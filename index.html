@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mehmet Ali Yıldırım | Portfolio</title>
-    <!-- Sekme İkonu (Favicon - Çip Simgesi) -->
+    
+    <!-- FAVICON (SEKME İKONU) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -64,8 +66,8 @@
                 <button onclick="switchTab('notes')" id="tab-notes" class="tab-btn px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                     Ders Notları
                 </button>
-                <button onclick="switchTab('contact')" id="tab-contact" class="tab-btn px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                    İletişim
+                <button onclick="switchTab('social')" id="tab-social" class="tab-btn px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                    Sosyal Medya
                 </button>
             </div>
 
@@ -135,14 +137,81 @@
             </div>
         </section>
 
-        <!-- 4. SEKME: İLETİŞİM -->
-        <section id="content-contact" class="tab-content hidden max-w-xl mx-auto">
-            <div class="p-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 space-y-4 text-center">
-                <h2 class="text-2xl font-bold">Bana Ulaşın</h2>
-                <p class="text-slate-600 dark:text-slate-400">Proje ortaklıkları ve sorularınız için mail atabilirsiniz:</p>
-                <a href="mailto:mali@maliyildirimtr.com" class="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold shadow-lg hover:opacity-90 transition-opacity">
-                    mali@maliyildirimtr.com
+        <!-- 4. SEKME: SOSYAL MEDYA -->
+        <section id="content-social" class="tab-content hidden space-y-6">
+            <div class="text-center space-y-2 mb-8">
+                <h2 class="text-3xl font-extrabold tracking-tight">Sosyal Medya & İletişim</h2>
+                <p class="text-slate-600 dark:text-slate-400">Projelerimi takip etmek ve benimle iletişime geçmek için bağlantıları kullanabilirsiniz.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                <!-- GitHub -->
+                <a href="https://github.com/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsMavi group-hover:text-white transition-colors">
+                        💻
+                    </div>
+                    <div>
+                        <h3 class="font-bold group-hover:text-tsMavi transition-colors">GitHub</h3>
+                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
+                    </div>
                 </a>
+
+                <!-- LinkedIn -->
+                <a href="https://linkedin.com/in/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsMavi group-hover:text-white transition-colors">
+                        💼
+                    </div>
+                    <div>
+                        <h3 class="font-bold group-hover:text-tsMavi transition-colors">LinkedIn</h3>
+                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
+                    </div>
+                </a>
+
+                <!-- X / Twitter -->
+                <a href="https://x.com/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsBordo group-hover:text-white transition-colors">
+                        🐦
+                    </div>
+                    <div>
+                        <h3 class="font-bold group-hover:text-tsBordo transition-colors">X (Twitter)</h3>
+                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
+                    </div>
+                </a>
+
+                <!-- Instagram -->
+                <a href="https://instagram.com/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsBordo group-hover:text-white transition-colors">
+                        📸
+                    </div>
+                    <div>
+                        <h3 class="font-bold group-hover:text-tsBordo transition-colors">Instagram</h3>
+                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
+                    </div>
+                </a>
+
+                <!-- YouTube -->
+                <a href="https://youtube.com/@maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsBordo group-hover:text-white transition-colors">
+                        ▶️
+                    </div>
+                    <div>
+                        <h3 class="font-bold group-hover:text-tsBordo transition-colors">YouTube</h3>
+                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
+                    </div>
+                </a>
+
+                <!-- E-Posta Adresi -->
+                <a href="mailto:mali@maliyildirimtr.com" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsMavi group-hover:text-white transition-colors">
+                        ✉️
+                    </div>
+                    <div>
+                        <h3 class="font-bold group-hover:text-tsMavi transition-colors">E-Posta</h3>
+                        <p class="text-xs text-slate-500 font-mono">mali@maliyildirimtr.com</p>
+                    </div>
+                </a>
+
             </div>
         </section>
 

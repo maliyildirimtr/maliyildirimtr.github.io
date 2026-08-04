@@ -1,6 +1,6 @@
 // Firebase Ayarların
 const firebaseConfig = {
-    apiKey: "AIzaSyAGh5rutIe9ryHB7ZJIuKzwZxPWLxtc6m4",
+    apiKey: "AIzaSyAGh5rutIe9rYhB7ZJIuKzwZxPWLxtc6m4",
     authDomain: "maliyildirimtr-db.firebaseapp.com",
     projectId: "maliyildirimtr-db",
     storageBucket: "maliyildirimtr-db.firebasestorage.app",

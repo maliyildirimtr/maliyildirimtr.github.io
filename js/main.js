@@ -2,7 +2,7 @@
 // 1. YÖNETİCİ E-POSTASI VE ROL KONTROLÜ
 // ==========================================
 // Yönetici yetkisine sahip e-posta adresin ve gizli şifren
-const ADMIN_EMAIL = "maliyildirim.gazi@gmail.com"; // Kendi Gmail adresin
+const ADMIN_EMAIL = "maliyildirimtr@gmail.com"; // Kendi Gmail adresin
 const ADMIN_PASSWORD = "258061"; // Logoya 3 kez basınca kullanılan şifre
 
 function isAdmin() {

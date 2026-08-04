@@ -39,7 +39,7 @@
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
             <div>
                 <h1 class="text-2xl font-extrabold tracking-tight">📚 Firebase'e Yeni Ders Ekle</h1>
-                <p class="text-slate-600 dark:text-slate-400 text-xs mt-1">Buradan ekleyeceğiniz ders Google Firestore veritabanına işlenir ve sitede canlıda yayınlanır.</p>
+                <p class="text-slate-600 dark:text-slate-400 text-xs mt-1">Buradan ekleyeceğiniz ders Google Firestore veritabanına işlenir ve otamatik detay sayfası oluşturulur.</p>
             </div>
             <a href="dersler.html" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5">
                 <span>←</span> Derslere Dön
@@ -53,7 +53,7 @@
                 <!-- DERS ADI -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Ders Adı *</label>
-                    <input type="text" id="course-title" required placeholder="Örn: Mantıksal Devre Tasarımı" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
+                    <input type="text" id="course-title" required placeholder="Örn: Yüksek Matematik" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
                 </div>
 
                 <!-- DERS KODU / ALT BAŞLIK -->
@@ -63,30 +63,22 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- İKON SEÇİMİ -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Kart İkonu *</label>
-                    <select id="course-icon" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
-                        <option value="⚡">⚡ Şimşek (Devre/Mantık)</option>
-                        <option value="💻">💻 Laptop (FPGA/HDL)</option>
-                        <option value="🧲">🧲 Mıknatıs (Fizik/Elektronik)</option>
-                        <option value="📐">📐 Gönye (Matematik)</option>
-                        <option value="📚">📚 Kitap (Genel Notlar)</option>
-                    </select>
-                </div>
-
-                <!-- LİNK -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Ders Linki / Sayfası *</label>
-                    <input type="text" id="course-link" required placeholder="Örn: mantiksal-devre-tasarimi.html veya Drive linki" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
-                </div>
+            <!-- İKON SEÇİMİ -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Kart İkonu *</label>
+                <select id="course-icon" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
+                    <option value="⚡">⚡ Şimşek (Devre/Mantık)</option>
+                    <option value="💻">💻 Laptop (FPGA/HDL)</option>
+                    <option value="🧲">🧲 Mıknatıs (Fizik/Elektronik)</option>
+                    <option value="📐">📐 Gönye (Matematik)</option>
+                    <option value="📚">📚 Kitap (Genel Notlar)</option>
+                </select>
             </div>
 
             <!-- DERS AÇIKLAMASI -->
             <div>
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Kısa Açıklama *</label>
-                <textarea id="course-desc" rows="4" required placeholder="Karnaugh haritaları, kombinasyonel devreler, Don't Care durumları ve ardışıl devreler..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors resize-none"></textarea>
+                <textarea id="course-desc" rows="4" required placeholder="Dersin içeriği ve konuları hakkında kısa bir bilgi..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors resize-none"></textarea>
             </div>
 
             <!-- BUTONLAR -->
@@ -106,8 +98,8 @@
     </footer>
 
     <!-- SCRIPT'LER -->
-    <script src="js/main.js?v=1"></script>
-    <script src="js/firebase.js?v=1"></script>
+    <script src="js/main.js"></script>
+    <script src="js/firebase.js"></script>
     <script>
         renderNavbar('dersler');
 
@@ -123,7 +115,6 @@
                 title: document.getElementById('course-title').value,
                 code: document.getElementById('course-code').value,
                 icon: document.getElementById('course-icon').value,
-                link: document.getElementById('course-link').value,
                 description: document.getElementById('course-desc').value,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
@@ -131,7 +122,6 @@
             // FIREBASE FIRESTORE'A DERS KAYDETME
             db.collection("courses").add(newCourse)
             .then(() => {
-                // Kayıt tamamlandığında anında dersler.html sayfasına yönlendir
                 window.location.assign('dersler.html');
             })
             .catch((error) => {

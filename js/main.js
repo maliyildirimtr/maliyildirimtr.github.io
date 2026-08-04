@@ -170,7 +170,7 @@ function renderNavbar(activePage) {
         </div>
     </div>
 
-    <!-- HESAP / PROFİL DÜZENLEME MODAL (YENİ) -->
+    <!-- HESAP / PROFİL DÜZENLEME MODALI -->
     <div id="user-profile-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -245,7 +245,9 @@ function closeAuthModal() {
     if(modal) modal.classList.add('hidden'); 
 }
 
-// PROFİL / HESAP MODALI FONKSİYONLARI (YENİ)
+// ==========================================
+// PROFİL / HESAP MODALI FONKSİYONLARI 
+// ==========================================
 function openProfileModal() {
     const user = typeof auth !== 'undefined' ? auth.currentUser : null;
     if (!user) return;

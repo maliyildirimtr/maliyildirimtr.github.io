@@ -71,6 +71,14 @@ function handleLogoClick() {
     }
 }
 
+// MOBİL MENÜ AÇMA / KAPAMA
+function toggleMobileMenu() {
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenu) {
+        mobileMenu.classList.toggle('hidden');
+    }
+}
+
 // ==========================================
 // 3. ORTAK İKON / RESİM DETEKTÖRÜ
 // ==========================================
@@ -90,7 +98,7 @@ function renderIcon(iconData) {
 }
 
 // ==========================================
-// 4. ORTAK NAVBAR RENDER FONKSİYONU (Orijinal Şık Tasarım)
+// 4. ORTAK NAVBAR RENDER FONKSİYONU (Mobil Uyumlu)
 // ==========================================
 function renderNavbar(activePage) {
     const container = document.getElementById('navbar-container');
@@ -98,22 +106,21 @@ function renderNavbar(activePage) {
 
     const loggedIn = isAdmin();
 
-    // Aktif link stilleri (Orijinal Premium Görünüm)
     const activeClass = "bg-slate-100 dark:bg-slate-800 text-tsMavi font-bold shadow-sm";
     const inactiveClass = "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/50";
 
     container.innerHTML = `
-        <nav class="border-b border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-[#0d0f12]/70 backdrop-blur-xl sticky top-0 z-40 transition-all">
+        <nav class="border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-[#0d0f12]/80 backdrop-blur-xl sticky top-0 z-40 transition-all">
             <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                 
-                <!-- LOGO (3 Kez Tıklama ile Gizli Yönetici Girişi) -->
+                <!-- LOGO -->
                 <div onclick="handleLogoClick()" class="cursor-pointer font-black text-lg tracking-wider text-slate-900 dark:text-white hover:opacity-85 transition-opacity select-none flex items-center gap-1">
                     <span>M. ALİ</span>
                     <span class="text-tsMavi bg-gradient-to-r from-tsMavi to-tsMavi-light bg-clip-text text-transparent">YILDIRIM</span>
                 </div>
 
-                <!-- MENÜ LİNK ALANI -->
-                <div class="flex items-center gap-1 sm:gap-2 text-xs font-semibold">
+                <!-- MASAÜSTÜ MENÜ LİNKLERİ (md:flex) -->
+                <div class="hidden md:flex items-center gap-2 text-xs font-semibold">
                     <a href="index.html" class="px-3.5 py-2 rounded-xl transition-all duration-200 ${activePage === 'home' ? activeClass : inactiveClass}">
                         Hakkımda
                     </a>
@@ -133,6 +140,34 @@ function renderNavbar(activePage) {
                         </button>
                     ` : ''}
                 </div>
+
+                <!-- MOBİL MENÜ BUTONU (BURGER) -->
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-tsMavi focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- MOBİL AÇILIR MENÜ ALANI -->
+            <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d0f12] px-4 py-4 space-y-2 text-xs font-semibold">
+                <a href="index.html" class="block px-4 py-2.5 rounded-xl ${activePage === 'home' ? activeClass : inactiveClass}">
+                    Hakkımda
+                </a>
+                <a href="projeler.html" class="block px-4 py-2.5 rounded-xl ${activePage === 'projeler' ? activeClass : inactiveClass}">
+                    Projeler
+                </a>
+                <a href="dersler.html" class="block px-4 py-2.5 rounded-xl ${activePage === 'dersler' ? activeClass : inactiveClass}">
+                    Dersler & Notlar
+                </a>
+                <a href="iletisim.html" class="block px-4 py-2.5 rounded-xl ${activePage === 'iletisim' ? activeClass : inactiveClass}">
+                    İletişim
+                </a>
+                ${loggedIn ? `
+                    <button onclick="logoutAdmin()" class="w-full text-left px-4 py-2.5 rounded-xl bg-red-500/10 text-red-500 font-medium">
+                        🔓 Çıkış Yap
+                    </button>
+                ` : ''}
             </div>
         </nav>
 

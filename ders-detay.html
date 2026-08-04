@@ -22,6 +22,7 @@
     </script>
     <link rel="stylesheet" href="css/style.css">
 
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
@@ -33,6 +34,7 @@
         <div class="py-20 text-center text-slate-500 text-sm">⏳ Yükleniyor...</div>
     </main>
 
+    <!-- DÜZENLEME MODALI -->
     <div id="topic-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -160,10 +162,10 @@
                     const coverImg = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null;
 
                     html += `
-                        <div class="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between">
+                        <a href="konu-detay.html?courseId=${courseId}&topicId=${topicId}" class="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer">
                             
                             ${loggedIn ? `
-                                <div class="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div class="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.preventDefault(); event.stopPropagation();">
                                     ${index > 0 ? `<button onclick="moveTopic('${topicId}', ${topic.orderIndex}, ${docs[index-1].data().orderIndex}, '${docs[index-1].id}')" title="Yukarı Taşı" class="text-xs text-white hover:text-tsMavi px-1">⬅</button>` : ''}
                                     ${index < docs.length - 1 ? `<button onclick="moveTopic('${topicId}', ${topic.orderIndex}, ${docs[index+1].data().orderIndex}, '${docs[index+1].id}')" title="Aşağı Taşı" class="text-xs text-white hover:text-tsMavi px-1">➡</button>` : ''}
                                     <button onclick="openTopicModal('${topicId}', '${topic.title.replace(/'/g, "\\'")}', '${topic.videoUrl || ''}')" title="Düzenle" class="text-xs text-yellow-400 hover:text-yellow-300 px-1">✏️</button>
@@ -171,7 +173,7 @@
                                 </div>
                             ` : ''}
 
-                            <a href="konu-detay.html?courseId=${courseId}&topicId=${topicId}">
+                            <div>
                                 ${coverImg ? `
                                     <div class="relative aspect-video w-full overflow-hidden bg-slate-900">
                                         <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -189,12 +191,12 @@
                                 <div class="p-5">
                                     <h4 class="font-bold text-base group-hover:text-tsMavi transition-colors leading-snug">${topic.title}</h4>
                                 </div>
-                            </a>
-                            
-                            <div class="px-5 pb-4 flex justify-between items-center border-t border-slate-100 dark:border-slate-800/60 pt-3">
-                                <span class="text-xs text-tsMavi font-semibold flex items-center gap-1">İçeriğe Git →</span>
                             </div>
-                        </div>
+                            
+                            <div class="px-5 pb-4 flex justify-between items-center border-t border-slate-100 dark:border-slate-800/60 pt-3 mt-auto">
+                                <span class="text-xs text-tsMavi font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">İçeriğe Git →</span>
+                            </div>
+                        </a>
                     `;
                 });
                 topicsGrid.innerHTML = html;

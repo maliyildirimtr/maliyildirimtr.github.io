@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mehmet Ali Yıldırım | Dersler & Notlar</title>
+    <title>Mehmet Ali Yıldırım | Yeni Ders / Not Ekle</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     
     <!-- Tailwind CSS CDN -->
@@ -33,30 +33,70 @@
     <div id="navbar-container"></div>
 
     <!-- ANA İÇERİK ALANI -->
-    <main class="max-w-5xl mx-auto px-4 py-12 flex-grow w-full space-y-8">
+    <main class="max-w-4xl mx-auto px-4 py-12 flex-grow w-full space-y-8">
         
-        <!-- ÜST BAŞLIK VE EKLE / ÇIKIŞ BUTONLARI -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <!-- ÜST BAŞLIK VE GERİ DÖN BUTONU -->
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
             <div>
-                <h1 class="text-3xl font-extrabold tracking-tight">📚 Dersler ve Notlar</h1>
-                <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">İçeriğine gitmek istediğiniz ders penceresine tıklayın.</p>
+                <h1 class="text-2xl font-extrabold tracking-tight">📚 Firebase'e Yeni Ders Ekle</h1>
+                <p class="text-slate-600 dark:text-slate-400 text-xs mt-1">Buradan ekleyeceğiniz ders Google Firestore veritabanına işlenir ve sitede canlıda yayınlanır.</p>
             </div>
-            
-            <!-- AKSİYON BUTONLARI -->
-            <div class="flex items-center gap-3" id="admin-actions">
-                <a href="ders-ekle.html" title="Yeni Ders Ekle" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white text-xs font-semibold shadow-md hover:opacity-95 transition-all flex items-center gap-1.5">
-                    <span class="text-base leading-none">+</span> Ders Ekle
-                </a>
-            </div>
+            <a href="dersler.html" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5">
+                <span>←</span> Derslere Dön
+            </a>
         </div>
 
-        <!-- DERS KARTLARI LİSTESİ (FIREBASE'DEN CANLI GELECEK) -->
-        <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Yükleniyor Mesajı -->
-            <div class="col-span-full py-12 text-center text-slate-500 dark:text-slate-400 text-sm">
-                <span>⏳ Dersler veritabanından yükleniyor...</span>
+        <!-- DERS EKLEME FORMU -->
+        <form id="add-course-form" class="p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-6 shadow-sm">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- DERS ADI -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Ders Adı *</label>
+                    <input type="text" id="course-title" required placeholder="Örn: Mantıksal Devre Tasarımı" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
+                </div>
+
+                <!-- DERS KODU / ALT BAŞLIK -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">İçerik Durumu / Kodu *</label>
+                    <input type="text" id="course-code" required placeholder="Örn: 12 Video İçerik veya Hazırlanıyor" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
+                </div>
             </div>
-        </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- İKON SEÇİMİ -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Kart İkonu *</label>
+                    <select id="course-icon" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
+                        <option value="⚡">⚡ Şimşek (Devre/Mantık)</option>
+                        <option value="💻">💻 Laptop (FPGA/HDL)</option>
+                        <option value="🧲">🧲 Mıknatıs (Fizik/Elektronik)</option>
+                        <option value="📐">📐 Gönye (Matematik)</option>
+                        <option value="📚">📚 Kitap (Genel Notlar)</option>
+                    </select>
+                </div>
+
+                <!-- LİNK -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Ders Linki / Sayfası *</label>
+                    <input type="text" id="course-link" required placeholder="Örn: mantiksal-devre-tasarimi.html veya Drive linki" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
+                </div>
+            </div>
+
+            <!-- DERS AÇIKLAMASI -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Kısa Açıklama *</label>
+                <textarea id="course-desc" rows="4" required placeholder="Karnaugh haritaları, kombinasyonel devreler, Don't Care durumları ve ardışıl devreler..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors resize-none"></textarea>
+            </div>
+
+            <!-- BUTONLAR -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <a href="dersler.html" class="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">İptal</a>
+                <button type="submit" id="submit-btn" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white text-xs font-semibold shadow-md hover:opacity-95 transition-opacity flex items-center gap-2">
+                    <span>➕</span> Veritabanına Kaydet
+                </button>
+            </div>
+        </form>
 
     </main>
 
@@ -71,78 +111,35 @@
     <script>
         renderNavbar('dersler');
 
-        const coursesGrid = document.getElementById('courses-grid');
+        const form = document.getElementById('add-course-form');
+        const submitBtn = document.getElementById('submit-btn');
 
-        // FIREBASE'DEN DERSLERİ CANLI CANLI DİNLE & LİSTELE
-        db.collection("courses").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-            if (snapshot.empty) {
-                coursesGrid.innerHTML = `
-                    <div class="col-span-full py-12 text-center text-slate-500 dark:text-slate-400 text-sm border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">
-                        <p>Henüz veritabanında kayıtlı ders bulunmuyor.</p>
-                        <p class="text-xs text-slate-400 mt-1">Sağ üstteki <b>+ Ders Ekle</b> butonuna basarak ilk dersini ekleyebilirsin!</p>
-                    </div>
-                `;
-                return;
-            }
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "<span>⏳</span> Veritabanına Yazılıyor...";
 
-            let htmlContent = "";
+            const newCourse = {
+                title: document.getElementById('course-title').value,
+                code: document.getElementById('course-code').value,
+                icon: document.getElementById('course-icon').value,
+                link: document.getElementById('course-link').value,
+                description: document.getElementById('course-desc').value,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
 
-            snapshot.forEach((doc) => {
-                const course = doc.data();
-                const courseId = doc.id;
-
-                htmlContent += `
-                    <div class="group relative p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 hover:border-tsMavi/50 dark:hover:border-tsMavi/50 transition-all shadow-sm hover:shadow-md flex flex-col justify-between">
-                        <div>
-                            <!-- İKON VE SİL BUTONU -->
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl shadow-inner">
-                                    ${course.icon || '📚'}
-                                </div>
-                                <button onclick="deleteCourse('${courseId}', '${course.title}')" title="Dersi Sil" class="opacity-0 group-hover:opacity-100 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 text-xs hover:bg-red-500 hover:text-white transition-all">
-                                    🗑️ Sil
-                                </button>
-                            </div>
-
-                            <!-- BAŞLIK VE AÇIKLAMA -->
-                            <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-tsMavi transition-colors">
-                                ${course.title}
-                            </h2>
-                            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-                                ${course.description}
-                            </p>
-                        </div>
-
-                        <!-- ALT BİLGİ VE LİNK -->
-                        <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-                            <span class="text-slate-500 font-medium">${course.code || 'Genel Notlar'}</span>
-                            <a href="${course.link}" class="font-semibold text-tsMavi hover:underline flex items-center gap-1">
-                                İncele →
-                            </a>
-                        </div>
-                    </div>
-                `;
+            // FIREBASE FIRESTORE'A DERS KAYDETME
+            db.collection("courses").add(newCourse)
+            .then(() => {
+                // Kayıt tamamlandığında anında dersler.html sayfasına yönlendir
+                window.location.assign('dersler.html');
+            })
+            .catch((error) => {
+                alert('Hata oluştu: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "<span>➕</span> Veritabanına Kaydet";
             });
-
-            coursesGrid.innerHTML = htmlContent;
-        }, (error) => {
-            coursesGrid.innerHTML = `
-                <div class="col-span-full py-8 text-center text-red-500 text-xs">
-                    Veriler yüklenirken hata oluştu: ${error.message}
-                </div>
-            `;
         });
-
-        // DERS SİLME FONKSİYONU
-        function deleteCourse(id, title) {
-            if (confirm(`"${title}" dersini silmek istediğinize emin misiniz?`)) {
-                db.collection("courses").doc(id).delete().then(() => {
-                    alert('Ders başarıyla silindi!');
-                }).catch((error) => {
-                    alert('Silinirken hata oluştu: ' + error.message);
-                });
-            }
-        }
     </script>
 </body>
 </html>

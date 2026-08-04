@@ -156,7 +156,30 @@
             </div>
         </div>
     </div>
-
+    <!-- YENİ DERS EKLE (+) BUTONU (BAŞLANGIÇTA GİZLİ) -->
+    <!-- Not: Nav bar içindeki butonuna id="admin-add-btn" ve class="hidden" eklendiğinden emin ol -->
+    
+    <!-- ŞİFRE İLE YÖNETİCİ GİRİŞİ MODAL -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-center">
+            <div class="w-12 h-12 rounded-full bg-tsBordo/10 text-tsBordo dark:bg-tsMavi/10 dark:text-tsMavi mx-auto flex items-center justify-center text-xl font-bold">
+                🔒
+            </div>
+            <div>
+                <h3 class="text-lg font-bold">Yönetici Paneli Girişi</h3>
+                <p class="text-xs text-slate-500 mt-1">İçerik eklemek için lütfen yönetici şifresini girin.</p>
+            </div>
+            <div>
+                <input type="password" id="admin-password-input" placeholder="Şifreniz..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-center focus:outline-none focus:border-tsMavi transition-colors">
+                <p id="login-error-msg" class="text-xs text-red-500 mt-2 hidden">Hatalı şifre! Lütfen tekrar deneyin.</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeLoginModal()" class="w-1/2 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:opacity-80">İptal</button>
+                <button onclick="checkAdminPassword()" class="w-1/2 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Giriş Yap</button>
+            </div>
+        </div>
+    </div>
+    
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
         <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
     </footer>

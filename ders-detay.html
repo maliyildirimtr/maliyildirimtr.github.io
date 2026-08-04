@@ -6,7 +6,6 @@
     <title>Ders Detayı | Mehmet Ali Yıldırım</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -23,22 +22,56 @@
     </script>
     <link rel="stylesheet" href="css/style.css">
 
-    <!-- Firebase SDK (Compat Modu) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- ORTAK MENÜ ALANI -->
+    <!-- ORTAK MENÜ -->
     <div id="navbar-container"></div>
 
-    <!-- ANA İÇERİK ALANI -->
-    <main class="max-w-4xl mx-auto px-4 py-12 flex-grow w-full space-y-8" id="course-detail-container">
-        <!-- Yükleniyor Mesajı -->
-        <div class="py-20 text-center text-slate-500 dark:text-slate-400 text-sm">
-            <span>⏳ Ders içeriği yükleniyor...</span>
-        </div>
+    <!-- ANA İÇERİK -->
+    <main class="max-w-6xl mx-auto px-4 py-12 flex-grow w-full space-y-8" id="course-detail-container">
+        <div class="py-20 text-center text-slate-500 text-sm">⏳ Yükleniyor...</div>
     </main>
+
+    <!-- YENİ KONU EKLEME MODAL (AÇILIR PENCERE) -->
+    <div id="add-topic-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold">➕ Yeni Konu / İçerik Ekle</h3>
+                <button onclick="closeTopicModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            
+            <form id="add-topic-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">Konu Başlığı *</label>
+                    <input type="text" id="topic-title" required placeholder="Örn: 01 - Karnaugh Haritaları" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">YouTube Video Linki (İsteğe Bağlı)</label>
+                    <input type="url" id="topic-video" placeholder="Örn: https://www.youtube.com/watch?v=..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">PDF / Drive Not Linki (İsteğe Bağlı)</label>
+                    <input type="url" id="topic-pdf" placeholder="Örn: https://drive.google.com/file/d/..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">Kod Bloğu (SystemVerilog / C / C++ vb. - İsteğe Bağlı)</label>
+                    <textarea id="topic-code" rows="4" placeholder="// Kopyalanabilir kodları buraya yapıştırabilirsin..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm font-mono focus:outline-none focus:border-tsMavi resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeTopicModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
+                    <button type="submit" id="save-topic-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- FOOTER -->
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
@@ -51,67 +84,161 @@
     <script>
         renderNavbar('dersler');
 
-        // URL'den ders ID'sini al (örn: ders-detay.html?id=ABC123XYZ)
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
-
         const container = document.getElementById('course-detail-container');
 
+        // YouTube Video ID Çıkarma Fonksiyonu
+        function getYouTubeId(url) {
+            if(!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function openTopicModal() { document.getElementById('add-topic-modal').classList.remove('hidden'); }
+        function closeTopicModal() { document.getElementById('add-topic-modal').classList.add('hidden'); }
+
         if (!courseId) {
-            container.innerHTML = `
-                <div class="text-center py-20 text-red-500 font-semibold text-sm space-y-3">
-                    <p>⚠️ Lütfen geçerli bir ders seçin veya ID bulunamadı!</p>
-                    <a href="dersler.html" class="inline-block px-4 py-2 rounded-xl bg-slate-800 text-white text-xs">← Derslere Dön</a>
-                </div>
-            `;
+            container.innerHTML = `<div class="text-center py-20 text-red-500">Ders bulunamadı! <a href="dersler.html">Derslere Dön</a></div>`;
         } else {
-            // Firebase Firestore'dan seçilen özel derse ait veriyi çek
+            // Ders Bilgisini Çek
             db.collection("courses").doc(courseId).get().then((doc) => {
                 if (doc.exists) {
                     const course = doc.data();
+                    
+                    // İçerik İskeletini Oluştur
                     container.innerHTML = `
-                        <!-- GERİ DÖN VE BAŞLIK -->
-                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
                             <div class="flex items-center gap-4">
-                                <div class="w-14 h-14 rounded-2xl bg-tsMavi/10 text-tsMavi flex items-center justify-center text-3xl shadow-inner">
+                                <div class="w-14 h-14 rounded-2xl bg-tsMavi/10 text-tsMavi flex items-center justify-center text-3xl font-bold">
                                     ${course.icon || '📚'}
                                 </div>
                                 <div>
-                                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">${course.title}</h1>
+                                    <h1 class="text-3xl font-extrabold tracking-tight">${course.title}</h1>
                                     <p class="text-slate-500 text-xs mt-1 font-mono">${course.code || 'Genel Notlar'}</p>
                                 </div>
                             </div>
-                            <a href="dersler.html" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                                ← Derslere Dön
-                            </a>
+                            <div class="flex items-center gap-2">
+                                <button onclick="openTopicModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white text-xs font-semibold shadow-md flex items-center gap-1.5">
+                                    <span>＋</span> Yeni Konu Ekle
+                                </button>
+                                <a href="dersler.html" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700">
+                                    ← Derslere Dön
+                                </a>
+                            </div>
                         </div>
 
-                        <!-- DERS AÇIKLAMASI -->
-                        <div class="p-6 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
-                            <h3 class="text-xs font-bold text-tsMavi uppercase tracking-wider">Ders / İçerik Hakkında</h3>
-                            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${course.description}</p>
+                        <div class="p-6 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                            <p class="text-sm text-slate-600 dark:text-slate-300">${course.description}</p>
                         </div>
 
-                        <!-- İÇERİK & VİDEO ALANI -->
-                        <div class="p-12 text-center border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl space-y-3 bg-slate-50/50 dark:bg-slate-900/20">
-                            <div class="text-4xl">🎥</div>
-                            <h3 class="font-bold text-base">Video İçerikleri & Notlar</h3>
-                            <p class="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                                Bu derse ait eğitim videoları, PDF notları ve ders belgeleri yakında buraya eklenecektir.
-                            </p>
+                        <!-- KONU KARTLARI GRİD'İ -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold">Konular & Materyaller</h3>
+                            <div id="topics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div class="col-span-full text-center py-8 text-slate-500 text-xs">Konular yükleniyor...</div>
+                            </div>
                         </div>
                     `;
-                } else {
-                    container.innerHTML = `
-                        <div class="text-center py-20 text-red-500 font-semibold text-sm space-y-3">
-                            <p>⚠️ Veritabanında bu kimliğe (ID) ait ders bulunamadı!</p>
-                            <a href="dersler.html" class="inline-block px-4 py-2 rounded-xl bg-slate-800 text-white text-xs">← Derslere Dön</a>
-                        </div>
-                    `;
+
+                    // Konuları Canlı Dinle
+                    loadTopics();
                 }
-            }).catch((error) => {
-                container.innerHTML = `<div class="text-center py-20 text-red-500 text-xs">Veri çekilirken hata oluştu: ${error.message}</div>`;
             });
+        }
+
+        // Konuları Firestore'dan Çek
+        function loadTopics() {
+            db.collection("courses").doc(courseId).collection("topics").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
+                const topicsGrid = document.getElementById('topics-grid');
+                if (snapshot.empty) {
+                    topicsGrid.innerHTML = `
+                        <div class="col-span-full py-12 text-center text-slate-500 text-xs border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">
+                            Henüz bu derse eklenmiş konu bulunmuyor. Üstteki <b>＋ Yeni Konu Ekle</b> butonundan ilk konunu ekleyebilirsin!
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = "";
+                snapshot.forEach((doc) => {
+                    const topic = doc.data();
+                    const topicId = doc.id;
+                    const ytId = getYouTubeId(topic.videoUrl);
+                    
+                    // Kapak Resmi: YouTube varsa Thumbnail, yoksa Özel PDF Görseli
+                    const coverImg = ytId 
+                        ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` 
+                        : null;
+
+                    html += `
+                        <div class="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden hover:border-tsMavi transition-all shadow-sm hover:shadow-md flex flex-col justify-between">
+                            <a href="konu-detay.html?courseId=${courseId}&topicId=${topicId}">
+                                ${coverImg ? `
+                                    <div class="relative aspect-video w-full overflow-hidden bg-slate-900">
+                                        <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                        <div class="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/10 transition-colors">
+                                            <div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center pl-0.5 shadow-lg">▶</div>
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="aspect-video w-full bg-slate-100 dark:bg-slate-800/80 flex flex-col items-center justify-center gap-2 text-slate-400">
+                                        <span class="text-3xl">📄</span>
+                                        <span class="text-xs font-semibold">Ders Notu / PDF</span>
+                                    </div>
+                                `}
+
+                                <div class="p-5 space-y-2">
+                                    <h4 class="font-bold text-base group-hover:text-tsMavi transition-colors">${topic.title}</h4>
+                                    <div class="flex items-center gap-2 text-[10px] text-slate-500 font-mono pt-2">
+                                        ${topic.videoUrl ? '<span class="px-2 py-0.5 rounded bg-red-500/10 text-red-500">Video</span>' : ''}
+                                        ${topic.pdfUrl ? '<span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-500">PDF</span>' : ''}
+                                        ${topic.code ? '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500">Kod</span>' : ''}
+                                    </div>
+                                </div>
+                            </a>
+                            
+                            <div class="px-5 pb-4 flex justify-between items-center border-t border-slate-100 dark:border-slate-800/60 pt-3">
+                                <span class="text-xs text-tsMavi font-semibold">İçeriğe Git →</span>
+                                <button onclick="deleteTopic('${topicId}', '${topic.title}')" class="text-xs text-red-500 opacity-0 group-hover:opacity-100 hover:underline">Sil</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                topicsGrid.innerHTML = html;
+            });
+        }
+
+        // Yeni Konu Kaydet
+        document.getElementById('add-topic-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('save-topic-btn');
+            btn.disabled = true;
+
+            const newTopic = {
+                title: document.getElementById('topic-title').value,
+                videoUrl: document.getElementById('topic-video').value,
+                pdfUrl: document.getElementById('topic-pdf').value,
+                code: document.getElementById('topic-code').value,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection("courses").doc(courseId).collection("topics").add(newTopic).then(() => {
+                closeTopicModal();
+                document.getElementById('add-topic-form').reset();
+                btn.disabled = false;
+            }).catch(err => {
+                alert('Hata: ' + err.message);
+                btn.disabled = false;
+            });
+        });
+
+        // Konu Silme
+        function deleteTopic(topicId, title) {
+            if (confirm(`"${title}" konusunu silmek istediğinize emin misiniz?`)) {
+                db.collection("courses").doc(courseId).collection("topics").doc(topicId).delete();
+            }
         }
     </script>
 </body>

@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mehmet Ali Yıldırım | Dersler & Kurslar</title>
+    <title>Dersler & Notlar | Mehmet Ali Yıldırım</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -22,95 +23,185 @@
     </script>
     <link rel="stylesheet" href="css/style.css">
 
+    <!-- Firebase SDK (Sıralama Çok Önemli: Önce Firebase, Sonra main.js) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
+    <!-- ORTAK NAVBAR CONTAINER -->
     <div id="navbar-container"></div>
 
+    <!-- MAIN CONTENT -->
     <main class="max-w-6xl mx-auto px-4 py-12 flex-grow w-full space-y-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+        
+        <!-- ÜST BAŞLIK -->
+        <div class="border-b border-slate-200 dark:border-slate-800 pb-6 flex items-center justify-between">
             <div>
-                <h2 class="text-3xl font-extrabold tracking-tight">Akademik Dersler & Eğitim Setleri</h2>
-                <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">İçeriğine gitmek istediğiniz ders penceresine tıklayın.</p>
-            </div>
-            
-            <div id="admin-add-course-btn" class="hidden">
-                <a href="ders-ekle.html" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white text-xs font-semibold shadow-md flex items-center gap-1.5">
-                    <span class="text-base leading-none">+</span> Yeni Ders Ekle
-                </a>
+                <h1 class="text-3xl font-extrabold tracking-tight">Akademik Dersler & Eğitim Setleri</h1>
+                <p class="text-slate-500 text-xs mt-1">İçeriğine gitmek istediğiniz ders penceresine tıklayın.</p>
             </div>
         </div>
 
-        <div id="course-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="col-span-full py-12 text-center text-slate-500 text-sm">⏳ Yükleniyor...</div>
+        <!-- DERS KARTLARI GRID -->
+        <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full py-20 text-center text-slate-500 text-sm">⏳ Yükleniyor...</div>
         </div>
     </main>
 
+    <!-- DERS EKLE / DÜZENLE MODAL (ADMIN) -->
+    <div id="add-course-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold" id="course-modal-title">➕ Yeni Ders Ekle</h3>
+                <button onclick="closeCourseModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            
+            <form id="add-course-form" class="space-y-4">
+                <input type="hidden" id="edit-course-id">
+                
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">Ders Başlığı *</label>
+                    <input type="text" id="course-title" required placeholder="Örn: Mantık Devreleri Tasarımı" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">Ders Kodu / Kategori</label>
+                    <input type="text" id="course-code" placeholder="Örn: EEE-201 veya Genel Notlar" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">İkon / Görsel (Emoji veya Görsel Linki)</label>
+                    <input type="text" id="course-icon" placeholder="Örn: ⚡ veya images/ders.png" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">Kısa Açıklama</label>
+                    <textarea id="course-description" rows="3" placeholder="Ders içeriği hakkında kısa bilgi..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeCourseModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
         <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
     </footer>
 
-    <script src="js/main.js"></script>
+    <!-- JS YÜKLEME SIRASI (ÖNEMLİ!) -->
     <script src="js/firebase.js"></script>
+    <script src="js/main.js"></script>
     <script>
-        renderNavbar('dersler');
+        // Dersleri Yükleme Fonksiyonu
+        function loadCourses() {
+            const grid = document.getElementById('courses-grid');
+            if (!grid) return;
 
-        if (typeof isAdmin === "function" && isAdmin()) {
-            document.getElementById('admin-add-course-btn')?.classList.remove('hidden');
+            db.collection("courses").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                if (snapshot.empty) {
+                    grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 text-xs border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">Henüz ders eklenmemiş.</div>`;
+                    return;
+                }
+
+                const adminState = typeof isAdmin === 'function' && isAdmin();
+                let html = "";
+
+                snapshot.docs.forEach((doc) => {
+                    const course = doc.data();
+                    const courseId = doc.id;
+                    const iconContent = typeof renderIcon === 'function' ? renderIcon(course.icon) : (course.icon || '⚡');
+
+                    html += `
+                        <div class="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between">
+                            
+                            ${adminState ? `
+                                <div class="absolute top-3 right-3 z-10 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="openEditCourseModal('${courseId}', '${(course.title||'').replace(/'/g, "\\'")}', '${course.code||''}', '${course.icon||''}', '${(course.description||'').replace(/'/g, "\\'")}')" class="text-xs text-yellow-400 hover:text-yellow-300 px-1">✏️</button>
+                                    <button onclick="deleteCourse('${courseId}', '${(course.title||'').replace(/'/g, "\\'")}')" class="text-xs text-red-400 hover:text-red-300 px-1">🗑️</button>
+                                </div>
+                            ` : ''}
+
+                            <div>
+                                <div class="w-12 h-12 rounded-2xl bg-tsMavi/10 text-tsMavi flex items-center justify-center text-2xl font-bold mb-4 overflow-hidden">
+                                    ${iconContent}
+                                </div>
+                                <h3 class="font-bold text-lg group-hover:text-tsMavi transition-colors">${course.title}</h3>
+                                <p class="text-xs font-mono text-slate-400 mt-1">${course.code || 'Genel Notlar'}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 line-clamp-2 leading-relaxed">${course.description || ''}</p>
+                            </div>
+
+                            <div class="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
+                                <a href="ders-detay.html?id=${courseId}" class="text-xs text-tsMavi font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                    İçeriği İncele →
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                grid.innerHTML = html;
+            }, (err) => {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-red-500 text-xs">Veri yükleme hatası: ${err.message}</div>`;
+            });
         }
 
-        const courseGrid = document.getElementById('course-grid');
+        // Modal Yönetimi
+        function openEditCourseModal(id, title, code, icon, description) {
+            document.getElementById('edit-course-id').value = id;
+            document.getElementById('course-title').value = title;
+            document.getElementById('course-code').value = code;
+            document.getElementById('course-icon').value = icon;
+            document.getElementById('course-description').value = description;
+            document.getElementById('course-modal-title').innerText = "✏️ Dersi Düzenle";
+            document.getElementById('add-course-modal').classList.remove('hidden');
+        }
 
-        db.collection("courses").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-            if (snapshot.empty) {
-                courseGrid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 text-xs border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">Henüz kayıtlı ders bulunmuyor.</div>`;
-                return;
+        function closeCourseModal() {
+            document.getElementById('add-course-modal').classList.add('hidden');
+            document.getElementById('add-course-form').reset();
+            document.getElementById('edit-course-id').value = '';
+        }
+
+        // Form Submit
+        document.getElementById('add-course-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (typeof isAdmin === 'function' && !isAdmin()) return;
+
+            const editId = document.getElementById('edit-course-id').value;
+            const title = document.getElementById('course-title').value.trim();
+            const code = document.getElementById('course-code').value.trim();
+            const icon = document.getElementById('course-icon').value.trim();
+            const description = document.getElementById('course-description').value.trim();
+
+            if (editId) {
+                db.collection("courses").doc(editId).update({
+                    title, code, icon, description
+                }).then(() => closeCourseModal());
+            } else {
+                db.collection("courses").add({
+                    title, code, icon, description,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => closeCourseModal());
             }
-
-            let htmlContent = "";
-            const loggedIn = typeof isAdmin === "function" && isAdmin();
-
-            snapshot.forEach((doc) => {
-                const course = doc.data();
-                const courseId = doc.id;
-
-                htmlContent += `
-                    <a href="ders-detay.html?id=${courseId}" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex flex-col justify-between relative overflow-hidden shadow-sm hover:shadow-md cursor-pointer">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-tsBordo to-tsMavi"></div>
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div class="w-12 h-12 rounded-xl bg-tsMavi/10 text-tsMavi dark:bg-tsMavi/20 flex items-center justify-center text-2xl font-bold overflow-hidden">
-                                    ${renderIcon(course.icon)}
-                                </div>
-                                ${loggedIn ? `
-                                    <button onclick="event.preventDefault(); event.stopPropagation(); deleteCourse('${courseId}', '${course.title.replace(/'/g, "\\'")}')" title="Dersi Sil" class="opacity-0 group-hover:opacity-100 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 text-xs hover:bg-red-500 hover:text-white transition-all">
-                                        🗑️ Sil
-                                    </button>
-                                ` : ''}
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold group-hover:text-tsMavi transition-colors">${course.title}</h3>
-                                <p class="text-slate-600 dark:text-slate-400 text-sm mt-2 leading-relaxed">${course.description}</p>
-                            </div>
-                        </div>
-                        <div class="pt-6 border-t border-slate-100 dark:border-slate-800/60 mt-6 flex items-center justify-between text-xs text-slate-500 font-mono">
-                            <span>${course.code || 'Genel Notlar'}</span>
-                            <span class="group-hover:translate-x-1 transition-transform font-semibold text-tsMavi">İncele →</span>
-                        </div>
-                    </a>
-                `;
-            });
-
-            courseGrid.innerHTML = htmlContent;
         });
 
         function deleteCourse(id, title) {
-            if (confirm(`"${title}" dersini silmek istediğinize emin misiniz?`)) {
+            if (typeof isAdmin === 'function' && !isAdmin()) return;
+            if (confirm(`"${title}" dersini ve tüm alt konularını silmek istediğinize emin misiniz?`)) {
                 db.collection("courses").doc(id).delete();
             }
         }
+
+        // Sayfa Hazır Olduğunda Yükle
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCourses();
+        });
     </script>
 </body>
 </html>

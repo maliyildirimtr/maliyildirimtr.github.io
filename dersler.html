@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mehmet Ali Yıldırım | Dersler & Notlar</title>
+    <title>Mehmet Ali Yıldırım | Dersler & Kurslar</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -24,85 +24,152 @@
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- NAV BAR -->
+    <!-- NAV BAR (ÜST MENÜ) -->
     <nav class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0d0f12]/80 glass-card">
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            
+            <!-- Logo -->
             <a href="index.html" class="text-xl font-bold tracking-wider uppercase">
                 M. Ali <span class="ts-gradient-text">Yıldırım</span>
             </a>
+
+            <!-- Menü Linkleri -->
             <div class="hidden md:flex items-center space-x-1 border border-slate-200 dark:border-slate-800 p-1 rounded-full bg-slate-100/50 dark:bg-slate-900/50">
                 <a href="index.html" class="px-5 py-1.5 text-sm font-medium rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Hakkımda</a>
                 <a href="projeler.html" class="px-5 py-1.5 text-sm font-medium rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Projeler</a>
                 <a href="dersler.html" class="px-5 py-1.5 text-sm font-medium rounded-full bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm">Dersler & Notlar</a>
                 <a href="sosyal.html" class="px-5 py-1.5 text-sm font-medium rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Sosyal Medya</a>
             </div>
-            <button id="theme-toggle" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
-                <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-            </button>
+
+            <!-- Sağ Taraf: İçerik Ekle (+) ve Tema Butonu -->
+            <div class="flex items-center gap-3">
+                
+                <!-- YENİ DERS / İÇERİK EKLE (+) BUTONU -->
+                <button onclick="openAddModal()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold text-sm shadow-md hover:opacity-90 transition-opacity">
+                    <span class="text-lg leading-none">+</span>
+                    <span class="hidden sm:inline">Ders Ekle</span>
+                </button>
+
+                <!-- Tema Değiştirici -->
+                <button id="theme-toggle" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
+                    <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
         </div>
     </nav>
 
-    <!-- DERSLER İÇERİK -->
+    <!-- ANA İÇERİK (DERS PENCERELERİ/KARTLARI GRID'İ) -->
     <main class="max-w-6xl mx-auto px-4 py-12 flex-grow w-full space-y-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
-            <div>
-                <h2 class="text-3xl font-extrabold tracking-tight">Ders Notları & Eğitim Arşivi</h2>
-                <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Mühendislik ders notlarım, lab dokümanlarım ve video eğitim kaynakları.</p>
-            </div>
-            <div class="relative min-w-[260px]">
-                <input type="text" id="note-search" onkeyup="filterNotes()" placeholder="Konu veya ders ara..." class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-tsMavi transition-colors">
-                <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
-            </div>
+        
+        <div class="border-b border-slate-200 dark:border-slate-800 pb-6">
+            <h2 class="text-3xl font-extrabold tracking-tight">Akademik Dersler & Eğitim Setleri</h2>
+            <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">İçeriğine gitmek istediğiniz ders penceresine tıklayın.</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-            <button onclick="filterCategory('all')" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-tsBordo text-white dark:bg-tsMavi dark:text-slate-950 transition-all">Tümü</button>
-            <button onclick="filterCategory('logic')" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:opacity-80 transition-all">Mantık Devreleri</button>
-            <button onclick="filterCategory('code')" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:opacity-80 transition-all">C / C++ Programlama</button>
-            <button onclick="filterCategory('hardware')" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:opacity-80 transition-all">Donanım & Verilog</button>
-        </div>
+        <!-- DERS PENCERELERİ (KARTLAR) LİSTESİ -->
+        <div id="course-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-        <div id="notes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="note-card note-logic group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex flex-col justify-between">
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-tsBordo/10 text-tsBordo dark:bg-tsBordo/20 dark:text-tsBordo-light">Mantık Devreleri</span>
-                        <span class="text-xs text-slate-400 font-mono">PDF + Video</span>
+            <!-- PENCERE 1: Mantıksal Devre Tasarımı -->
+            <a href="ders-detay.html?course=logic" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-tsBordo to-tsBordo-light"></div>
+                <div class="space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-tsBordo/10 text-tsBordo dark:bg-tsBordo/20 flex items-center justify-center text-2xl font-bold">
+                        ⚡
                     </div>
-                    <h3 class="text-xl font-bold group-hover:text-tsBordo transition-colors">Digital Logic Design & Karnaugh Maps</h3>
-                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">Boole matematiği, Karnaugh haritaları ile sadeleştirme, Don't Care durumları ve kombinazyonel devre tasarımları.</p>
-                </div>
-                <div class="pt-6 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 mt-4">
-                    <span class="text-xs text-slate-500 font-medium">150+ Sayfa Not</span>
-                    <div class="flex gap-2">
-                        <a href="#" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-tsBordo hover:text-white transition-colors">PDF İndir</a>
-                        <a href="https://youtube.com/@maliyildirimtr" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600/10 text-red-600 hover:bg-red-600 hover:text-white transition-colors">İzle ▶</a>
+                    <div>
+                        <h3 class="text-xl font-bold group-hover:text-tsBordo transition-colors">Mantıksal Devre Tasarımı</h3>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm mt-2 leading-relaxed">Karnaugh haritaları, kombinazyonel devreler, Don't Care durumları ve ardışıl devreler.</p>
                     </div>
                 </div>
-            </div>
+                <div class="pt-6 border-t border-slate-100 dark:border-slate-800/60 mt-6 flex items-center justify-between text-xs text-slate-500 font-mono">
+                    <span>12 Video İçerik</span>
+                    <span class="group-hover:translate-x-1 transition-transform">İncele →</span>
+                </div>
+            </a>
 
-            <div class="note-card note-hardware group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex flex-col justify-between">
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-tsMavi/10 text-tsMavi dark:bg-tsMavi/20 dark:text-tsMavi">SystemVerilog</span>
-                        <span class="text-xs text-slate-400 font-mono">Kod Arşivi</span>
+            <!-- PENCERE 2: SystemVerilog -->
+            <a href="ders-detay.html?course=systemverilog" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-tsMavi to-tsMavi-dark"></div>
+                <div class="space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-tsMavi/10 text-tsMavi dark:bg-tsMavi/20 flex items-center justify-center text-2xl font-bold">
+                        💻
                     </div>
-                    <h3 class="text-xl font-bold group-hover:text-tsMavi transition-colors">Verilog & SystemVerilog Temelleri</h3>
-                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">FPGA mimarileri, Vivado/Quartus simülasyon adımları, Module tanımlamaları ve Testbench hazırlama rehberi.</p>
+                    <div>
+                        <h3 class="text-xl font-bold group-hover:text-tsMavi transition-colors">SystemVerilog & FPGA</h3>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm mt-2 leading-relaxed">Donanım tanımlama dili, Vivado/Quartus simülasyonları, modül tasarımları ve testbench yapısı.</p>
+                    </div>
                 </div>
-                <div class="pt-6 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/60 mt-4">
-                    <span class="text-xs text-slate-500 font-medium">Lab Şablonları</span>
-                    <a href="https://github.com/maliyildirimtr" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-tsMavi hover:text-white transition-colors">Kodları İncele 💻</a>
+                <div class="pt-6 border-t border-slate-100 dark:border-slate-800/60 mt-6 flex items-center justify-between text-xs text-slate-500 font-mono">
+                    <span>8 Video İçerik</span>
+                    <span class="group-hover:translate-x-1 transition-transform">İncele →</span>
                 </div>
-            </div>
+            </a>
+
+            <!-- PENCERE 3: Fizik -->
+            <a href="ders-detay.html?course=fizik" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-emerald-500 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                <div class="space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-2xl font-bold">
+                        🧲
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold group-hover:text-emerald-500 transition-colors">Mühendislik Fiziği</h3>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm mt-2 leading-relaxed">Elektrik alanlar, Gauss yasası, manyetizma, devre teorisi temelleri ve problem çözümleri.</p>
+                    </div>
+                </div>
+                <div class="pt-6 border-t border-slate-100 dark:border-slate-800/60 mt-6 flex items-center justify-between text-xs text-slate-500 font-mono">
+                    <span>Hazırlanıyor</span>
+                    <span class="group-hover:translate-x-1 transition-transform">İncele →</span>
+                </div>
+            </a>
+
         </div>
     </main>
+
+    <!-- YENİ DERS EKLEME MODAL (AÇILIR PENCERE) -->
+    <div id="add-course-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-lg font-bold">Yeni Ders / İpuçları Ekle</h3>
+                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">✕</button>
+            </div>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-500">Ders Adı</label>
+                    <input type="text" placeholder="Örn: Yüksek Matematik" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-500">Açıklama</label>
+                    <textarea placeholder="Ders içeriği hakkında kısa bilgi..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi h-20"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-500">Ikon Emoji</label>
+                    <input type="text" placeholder="📐, ⚡, 💻 vb." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button onclick="closeAddModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:opacity-80">İptal</button>
+                <button onclick="alert('Ders taslağı oluşturuldu!')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Oluştur</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
         <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
     </footer>
 
+    <!-- MODAL AÇ/KAPA LOGIC -->
+    <script>
+        function openAddModal() {
+            document.getElementById('add-course-modal').classList.remove('hidden');
+        }
+        function closeAddModal() {
+            document.getElementById('add-course-modal').classList.add('hidden');
+        }
+    </script>
     <script src="js/main.js"></script>
 </body>
 </html>

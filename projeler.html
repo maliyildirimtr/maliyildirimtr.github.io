@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mehmet Ali Yıldırım | Projeler</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tsBordo: { DEFAULT: '#800020', light: '#a31236', dark: '#540015' },
+                        tsMavi: { DEFAULT: '#00a8e8', light: '#33bcef', dark: '#0077a8' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- ORTAK MENÜ ALANI -->
+    <div id="navbar-container"></div>
+
+    <!-- ANA İÇERİK ALANI -->
+    <main class="max-w-6xl mx-auto px-4 py-12 flex-grow w-full space-y-8">
+        
+        <!-- BAŞLIK VE AÇIKLAMA -->
+        <div class="border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight">Proje Portfolyosu</h1>
+                <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Gömülü sistemler, donanım tasarımı ve yazılım alanlarında geliştirdiğim projeler.</p>
+            </div>
+            <!-- GitHub Profil Butonu -->
+            <a href="https://github.com/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold hover:bg-tsMavi transition-colors w-fit">
+                <span>💻</span> GitHub Profilim
+            </a>
+        </div>
+
+        <!-- PROJE İZGARA ALANI (GRID) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- PROJE 1: Digital Logic Circuit Design -->
+            <div class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-tsBordo to-tsBordo-light"></div>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-tsBordo/10 text-tsBordo dark:bg-tsBordo/20 dark:text-tsBordo-light">Donanım / FPGA</span>
+                        <span class="text-xs text-slate-400 font-mono">SystemVerilog</span>
+                    </div>
+                    <h3 class="text-xl font-bold group-hover:text-tsBordo transition-colors">Digital Logic Circuit Design</h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                        SystemVerilog ve Verilog kullanılarak geliştirilmiş kombinazyonel ve ardışıl mantık devre tasarımları. Vivado simülasyon testbench yapılarını içerir.
+                    </p>
+                    <div class="flex flex-wrap gap-2 pt-2">
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">SystemVerilog</span>
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Quartus</span>
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Vivado</span>
+                    </div>
+                </div>
+                <div class="pt-6 border-t border-slate-100 dark:border-slate-800/60 mt-6 flex items-center justify-between">
+                    <span class="text-xs text-slate-500">Açık Kaynak</span>
+                    <a href="https://github.com/maliyildirimtr" target="_blank" class="text-xs font-bold text-tsBordo dark:text-tsMavi hover:underline flex items-center gap-1">
+                        Kodları İncele →
+                    </a>
+                </div>
+            </div>
+
+            <!-- PROJE 2: Gömülü Sistem C/C++ Mimarisi -->
+            <div class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-tsMavi to-tsMavi-dark"></div>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-tsMavi/10 text-tsMavi dark:bg-tsMavi/20 dark:text-tsMavi">Yazılım & Gömülü</span>
+                        <span class="text-xs text-slate-400 font-mono">C / C++</span>
+                    </div>
+                    <h3 class="text-xl font-bold group-hover:text-tsMavi transition-colors">C/C++ Algoritma ve Donanım Sürücüleri</h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                        Düşük seviyeli bellek yönetimi, pointer mimarileri, bit seviyesinde işlemler ve gömülü sistem odaklı veri yapıları uygulamaları.
+                    </p>
+                    <div class="flex flex-wrap gap-2 pt-2">
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">C++</span>
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">GCC / Clang</span>
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Embedded C</span>
+                    </div>
+                </div>
+                <div class="pt-6 border-t border-slate-100 dark:border-slate-800/60 mt-6 flex items-center justify-between">
+                    <span class="text-xs text-slate-500">Geliştirme Aşamasında</span>
+                    <a href="https://github.com/maliyildirimtr" target="_blank" class="text-xs font-bold text-tsBordo dark:text-tsMavi hover:underline flex items-center gap-1">
+                        Kodları İncele →
+                    </a>
+                </div>
+            </div>
+
+            <!-- PROJE 3: Kişisel Asistan & AI Companion (Gelecek Proje) -->
+            <div class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-emerald-500 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500">Yapay Zeka & Sesli Asistan</span>
+                        <span class="text-xs text-slate-400 font-mono">Python / C++</span>
+                    </div>
+                    <h3 class="text-xl font-bold group-hover:text-emerald-500 transition-colors">Sesli Kontrollü Akıllı Asistan</h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                        Yerel yapay zeka modelleriyle çalışan, mühendislik çalışma ortamına entegre sesli komut ve otomasyon sistemi.
+                    </p>
+                    <div class="flex flex-wrap gap-2 pt-2">
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Python</span>
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">AI / LLM</span>
+                        <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Voice Control</span>
+                    </div>
+                </div>
+                <div class="pt-6 border-t border-slate-100 dark:border-slate-800/60 mt-6 flex items-center justify-between">
+                    <span class="text-xs text-slate-500 font-medium">Taslak / Ar-Ge</span>
+                    <span class="text-xs text-slate-400 font-mono">Yakında 🚀</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
+    </footer>
+
+    <!-- SCRIPT'LER -->
+    <script src="js/main.js"></script>
+    <script>
+        // Sayfa yüklenince menüde "Projeler" butonunu aktif hale getirir
+        renderNavbar('projeler');
+    </script>
+</body>
+</html>

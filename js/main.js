@@ -71,7 +71,6 @@ function handleLogoClick() {
     }
 }
 
-// MOBİL MENÜ AÇMA / KAPAMA
 function toggleMobileMenu() {
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenu) {
@@ -80,10 +79,33 @@ function toggleMobileMenu() {
 }
 
 // ==========================================
-// 3. ORTAK İKON / RESİM DETEKTÖRÜ
+// 3. TEMA DEĞİŞTİRİCİ (DARK / LIGHT MODE)
+// ==========================================
+function toggleTheme() {
+    if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    }
+    updateThemeIcons();
+}
+
+function updateThemeIcons() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const desktopIcon = document.getElementById('theme-icon-desktop');
+    const mobileIcon = document.getElementById('theme-icon-mobile');
+    
+    if (desktopIcon) desktopIcon.innerText = isDark ? '🌙' : '☀️';
+    if (mobileIcon) mobileIcon.innerText = isDark ? '🌙 Gece Modu' : '☀️ Gündüz Modu';
+}
+
+// ==========================================
+// 4. RESİM / İKON DETEKTÖRÜ
 // ==========================================
 function renderIcon(iconData) {
-    if (!iconData) return '📚';
+    if (!iconData) return '⚡';
     
     const isImage = iconData.startsWith('images/') || 
                     iconData.startsWith('http://') || 
@@ -98,59 +120,74 @@ function renderIcon(iconData) {
 }
 
 // ==========================================
-// 4. ORTAK NAVBAR RENDER FONKSİYONU (Mobil Uyumlu)
+// 5. ŞIK VE ESTETİK NAVBAR RENDER FONKSİYONU
 // ==========================================
 function renderNavbar(activePage) {
     const container = document.getElementById('navbar-container');
     if (!container) return;
 
     const loggedIn = isAdmin();
+    const isDark = document.documentElement.classList.contains('dark');
 
-    const activeClass = "bg-slate-100 dark:bg-slate-800 text-tsMavi font-bold shadow-sm";
-    const inactiveClass = "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/50";
+    // Estetik Aktif / Pasif Buton Stilleri
+    const activeClass = "bg-gradient-to-r from-tsBordo/10 to-tsMavi/10 text-tsMavi font-bold border border-tsMavi/20 shadow-sm";
+    const inactiveClass = "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60";
 
     container.innerHTML = `
-        <nav class="border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-[#0d0f12]/80 backdrop-blur-xl sticky top-0 z-40 transition-all">
+        <nav class="border-b border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-[#0d0f12]/75 backdrop-blur-2xl sticky top-0 z-40 transition-all duration-300">
             <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                 
-                <!-- LOGO -->
-                <div onclick="handleLogoClick()" class="cursor-pointer font-black text-lg tracking-wider text-slate-900 dark:text-white hover:opacity-85 transition-opacity select-none flex items-center gap-1">
+                <!-- ESTETİK LOGO -->
+                <div onclick="handleLogoClick()" class="cursor-pointer font-black text-lg tracking-wider text-slate-900 dark:text-white hover:opacity-85 transition-opacity select-none flex items-center gap-1.5 group">
+                    <span class="bg-tsMavi/10 dark:bg-tsMavi/20 text-tsMavi p-1.5 rounded-xl text-xs font-mono group-hover:scale-105 transition-transform">⚡</span>
                     <span>M. ALİ</span>
-                    <span class="text-tsMavi bg-gradient-to-r from-tsMavi to-tsMavi-light bg-clip-text text-transparent">YILDIRIM</span>
+                    <span class="bg-gradient-to-r from-tsMavi to-tsMavi-light bg-clip-text text-transparent">YILDIRIM</span>
                 </div>
 
-                <!-- MASAÜSTÜ MENÜ LİNKLERİ (md:flex) -->
-                <div class="hidden md:flex items-center gap-2 text-xs font-semibold">
-                    <a href="index.html" class="px-3.5 py-2 rounded-xl transition-all duration-200 ${activePage === 'home' ? activeClass : inactiveClass}">
+                <!-- MASAÜSTÜ MENÜ LİNKLERİ -->
+                <div class="hidden md:flex items-center gap-1.5 text-xs font-medium">
+                    <a href="index.html" class="px-4 py-2 rounded-xl transition-all duration-200 ${activePage === 'home' ? activeClass : inactiveClass}">
                         Hakkımda
                     </a>
-                    <a href="projeler.html" class="px-3.5 py-2 rounded-xl transition-all duration-200 ${activePage === 'projeler' ? activeClass : inactiveClass}">
+                    <a href="projeler.html" class="px-4 py-2 rounded-xl transition-all duration-200 ${activePage === 'projeler' ? activeClass : inactiveClass}">
                         Projeler
                     </a>
-                    <a href="dersler.html" class="px-3.5 py-2 rounded-xl transition-all duration-200 ${activePage === 'dersler' ? activeClass : inactiveClass}">
+                    <a href="dersler.html" class="px-4 py-2 rounded-xl transition-all duration-200 ${activePage === 'dersler' ? activeClass : inactiveClass}">
                         Dersler & Notlar
                     </a>
-                    <a href="iletisim.html" class="px-3.5 py-2 rounded-xl transition-all duration-200 ${activePage === 'iletisim' ? activeClass : inactiveClass}">
+                    <a href="iletisim.html" class="px-4 py-2 rounded-xl transition-all duration-200 ${activePage === 'iletisim' ? activeClass : inactiveClass}">
                         İletişim
                     </a>
                     
+                    <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1"></div>
+
+                    <!-- TEMA BUTONU -->
+                    <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-tsMavi border border-slate-200/50 dark:border-slate-700/50 transition-all text-xs" title="Tema Değiştir">
+                        <span id="theme-icon-desktop">${isDark ? '🌙' : '☀️'}</span>
+                    </button>
+
                     ${loggedIn ? `
-                        <button onclick="logoutAdmin()" class="ml-2 px-3 py-1.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-medium transition-all duration-200 border border-red-500/20 flex items-center gap-1">
-                            🔓 Çıkış Yap
+                        <button onclick="logoutAdmin()" class="ml-1 px-3 py-1.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-semibold transition-all duration-200 border border-red-500/20 text-xs flex items-center gap-1">
+                            🔓 Çıkış
                         </button>
                     ` : ''}
                 </div>
 
-                <!-- MOBİL MENÜ BUTONU (BURGER) -->
-                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-tsMavi focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
+                <!-- MOBİL MENÜ SAĞ ALAN -->
+                <div class="flex items-center gap-2 md:hidden">
+                    <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs border border-slate-200/50 dark:border-slate-800">
+                        <span id="theme-icon-mobile">${isDark ? '🌙' : '☀️'}</span>
+                    </button>
+                    <button onclick="toggleMobileMenu()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-tsMavi focus:outline-none border border-slate-200/50 dark:border-slate-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
-            <!-- MOBİL AÇILIR MENÜ ALANI -->
-            <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d0f12] px-4 py-4 space-y-2 text-xs font-semibold">
+            <!-- MOBİL AÇILIR MENÜ -->
+            <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0d0f12]/95 backdrop-blur-xl px-4 py-4 space-y-1.5 text-xs font-medium shadow-2xl">
                 <a href="index.html" class="block px-4 py-2.5 rounded-xl ${activePage === 'home' ? activeClass : inactiveClass}">
                     Hakkımda
                 </a>
@@ -164,14 +201,14 @@ function renderNavbar(activePage) {
                     İletişim
                 </a>
                 ${loggedIn ? `
-                    <button onclick="logoutAdmin()" class="w-full text-left px-4 py-2.5 rounded-xl bg-red-500/10 text-red-500 font-medium">
+                    <button onclick="logoutAdmin()" class="w-full text-left px-4 py-2.5 rounded-xl bg-red-500/10 text-red-500 font-semibold mt-2 border border-red-500/20">
                         🔓 Çıkış Yap
                     </button>
                 ` : ''}
             </div>
         </nav>
 
-        <!-- YÖNETİCİ GİRİŞ MODAL (GİZLİ) -->
+        <!-- YÖNETİCİ GİRİŞ MODAL -->
         <div id="admin-login-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-tsBordo to-tsMavi"></div>
@@ -180,11 +217,11 @@ function renderNavbar(activePage) {
                 </div>
                 <div>
                     <h3 class="text-base font-bold">Yönetici Girişi</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">İçerik düzenlemek için lütfen şifrenizi girin.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">İçerik düzenlemek için şifrenizi girin.</p>
                 </div>
                 <div>
                     <input type="password" id="admin-password-input" placeholder="Şifreniz..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-center focus:outline-none focus:border-tsMavi transition-colors">
-                    <p id="login-error-msg" class="text-xs text-red-500 mt-2 hidden">Hatalı şifre! Lütfen tekrar deneyin.</p>
+                    <p id="login-error-msg" class="text-xs text-red-500 mt-2 hidden">Hatalı şifre! Tekrar deneyin.</p>
                 </div>
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closeLoginModal()" class="w-1/2 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">İptal</button>
@@ -195,9 +232,12 @@ function renderNavbar(activePage) {
     `;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    if (!localStorage.getItem('theme')) {
+// SAYFA YÜKLENDİĞİNDE TEMA BAŞLAT
+(function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
+    } else {
+        document.documentElement.classList.remove('dark');
     }
-});
+})();

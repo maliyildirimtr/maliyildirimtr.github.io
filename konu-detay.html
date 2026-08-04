@@ -34,7 +34,7 @@
     <div id="navbar-container"></div>
 
     <!-- ANA İÇERİK -->
-    <main class="max-w-5xl mx-auto px-4 py-12 flex-grow w-full space-y-8" id="topic-container">
+    <main class="max-w-5xl mx-auto px-4 py-12 flex-grow w-full space-y-12" id="topic-container">
         <div class="py-20 text-center text-slate-500 text-sm">⏳ İçerik yükleniyor...</div>
     </main>
 
@@ -118,22 +118,22 @@
 
         // --- TAMAMLANDI / İLERLEME SİSTEMİ ---
         function checkUserProgress() {
-            const user = auth.currentUser;
-            if (!user) return;
+            const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+            if (!user || !topicId) return;
 
             db.collection("user_progress").doc(`${user.uid}_${topicId}`).get().then((doc) => {
                 if (doc.exists && doc.data().completed) {
                     isTopicCompleted = true;
                     updateCompleteButtonUI(true);
                 }
-            });
+            }).catch(e => console.log(e));
         }
 
         function toggleTopicComplete() {
-            const user = auth.currentUser;
+            const user = typeof auth !== 'undefined' ? auth.currentUser : null;
             if (!user) {
                 alert("İlerlemenizi kaydetmek için lütfen giriş yapın!");
-                openAuthModal();
+                if(typeof openAuthModal === 'function') openAuthModal();
                 return;
             }
 
@@ -161,10 +161,6 @@
                 btn.innerHTML = `⭕ Tamamlandı Olarak İşaretle`;
             }
         }
-
-        auth.onAuthStateChanged(() => {
-            checkUserProgress();
-        });
 
         // FORM VE MODAL FONKSİYONLARI
         function addPdfInput(title = '', url = '') {
@@ -210,18 +206,19 @@
 
         function closeEditModal() { document.getElementById('topic-edit-modal').classList.add('hidden'); }
 
+        // --- SAYFA YÜKLEME MANAĞI ---
         if (!courseId || !topicId) {
-            container.innerHTML = `<div class="text-center py-20 text-red-500">Konu bulunamadı!</div>`;
+            container.innerHTML = `<div class="text-center py-20 text-red-500 font-bold">Geçersiz URL! Ders veya Konu ID bulunamadı.</div>`;
         } else {
             db.collection("courses").doc(courseId).collection("topics").doc(topicId).onSnapshot((doc) => {
                 if (!doc.exists) {
-                    container.innerHTML = `<div class="text-center py-20 text-red-500">Konu bulunamadı!</div>`;
+                    container.innerHTML = `<div class="text-center py-20 text-red-500 font-bold">Aradığınız konu veritabanında bulunamadı!</div>`;
                     return;
                 }
 
                 const topic = doc.data();
                 const ytId = getYouTubeId(topic.videoUrl);
-                const loggedInAdmin = isAdmin();
+                const loggedInAdmin = typeof isAdmin === 'function' && isAdmin();
 
                 const pdfList = topic.pdfList || (topic.pdfUrl ? [{ title: 'Ders Notu (PDF)', url: topic.pdfUrl }] : []);
                 const codeList = topic.codeList || (topic.codeContent ? [{ title: topic.codeTitle || 'Kaynak Kod', content: topic.codeContent }] : []);
@@ -233,7 +230,6 @@
                             <h1 class="text-3xl font-extrabold tracking-tight">${topic.title}</h1>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <!-- TAMAMLANDI TIK BUTONU -->
                             <button id="complete-toggle-btn" onclick="toggleTopicComplete()" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
                                 ⭕ Tamamlandı Olarak İşaretle
                             </button>
@@ -300,12 +296,160 @@
                             `).join('')}
                         </div>
                     ` : ''}
+
+                    <!-- YORUMLAR BÖLÜMÜ -->
+                    <section class="border-t border-slate-200 dark:border-slate-800 pt-8 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-bold flex items-center gap-2">
+                                💬 Yorumlar & Soru-Cevap <span id="comments-count" class="text-xs bg-slate-200 dark:bg-slate-800 px-2.5 py-0.5 rounded-full font-mono text-slate-500">0</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">
+                                Genel sorularınız için <a href="sosyal.html" class="text-tsMavi hover:underline">İletişim</a> sayfasını kullanabilirsiniz.
+                            </p>
+                        </div>
+
+                        <div id="comment-form-container" class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
+                            <form id="add-comment-form" onsubmit="handleCommentSubmit(event)" class="space-y-3 hidden">
+                                <textarea id="comment-input" rows="3" required placeholder="Bu konu veya video hakkında bir şey sorun ya da yorum yapın..." class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi resize-none"></textarea>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold text-xs shadow-md hover:opacity-90 transition-opacity">
+                                        Yorum Gönder
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div id="comment-login-warning" class="text-center py-4 space-y-2">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">🔒 Yorum yapabilmek için üye olmanız veya giriş yapmanız gerekmektedir.</p>
+                                <button onclick="openAuthModal()" class="px-4 py-1.5 rounded-full bg-tsMavi/10 text-tsMavi border border-tsMavi/20 text-xs font-semibold hover:bg-tsMavi hover:text-white transition-all">
+                                    Giriş Yap / Üye Ol
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="comments-list" class="space-y-4">
+                            <div class="text-center py-6 text-xs text-slate-500">Yorumlar yükleniyor...</div>
+                        </div>
+                    </section>
                 `;
 
                 const editBtn = document.getElementById('open-edit-btn');
                 if (editBtn) editBtn.onclick = () => openEditModal({ ...topic, pdfList, codeList });
 
                 checkUserProgress();
+                updateCommentFormUI();
+                loadComments();
+            }, (err) => {
+                container.innerHTML = `<div class="text-center py-20 text-red-500 font-bold">Veri Çekme Hatası: ${err.message}</div>`;
+            });
+        }
+
+        // --- YORUM SİSTEMİ LOGIC ---
+        function updateCommentFormUI() {
+            const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+            const form = document.getElementById('add-comment-form');
+            const warning = document.getElementById('comment-login-warning');
+
+            if (user) {
+                if (form) form.classList.remove('hidden');
+                if (warning) warning.classList.add('hidden');
+            } else {
+                if (form) form.classList.add('hidden');
+                if (warning) warning.classList.remove('hidden');
+            }
+        }
+
+        function loadComments() {
+            if (!topicId) return;
+
+            db.collection("comments")
+              .where("topicId", "==", topicId)
+              .orderBy("createdAt", "desc")
+              .onSnapshot((snapshot) => {
+                  const list = document.getElementById('comments-list');
+                  const countBadge = document.getElementById('comments-count');
+                  
+                  if (countBadge) countBadge.innerText = snapshot.docs.length;
+
+                  if (snapshot.empty) {
+                      if (list) list.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">Henüz yorum yapılmamış. İlk yorumu sen yap!</div>`;
+                      return;
+                  }
+
+                  const currentUser = typeof auth !== 'undefined' ? auth.currentUser : null;
+                  const adminState = typeof isAdmin === 'function' && isAdmin();
+
+                  let html = "";
+                  snapshot.docs.forEach((doc) => {
+                      const data = doc.data();
+                      const commentId = doc.id;
+                      const isMyComment = currentUser && currentUser.uid === data.userId;
+                      const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
+
+                      html += `
+                          <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-2 shadow-sm">
+                              <div class="flex items-center justify-between">
+                                  <div class="flex items-center gap-2">
+                                      <div class="w-7 h-7 rounded-full bg-tsMavi/10 text-tsMavi flex items-center justify-center font-bold text-xs uppercase">
+                                          ${(data.userName || 'K')[0]}
+                                      </div>
+                                      <div>
+                                          <span class="text-xs font-bold">${data.userName || 'Kullanıcı'}</span>
+                                          <span class="text-[10px] text-slate-400 ml-2">${dateStr}</span>
+                                      </div>
+                                  </div>
+                                  
+                                  ${(isMyComment || adminState) ? `
+                                      <button onclick="deleteComment('${commentId}')" class="text-[10px] text-red-400 hover:text-red-600 font-semibold px-2 py-0.5 rounded bg-red-500/10">
+                                          Sil 🗑️
+                                      </button>
+                                  ` : ''}
+                              </div>
+                              <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed pl-9">${data.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+                          </div>
+                      `;
+                  });
+
+                  if (list) list.innerHTML = html;
+              }, (err) => console.log("Yorumlar çekilemedi:", err));
+        }
+
+        function handleCommentSubmit(e) {
+            e.preventDefault();
+            const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+            if (!user) {
+                alert("Yorum yapmak için giriş yapmalısınız.");
+                if (typeof openAuthModal === 'function') openAuthModal();
+                return;
+            }
+
+            const input = document.getElementById('comment-input');
+            const commentText = input.value.trim();
+
+            if (!commentText) return;
+
+            db.collection("comments").add({
+                topicId: topicId,
+                courseId: courseId,
+                userId: user.uid,
+                userName: user.displayName || user.email.split('@')[0],
+                text: commentText,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                input.value = '';
+            }).catch(err => alert("Yorum gönderilemedi: " + err.message));
+        }
+
+        function deleteComment(commentId) {
+            if (confirm("Bu yorumu silmek istediğinize emin misiniz?")) {
+                db.collection("comments").doc(commentId).delete();
+            }
+        }
+
+        if (typeof auth !== 'undefined') {
+            auth.onAuthStateChanged(() => {
+                checkUserProgress();
+                updateCommentFormUI();
+                loadComments();
             });
         }
 

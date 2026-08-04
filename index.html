@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mehmet Ali Yıldırım | Portfolio</title>
-    
-    <!-- FAVICON (SEKME İKONU) -->
+    <title>Mehmet Ali Yıldırım | Hakkımda</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-
-    <!-- Tailwind CSS CDN -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -16,77 +13,38 @@
             theme: {
                 extend: {
                     colors: {
-                        tsBordo: {
-                            DEFAULT: '#800020',
-                            light: '#a31236',
-                            dark: '#540015'
-                        },
-                        tsMavi: {
-                            DEFAULT: '#00a8e8',
-                            light: '#33bcef',
-                            dark: '#0077a8'
-                        }
+                        tsBordo: { DEFAULT: '#800020', light: '#a31236', dark: '#540015' },
+                        tsMavi: { DEFAULT: '#00a8e8', light: '#33bcef', dark: '#0077a8' }
                     }
                 }
             }
         }
     </script>
-    <style>
-        /* Bordo - Mavi Özel Renk Geçişi (Gradient Text) */
-        .ts-gradient-text {
-            background: linear-gradient(135deg, #a31236 0%, #00a8e8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        /* Glassmorphism Efekti */
-        .glass-card {
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 transition-colors duration-300 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- NAVIGATION BAR -->
+    <!-- NAV BAR -->
     <nav class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0d0f12]/80 glass-card">
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <!-- Logo / Marka İsim -->
-            <a href="#" class="text-xl font-bold tracking-wider uppercase">
-                Mehmet Ali <span class="ts-gradient-text">Yıldırım</span>
+            <a href="index.html" class="text-xl font-bold tracking-wider uppercase">
+                M. Ali <span class="ts-gradient-text">Yıldırım</span>
             </a>
-
-            <!-- Navigasyon Sekmeleri -->
             <div class="hidden md:flex items-center space-x-1 border border-slate-200 dark:border-slate-800 p-1 rounded-full bg-slate-100/50 dark:bg-slate-900/50">
-                <button onclick="switchTab('about')" id="tab-about" class="tab-btn px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm">
-                    Hakkımda
-                </button>
-                <button onclick="switchTab('projects')" id="tab-projects" class="tab-btn px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                    Projeler
-                </button>
-                <button onclick="switchTab('notes')" id="tab-notes" class="tab-btn px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                    Ders Notları
-                </button>
-                <button onclick="switchTab('social')" id="tab-social" class="tab-btn px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                    Sosyal Medya
-                </button>
+                <a href="index.html" class="px-5 py-1.5 text-sm font-medium rounded-full bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm">Hakkımda</a>
+                <a href="projeler.html" class="px-5 py-1.5 text-sm font-medium rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Projeler</a>
+                <a href="dersler.html" class="px-5 py-1.5 text-sm font-medium rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Dersler & Notlar</a>
+                <a href="sosyal.html" class="px-5 py-1.5 text-sm font-medium rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Sosyal Medya</a>
             </div>
-
-            <!-- Tema Değiştirici (Dark/Light Switcher) -->
             <button id="theme-toggle" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
-                <!-- Gece Modu İkonu (Ay) -->
-                <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-                </svg>
-                <!-- Gündüz Modu İkonu (Güneş) -->
-                <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden text-amber-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
-                </svg>
+                <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
             </button>
         </div>
     </nav>
 
-    <!-- HERO SECTION (GİRİŞ KAPAK ALANI) -->
-    <header class="max-w-6xl mx-auto px-4 pt-16 pb-8 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8">
+    <!-- HERO SECTION -->
+    <header class="max-w-6xl mx-auto px-4 pt-16 pb-8">
         <div class="space-y-4 max-w-2xl">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-tsBordo/10 text-tsBordo dark:bg-tsMavi/10 dark:text-tsMavi border border-tsBordo/20 dark:border-tsMavi/20">
                 <span class="w-2 h-2 rounded-full bg-tsBordo dark:bg-tsMavi animate-pulse"></span> Elektrik & Elektronik Mühendisi Adayı
@@ -101,168 +59,20 @@
         </div>
     </header>
 
-    <!-- DİNAMİK İÇERİK ALANLARI (SEKMELER) -->
+    <!-- HAKKIMDA İÇERİK -->
     <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full">
-        
-        <!-- 1. SEKME: HAKKIMDA -->
-        <section id="content-about" class="tab-content block space-y-6">
-            <div class="p-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 glass-card space-y-4">
-                <h2 class="text-2xl font-bold flex items-center gap-2">
-                    ⚡ Vizyon ve Çalışma Alanları
-                </h2>
-                <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Sistem tasarımı, donanım tanımlama dilleri (Verilog/SystemVerilog) ve C/C++ mimarileri odaklı çalışmalar yapıyorum.
-                </p>
-            </div>
-        </section>
-
-        <!-- 2. SEKME: PROJELER -->
-        <section id="content-projects" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi/50 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-tsBordo to-tsMavi"></div>
-                <h3 class="text-xl font-bold mb-2 group-hover:text-tsMavi transition-colors">Digital Logic Circuit Design</h3>
-                <p class="text-slate-600 dark:text-slate-400 text-sm mb-4">Verilog ve SystemVerilog kullanılarak geliştirilmiş FPGA tabanlı mantık devre tasarımları.</p>
-                <div class="flex gap-2">
-                    <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">SystemVerilog</span>
-                    <span class="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">FPGA</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- 3. SEKME: DERS NOTLARI -->
-        <section id="content-notes" class="tab-content hidden space-y-4">
-            <div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <h3 class="text-lg font-bold mb-1">Mantık Devreleri Notları</h3>
-                <p class="text-sm text-slate-500">Çok yakında detaylı PDF arşivleri ve YouTube içerikleriyle yüklenecektir.</p>
-            </div>
-        </section>
-
-        <!-- 4. SEKME: SOSYAL MEDYA -->
-        <section id="content-social" class="tab-content hidden space-y-6">
-            <div class="text-center space-y-2 mb-8">
-                <h2 class="text-3xl font-extrabold tracking-tight">Sosyal Medya & İletişim</h2>
-                <p class="text-slate-600 dark:text-slate-400">Projelerimi takip etmek ve benimle iletişime geçmek için bağlantıları kullanabilirsiniz.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                
-                <!-- GitHub -->
-                <a href="https://github.com/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsMavi group-hover:text-white transition-colors">
-                        💻
-                    </div>
-                    <div>
-                        <h3 class="font-bold group-hover:text-tsMavi transition-colors">GitHub</h3>
-                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
-                    </div>
-                </a>
-
-                <!-- LinkedIn -->
-                <a href="https://linkedin.com/in/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsMavi group-hover:text-white transition-colors">
-                        💼
-                    </div>
-                    <div>
-                        <h3 class="font-bold group-hover:text-tsMavi transition-colors">LinkedIn</h3>
-                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
-                    </div>
-                </a>
-
-                <!-- X / Twitter -->
-                <a href="https://x.com/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsBordo group-hover:text-white transition-colors">
-                        🐦
-                    </div>
-                    <div>
-                        <h3 class="font-bold group-hover:text-tsBordo transition-colors">X (Twitter)</h3>
-                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
-                    </div>
-                </a>
-
-                <!-- Instagram -->
-                <a href="https://instagram.com/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsBordo group-hover:text-white transition-colors">
-                        📸
-                    </div>
-                    <div>
-                        <h3 class="font-bold group-hover:text-tsBordo transition-colors">Instagram</h3>
-                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
-                    </div>
-                </a>
-
-                <!-- YouTube -->
-                <a href="https://youtube.com/@maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsBordo transition-all duration-300 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsBordo group-hover:text-white transition-colors">
-                        ▶️
-                    </div>
-                    <div>
-                        <h3 class="font-bold group-hover:text-tsBordo transition-colors">YouTube</h3>
-                        <p class="text-xs text-slate-500 font-mono">@maliyildirimtr</p>
-                    </div>
-                </a>
-
-                <!-- E-Posta Adresi -->
-                <a href="mailto:mali@maliyildirimtr.com" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold group-hover:bg-tsMavi group-hover:text-white transition-colors">
-                        ✉️
-                    </div>
-                    <div>
-                        <h3 class="font-bold group-hover:text-tsMavi transition-colors">E-Posta</h3>
-                        <p class="text-xs text-slate-500 font-mono">mali@maliyildirimtr.com</p>
-                    </div>
-                </a>
-
-            </div>
-        </section>
-
+        <div class="p-8 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 glass-card space-y-4">
+            <h2 class="text-2xl font-bold flex items-center gap-2">⚡ Vizyon ve Çalışma Alanları</h2>
+            <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                Sistem tasarımı, donanım tanımlama dilleri (Verilog/SystemVerilog) ve C/C++ mimarileri odaklı çalışmalar yapıyorum.
+            </p>
+        </div>
     </main>
 
-    <!-- FOOTER -->
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
         <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
     </footer>
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // TEMA DEĞİŞTİRME (DARK/LIGHT MODE)
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const darkIcon = document.getElementById('theme-toggle-dark-icon');
-        const lightIcon = document.getElementById('theme-toggle-light-icon');
-
-        if (localStorage.getItem('color-theme') === 'light' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
-            document.documentElement.classList.remove('dark');
-            lightIcon.classList.remove('hidden');
-        } else {
-            document.documentElement.classList.add('dark');
-            darkIcon.classList.remove('hidden');
-        }
-
-        themeToggleBtn.addEventListener('click', function() {
-            darkIcon.classList.toggle('hidden');
-            lightIcon.classList.toggle('hidden');
-
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
-            }
-        });
-
-        // SEKMELER ARASI GEÇİŞ (TAB SWITCHER)
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('bg-white', 'dark:bg-slate-800', 'text-tsBordo', 'dark:text-tsMavi', 'shadow-sm');
-                el.classList.add('text-slate-600', 'dark:text-slate-400');
-            });
-
-            document.getElementById('content-' + tabName).classList.remove('hidden');
-            const activeBtn = document.getElementById('tab-' + tabName);
-            activeBtn.classList.add('bg-white', 'dark:bg-slate-800', 'text-tsBordo', 'dark:text-tsMavi', 'shadow-sm');
-            activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
-        }
-    </script>
+    <script src="js/main.js"></script>
 </body>
 </html>

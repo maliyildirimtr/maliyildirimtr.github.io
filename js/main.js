@@ -69,12 +69,9 @@ function toggleMobileMenu() {
 }
 
 // ==========================================
-// 4. ORTAK NAVBAR COMPONENT & ARAYÜZ
+// 4. ORTAK NAVBAR COMPONENT & ARAYÜZ (SADELEŞTİRİLMİŞ)
 // ==========================================
 function renderNavbar(activePage) {
-    const user = typeof auth !== 'undefined' ? auth.currentUser : null;
-    const adminState = isAdmin();
-
     const navbarHTML = `
     <nav class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0d0f12]/80 glass-card backdrop-blur-md">
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -94,36 +91,12 @@ function renderNavbar(activePage) {
 
             <!-- SAĞ BUTONLAR -->
             <div class="flex items-center gap-2">
-                
-                <!-- Admin Ders Ekle (+) Butonu -->
-                ${adminState ? `
-                    <button id="admin-add-btn" onclick="openAddModal()" class="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold text-xs shadow-md hover:opacity-90 transition-opacity">
-                        <span class="text-base leading-none">+</span> Ders Ekle
-                    </button>
-                ` : ''}
-
-                <!-- KULLANICI / ADMİN KART VE GİRİŞ BUTONU -->
-                ${user || adminState ? `
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-semibold px-3 py-1.5 rounded-full ${adminState ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700'}">
-                            ${adminState ? '👑 Admin' : '👤 ' + (user.displayName || user.email.split('@')[0])}
-                        </span>
-                        <button onclick="logoutUser()" title="Çıkış Yap" class="text-xs px-2.5 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 font-semibold transition-colors">
-                            🚪 Çıkış
-                        </button>
-                    </div>
-                ` : `
-                    <button onclick="openAuthModal()" class="px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold transition-all border border-slate-200 dark:border-slate-700">
-                        Giriş Yap / Kayıt
-                    </button>
-                `}
-
                 <!-- Tema Değiştirici -->
                 <button id="theme-toggle" onclick="toggleTheme()" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
                     <svg id="theme-toggle-dark-icon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                     <svg id="theme-toggle-light-icon" class="w-4 h-4 hidden text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                 </button>
-            
+
                 <!-- Mobil Hamburger Menü Butonu -->
                 <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
                     ☰
@@ -227,14 +200,24 @@ if (typeof auth !== 'undefined') {
     });
 }
 
-function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
-function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
+function openAuthModal() { 
+    const modal = document.getElementById('auth-modal');
+    if(modal) modal.classList.remove('hidden'); 
+}
+function closeAuthModal() { 
+    const modal = document.getElementById('auth-modal');
+    if(modal) modal.classList.add('hidden'); 
+}
 
 function toggleAuthMode() {
     isSignUpMode = !isSignUpMode;
-    document.getElementById('auth-modal-title').innerText = isSignUpMode ? "📝 Yeni Hesap Oluştur" : "🔑 Hesabınıza Giriş Yapın";
-    document.getElementById('auth-submit-btn').innerText = isSignUpMode ? "Kayıt Ol" : "Giriş Yap";
-    document.getElementById('auth-toggle-btn').innerText = isSignUpMode ? "Zaten hesabınız var mı? Giriş Yapın" : "Hesabınız yok mu? Kayıt Olun";
+    const title = document.getElementById('auth-modal-title');
+    const submitBtn = document.getElementById('auth-submit-btn');
+    const toggleBtn = document.getElementById('auth-toggle-btn');
+    
+    if(title) title.innerText = isSignUpMode ? "📝 Yeni Hesap Oluştur" : "🔑 Hesabınıza Giriş Yapın";
+    if(submitBtn) submitBtn.innerText = isSignUpMode ? "Kayıt Ol" : "Giriş Yap";
+    if(toggleBtn) toggleBtn.innerText = isSignUpMode ? "Zaten hesabınız var mı? Giriş Yapın" : "Hesabınız yok mu? Kayıt Olun";
 }
 
 // E-POSTA İLE GİRİŞ & KAYIT

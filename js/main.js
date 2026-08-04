@@ -170,6 +170,33 @@ function renderNavbar(activePage) {
         </div>
     </div>
 
+    <!-- HESAP / PROFİL DÜZENLEME MODAL (YENİ) -->
+    <div id="user-profile-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold">👤 Profil & Hesap Ayarları</h3>
+                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <form id="profile-edit-form" onsubmit="updateUserProfile(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">E-Posta Adresiniz</label>
+                    <input type="email" id="profile-email-disabled" disabled class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-500 text-xs cursor-not-allowed">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">Kullanıcı Adınız</label>
+                    <input type="text" id="profile-display-name" required placeholder="Kullanıcı Adınız..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeProfileModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
+                    <button type="submit" id="profile-save-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md hover:opacity-90 transition-opacity">Değişiklikleri Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- GİZLİ ŞİFRELİ YÖNETİCİ GİRİŞ MODAL -->
     <div id="admin-login-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-center relative overflow-hidden">
@@ -216,6 +243,53 @@ function openAuthModal() {
 function closeAuthModal() { 
     const modal = document.getElementById('auth-modal');
     if(modal) modal.classList.add('hidden'); 
+}
+
+// PROFİL / HESAP MODALI FONKSİYONLARI (YENİ)
+function openProfileModal() {
+    const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+    if (!user) return;
+
+    const modal = document.getElementById('user-profile-modal');
+    const emailInput = document.getElementById('profile-email-disabled');
+    const nameInput = document.getElementById('profile-display-name');
+
+    if (emailInput) emailInput.value = user.email || '';
+    if (nameInput) nameInput.value = user.displayName || user.email.split('@')[0];
+
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById('user-profile-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function updateUserProfile(e) {
+    e.preventDefault();
+    const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+    if (!user) return;
+
+    const newName = document.getElementById('profile-display-name').value.trim();
+    const saveBtn = document.getElementById('profile-save-btn');
+
+    if (!newName) {
+        alert("Lütfen geçerli bir kullanıcı adı girin!");
+        return;
+    }
+
+    if (saveBtn) saveBtn.innerText = "Kaydediliyor...";
+
+    user.updateProfile({
+        displayName: newName
+    }).then(() => {
+        alert("✅ Kullanıcı adınız başarıyla güncellendi!");
+        closeProfileModal();
+        location.reload();
+    }).catch((err) => {
+        alert("Güncelleme Hatası: " + err.message);
+        if (saveBtn) saveBtn.innerText = "Değişiklikleri Kaydet";
+    });
 }
 
 function toggleAuthMode() {

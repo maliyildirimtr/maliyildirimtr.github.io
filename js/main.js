@@ -26,6 +26,11 @@ function renderNavbar(activePage) {
                     <span class="text-base leading-none">+</span> Ders Ekle
                 </button>
 
+                <!-- Admin Çıkış Yap Butonu -->
+                <button id="admin-logout-btn" onclick="logoutAdmin()" title="Yönetici Çıkışı" class="hidden px-2.5 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 font-semibold text-xs transition-colors">
+                    🚪 Çıkış
+                </button>
+
                 <!-- Tema Değiştirici -->
                 <button id="theme-toggle" onclick="toggleTheme()" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
                     <svg id="theme-toggle-dark-icon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
@@ -53,10 +58,10 @@ function renderNavbar(activePage) {
     if (navContainer) {
         navContainer.innerHTML = navbarHTML;
         
-        // Navbar yüklendikten hemen sonra tema ve admin buton durumunu güncelle
+        // Navbar yüklendikten sonra tema ikonu ve admin buton durumunu kontrol et
         initThemeIcons();
         if (localStorage.getItem('is_admin') === 'true') {
-            showAdminButton();
+            showAdminButtons();
         }
     }
 }
@@ -107,7 +112,7 @@ function toggleTheme() {
     }
 }
 
-// Sayfa ilk yüklendiğinde hafızadaki temayı uygula
+// Sayfa ilk açıldığında hafızadaki temayı uygula
 (function applyInitialTheme() {
     const savedTheme = localStorage.getItem('color-theme');
     if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -118,7 +123,7 @@ function toggleTheme() {
 })();
 
 // ==========================================
-// 4. 🔐 ŞİFRELİ ADMIN GİRİŞİ LOGIC
+// 4. 🔐 ŞİFRELİ ADMIN GİRİŞİ & ÇIKIŞI LOGIC
 // ==========================================
 const ADMIN_PASSWORD = "1967"; // Yönetici şifren
 
@@ -148,7 +153,7 @@ function checkAdminPassword() {
 
     if (inputPass === ADMIN_PASSWORD) {
         localStorage.setItem('is_admin', 'true');
-        showAdminButton();
+        showAdminButtons();
         closeLoginModal();
         alert('Giriş Başarılı! Yönetici modu aktif.');
     } else {
@@ -156,13 +161,16 @@ function checkAdminPassword() {
     }
 }
 
-function showAdminButton() {
+function showAdminButtons() {
     const adminBtn = document.getElementById('admin-add-btn');
+    const logoutBtn = document.getElementById('admin-logout-btn');
     if (adminBtn) adminBtn.classList.remove('hidden');
+    if (logoutBtn) logoutBtn.classList.remove('hidden');
 }
 
 function logoutAdmin() {
     localStorage.removeItem('is_admin');
+    alert('Yönetici oturumu kapatıldı.');
     location.reload();
 }
 
@@ -170,20 +178,20 @@ function logoutAdmin() {
 // 5. DERS EKLE MODALINI AÇMA & SAYFA YÖNLENDİRME LOGIC
 // ==========================================
 function openAddModal() {
-    // Eğer şu an dersler.html sayfasında değilsek, otomatik olarak dersler.html'e yönlendir ve modalı aç
+    // Eğer dersler.html sayfasında değilsek, dersler.html'e yönlendirip modalı aç
     if (!window.location.pathname.includes('dersler.html')) {
         window.location.href = 'dersler.html?openModal=true';
         return;
     }
 
-    // Eğer zaten dersler.html sayfasındaysak modal penceresini direkt aç
+    // Eğer zaten dersler.html sayfasındaysak modalı aç
     const modal = document.getElementById('add-course-modal');
     if (modal) {
         modal.classList.remove('hidden');
     }
 }
 
-// Başka sayfadan tıklandığında (URL'de ?openModal=true varsa) formu otomatik açar
+// Farklı sayfadan yönlendirilerek gelindiğinde (URL'de ?openModal=true varsa) modalı otomatik aç
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('openModal') === 'true') {

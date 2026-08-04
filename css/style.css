@@ -1,0 +1,17 @@
+/* Bordo - Mavi Özel Renk Geçişi (Gradient Text) */
+.ts-gradient-text {
+    background: linear-gradient(135deg, #a31236 0%, #00a8e8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Glassmorphism Cam Efekti */
+.glass-card {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Sayfa Geçiş Yumuşaklığı */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}

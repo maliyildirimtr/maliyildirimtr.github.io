@@ -129,6 +129,7 @@
     <!-- SCRIPTS -->
     <script src="js/firebase.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/courses-seed.js"></script>
     <script>
         // Sayfa Navbar Çizimi
         renderNavbar('dersler');
@@ -223,22 +224,16 @@
             const grid = document.getElementById('courses-grid');
             if (!grid) return;
 
-            db.collection("courses").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-                if (snapshot.empty) {
-                    grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 text-xs border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">Henüz ders eklenmemiş.</div>`;
-                    return;
-                }
-
+            const renderCourseList = (coursesList) => {
                 const adminState = typeof isAdmin === 'function' && isAdmin();
                 let html = "";
 
-                snapshot.docs.forEach((doc) => {
-                    const course = doc.data();
-                    const courseId = doc.id;
+                coursesList.forEach((course) => {
+                    const courseId = course.id;
                     const iconContent = typeof renderIcon === 'function' ? renderIcon(course.icon) : (course.icon || '⚡');
 
                     html += `
-                        <div onclick="window.location.href='ders-detay.html?id=${courseId}'" class="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer overflow-hidden">
+                        <div onclick="window.location.href='ders-detay.html?id=${courseId}'" class="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer overflow-hidden backdrop-blur-md">
                             
                             <!-- Sol Kenar Bordo-Mavi Geçiş Çizgisi -->
                             <div class="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-tsBordo to-tsMavi opacity-80 group-hover:opacity-100 transition-opacity"></div>
@@ -261,7 +256,7 @@
 
                             <div class="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
                                 <span class="text-xs text-tsMavi font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                    İçeriği İncele →
+                                    İçeriği İncele (15 Konu & Video) →
                                 </span>
                             </div>
                         </div>
@@ -269,8 +264,29 @@
                 });
 
                 grid.innerHTML = html;
+            };
+
+            db.collection("courses").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                let courses = [];
+                if (!snapshot.empty) {
+                    snapshot.docs.forEach((doc) => {
+                        courses.push({ id: doc.id, ...doc.data() });
+                    });
+                }
+                
+                // Fallback olarak varsayılan SystemVerilog kursunu ekle
+                if (courses.length === 0 && typeof SYSTEMVERILOG_COURSE_DATA !== 'undefined') {
+                    courses = [SYSTEMVERILOG_COURSE_DATA];
+                }
+
+                renderCourseList(courses);
             }, (err) => {
-                grid.innerHTML = `<div class="col-span-full py-12 text-center text-red-500 text-xs">Veri yükleme hatası: ${err.message}</div>`;
+                console.warn("Firestore çekme hatası, varsayılan dersler yükleniyor:", err);
+                if (typeof SYSTEMVERILOG_COURSE_DATA !== 'undefined') {
+                    renderCourseList([SYSTEMVERILOG_COURSE_DATA]);
+                } else {
+                    grid.innerHTML = `<div class="col-span-full py-12 text-center text-red-500 text-xs">Veri yükleme hatası: ${err.message}</div>`;
+                }
             });
         }
 

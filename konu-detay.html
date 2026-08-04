@@ -6,6 +6,7 @@
     <title>Konu İçeriği | Mehmet Ali Yıldırım</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -28,20 +29,55 @@
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- ORTAK MENÜ -->
+    <!-- ORTAK MENÜ BAR -->
     <div id="navbar-container"></div>
 
     <!-- ANA İÇERİK -->
-    <main class="max-w-4xl mx-auto px-4 py-12 flex-grow w-full space-y-8" id="topic-container">
-        <div class="py-20 text-center text-slate-500 text-sm">⏳ Konu içeriği yükleniyor...</div>
+    <main class="max-w-5xl mx-auto px-4 py-12 flex-grow w-full space-y-8" id="topic-container">
+        <div class="py-20 text-center text-slate-500 text-sm">⏳ İçerik yükleniyor...</div>
     </main>
+
+    <!-- ADMIN DÜZENLEME MODALI -->
+    <div id="topic-edit-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold">⚙️ Konu İçeriğini ve Materyalleri Düzenle</h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            
+            <form id="edit-topic-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">YouTube Video URL</label>
+                    <input type="url" id="input-video-url" placeholder="https://www.youtube.com/watch?v=..." class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">PDF Ders Notu Linki / Yolu</label>
+                    <input type="text" id="input-pdf-url" placeholder="Örn: pdf/ders12-half-adder.pdf veya Google Drive Linki" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-slate-400">Kod Bloğu Başlığı (Örn: SystemVerilog Half Adder Modülü)</label>
+                    <input type="text" id="input-code-title" placeholder="Half_Adder.sv" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                    
+                    <label class="block text-xs font-semibold text-slate-400">Kod İçeriği</label>
+                    <textarea id="input-code-content" rows="8" placeholder="// Verilog / C++ kodlarınızı buraya yapıştırın..." class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs font-mono focus:outline-none focus:border-tsMavi resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Değişiklikleri Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- FOOTER -->
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
         <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
     </footer>
 
-    <!-- SCRIPT'LER -->
+    <!-- SCRIPTS -->
     <script src="js/main.js"></script>
     <script src="js/firebase.js"></script>
     <script>
@@ -52,86 +88,138 @@
         const topicId = urlParams.get('topicId');
         const container = document.getElementById('topic-container');
 
-        function getYouTubeEmbedUrl(url) {
+        function getYouTubeId(url) {
             if(!url) return null;
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
-            return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function copyCode(button) {
+            const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+            navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+                const originalText = button.innerText;
+                button.innerText = "✓ Kopyalandı!";
+                button.classList.add('text-emerald-400');
+                setTimeout(() => {
+                    button.innerText = originalText;
+                    button.classList.remove('text-emerald-400');
+                }, 2000);
+            });
+        }
+
+        function openEditModal(currentVideo, currentPdf, currentCodeTitle, currentCodeContent) {
+            document.getElementById('input-video-url').value = currentVideo || '';
+            document.getElementById('input-pdf-url').value = currentPdf || '';
+            document.getElementById('input-code-title').value = currentCodeTitle || '';
+            document.getElementById('input-code-content').value = currentCodeContent || '';
+            document.getElementById('topic-edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('topic-edit-modal').classList.add('hidden');
         }
 
         if (!courseId || !topicId) {
-            container.innerHTML = `<div class="text-center py-20 text-red-500">Eksik parametre! <a href="dersler.html">Derslere Dön</a></div>`;
+            container.innerHTML = `<div class="text-center py-20 text-red-500">Konu bulunamadı!</div>`;
         } else {
-            db.collection("courses").doc(courseId).collection("topics").doc(topicId).get().then((doc) => {
-                if (doc.exists) {
-                    const topic = doc.data();
-                    const embedUrl = getYouTubeEmbedUrl(topic.videoUrl);
+            db.collection("courses").doc(courseId).collection("topics").doc(topicId).onSnapshot((doc) => {
+                if (!doc.exists) {
+                    container.innerHTML = `<div class="text-center py-20 text-red-500">Konu bulunamadı!</div>`;
+                    return;
+                }
 
-                    container.innerHTML = `
-                        <!-- GERİ DÖN VE BAŞLIK -->
-                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
-                            <h1 class="text-2xl font-extrabold tracking-tight">${topic.title}</h1>
-                            <a href="ders-detay.html?id=${courseId}" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700">
+                const topic = doc.data();
+                const ytId = getYouTubeId(topic.videoUrl);
+                const loggedIn = isAdmin();
+
+                container.innerHTML = `
+                    <!-- ÜST BAŞLIK VE GERİ BUTONU -->
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
+                        <div>
+                            <h1 class="text-3xl font-extrabold tracking-tight">${topic.title}</h1>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${loggedIn ? `
+                                <button onclick="openEditModal('${topic.videoUrl || ''}', '${topic.pdfUrl || ''}', '${(topic.codeTitle || '').replace(/'/g, "\\'")}', \`${(topic.codeContent || '').replace(/`/g, "\\`")}\`)" class="px-4 py-2 rounded-xl bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 text-xs font-semibold hover:bg-yellow-500 hover:text-black transition-all">
+                                    ⚙️ Düzenle / Materyal Ekle
+                                </button>
+                            ` : ''}
+                            <a href="ders-detay.html?id=${courseId}" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                                 ← Konulara Dön
                             </a>
                         </div>
+                    </div>
 
-                        <!-- 1. YOUTUBE VIDEO OYNATICI (VARSA GÖSTER) -->
-                        ${embedUrl ? `
-                            <div class="relative aspect-video w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 bg-black">
-                                <iframe src="${embedUrl}" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                            </div>
-                        ` : ''}
+                    <!-- 1. YOUTUBE VİDEO OYNATICI -->
+                    ${ytId ? `
+                        <div class="relative aspect-video w-full rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-black">
+                            <iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytId}" title="${topic.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    ` : ''}
 
-                        <!-- 2. PDF İNDİRME / GÖRÜNTÜLEME BUTONU (VARSA GÖSTER) -->
-                        ${topic.pdfUrl ? `
-                            <div class="p-6 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-sm">
+                    <!-- 2. PDF DERS NOTLARI SEKSİYONU -->
+                    ${topic.pdfUrl ? `
+                        <div class="p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-4 shadow-sm">
+                            <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <span class="text-3xl">📄</span>
+                                    <div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center font-bold text-lg">📄</div>
                                     <div>
-                                        <h4 class="font-bold text-sm">Ders Notu / PDF Belgesi</h4>
-                                        <p class="text-xs text-slate-500">Konu ile ilgili ders notlarını görüntüleyin veya indirin.</p>
+                                        <h3 class="font-bold text-sm">Ders Notları & Doküman (PDF)</h3>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">İncelemek veya indirmek için aşağıdaki bağlantıyı kullanabilirsiniz.</p>
                                     </div>
                                 </div>
-                                <a href="${topic.pdfUrl}" target="_blank" class="px-5 py-2.5 rounded-xl bg-tsMavi text-white font-semibold text-xs shadow-md hover:bg-tsMavi-dark transition-colors flex items-center gap-2">
-                                    <span>📥</span> PDF'yi Görüntüle
+                                <a href="${topic.pdfUrl}" target="_blank" class="px-4 py-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all text-xs font-semibold border border-red-500/20 flex items-center gap-1.5">
+                                    📥 PDF'i Aç / İndir
                                 </a>
                             </div>
-                        ` : ''}
+                        </div>
+                    ` : ''}
 
-                        <!-- 3. KOPYALANABİLİR KOD BLOĞU (VARSA GÖSTER) -->
-                        ${topic.code ? `
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <h4 class="font-bold text-sm text-slate-400 font-mono">&lt;/&gt; Kod / Tasarım Metni</h4>
-                                    <button onclick="copyCode()" id="copy-btn" class="px-3 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white transition-colors">
-                                        📋 Kodu Kopyala
-                                    </button>
+                    <!-- 3. KOD BLOĞU SEKSİYONU -->
+                    ${topic.codeContent ? `
+                        <div class="rounded-3xl border border-slate-800 bg-[#0a0c10] overflow-hidden shadow-xl">
+                            <div class="px-5 py-3 bg-[#12151c] border-b border-slate-800 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                                    <span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span>
+                                    <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+                                    <span class="ml-2 text-xs font-mono text-slate-400 font-semibold">${topic.codeTitle || 'Kaynak Kod'}</span>
                                 </div>
-                                <pre class="p-5 rounded-2xl bg-[#08090b] border border-slate-800 text-emerald-400 font-mono text-xs overflow-x-auto leading-relaxed shadow-inner"><code id="code-block">${escapeHtml(topic.code)}</code></pre>
+                                <button onclick="copyCode(this)" class="px-3 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-mono transition-colors border border-slate-700/50">
+                                    📋 Kopyala
+                                </button>
                             </div>
-                        ` : ''}
-                    `;
-                } else {
-                    container.innerHTML = `<div class="text-center py-20 text-red-500">Konu bulunamadı!</div>`;
-                }
+                            <div class="p-5 overflow-x-auto">
+                                <pre class="font-mono text-xs text-slate-200 leading-relaxed"><code>${topic.codeContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
             });
         }
 
-        // HTML Karakterlerini Temizleme
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
+        // DÜZENLEME FORMUNU KAYDETME
+        document.getElementById('edit-topic-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if(!isAdmin()) return;
 
-        // Kodu Kopyalama Fonksiyonu
-        function copyCode() {
-            const codeText = document.getElementById('code-block').innerText;
-            navigator.clipboard.writeText(codeText).then(() => {
-                const btn = document.getElementById('copy-btn');
-                btn.innerText = "✅ Kopyalandı!";
-                setTimeout(() => { btn.innerText = "📋 Kodu Kopyala"; }, 2000);
+            const videoUrl = document.getElementById('input-video-url').value;
+            const pdfUrl = document.getElementById('input-pdf-url').value;
+            const codeTitle = document.getElementById('input-code-title').value;
+            const codeContent = document.getElementById('input-code-content').value;
+
+            db.collection("courses").doc(courseId).collection("topics").doc(topicId).update({
+                videoUrl: videoUrl,
+                pdfUrl: pdfUrl,
+                codeTitle: codeTitle,
+                codeContent: codeContent
+            }).then(() => {
+                closeEditModal();
+            }).catch((err) => {
+                alert("Hata oluştu: " + err.message);
             });
-        }
+        });
     </script>
 </body>
 </html>

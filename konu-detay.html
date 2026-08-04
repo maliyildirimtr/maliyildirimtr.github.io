@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konu İçeriği | Mehmet Ali Yıldırım</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tsBordo: { DEFAULT: '#800020', light: '#a31236', dark: '#540015' },
+                        tsMavi: { DEFAULT: '#00a8e8', light: '#33bcef', dark: '#0077a8' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- ORTAK MENÜ -->
+    <div id="navbar-container"></div>
+
+    <!-- ANA İÇERİK -->
+    <main class="max-w-4xl mx-auto px-4 py-12 flex-grow w-full space-y-8" id="topic-container">
+        <div class="py-20 text-center text-slate-500 text-sm">⏳ Konu içeriği yükleniyor...</div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
+    </footer>
+
+    <!-- SCRIPT'LER -->
+    <script src="js/main.js"></script>
+    <script src="js/firebase.js"></script>
+    <script>
+        renderNavbar('dersler');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('courseId');
+        const topicId = urlParams.get('topicId');
+        const container = document.getElementById('topic-container');
+
+        function getYouTubeEmbedUrl(url) {
+            if(!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
+        }
+
+        if (!courseId || !topicId) {
+            container.innerHTML = `<div class="text-center py-20 text-red-500">Eksik parametre! <a href="dersler.html">Derslere Dön</a></div>`;
+        } else {
+            db.collection("courses").doc(courseId).collection("topics").doc(topicId).get().then((doc) => {
+                if (doc.exists) {
+                    const topic = doc.data();
+                    const embedUrl = getYouTubeEmbedUrl(topic.videoUrl);
+
+                    container.innerHTML = `
+                        <!-- GERİ DÖN VE BAŞLIK -->
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
+                            <h1 class="text-2xl font-extrabold tracking-tight">${topic.title}</h1>
+                            <a href="ders-detay.html?id=${courseId}" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700">
+                                ← Konulara Dön
+                            </a>
+                        </div>
+
+                        <!-- 1. YOUTUBE VIDEO OYNATICI (VARSA GÖSTER) -->
+                        ${embedUrl ? `
+                            <div class="relative aspect-video w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 bg-black">
+                                <iframe src="${embedUrl}" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        ` : ''}
+
+                        <!-- 2. PDF İNDİRME / GÖRÜNTÜLEME BUTONU (VARSA GÖSTER) -->
+                        ${topic.pdfUrl ? `
+                            <div class="p-6 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-sm">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-3xl">📄</span>
+                                    <div>
+                                        <h4 class="font-bold text-sm">Ders Notu / PDF Belgesi</h4>
+                                        <p class="text-xs text-slate-500">Konu ile ilgili ders notlarını görüntüleyin veya indirin.</p>
+                                    </div>
+                                </div>
+                                <a href="${topic.pdfUrl}" target="_blank" class="px-5 py-2.5 rounded-xl bg-tsMavi text-white font-semibold text-xs shadow-md hover:bg-tsMavi-dark transition-colors flex items-center gap-2">
+                                    <span>📥</span> PDF'yi Görüntüle
+                                </a>
+                            </div>
+                        ` : ''}
+
+                        <!-- 3. KOPYALANABİLİR KOD BLOĞU (VARSA GÖSTER) -->
+                        ${topic.code ? `
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-bold text-sm text-slate-400 font-mono">&lt;/&gt; Kod / Tasarım Metni</h4>
+                                    <button onclick="copyCode()" id="copy-btn" class="px-3 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white transition-colors">
+                                        📋 Kodu Kopyala
+                                    </button>
+                                </div>
+                                <pre class="p-5 rounded-2xl bg-[#08090b] border border-slate-800 text-emerald-400 font-mono text-xs overflow-x-auto leading-relaxed shadow-inner"><code id="code-block">${escapeHtml(topic.code)}</code></pre>
+                            </div>
+                        ` : ''}
+                    `;
+                } else {
+                    container.innerHTML = `<div class="text-center py-20 text-red-500">Konu bulunamadı!</div>`;
+                }
+            });
+        }
+
+        // HTML Karakterlerini Temizleme
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Kodu Kopyalama Fonksiyonu
+        function copyCode() {
+            const codeText = document.getElementById('code-block').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const btn = document.getElementById('copy-btn');
+                btn.innerText = "✅ Kopyalandı!";
+                setTimeout(() => { btn.innerText = "📋 Kodu Kopyala"; }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

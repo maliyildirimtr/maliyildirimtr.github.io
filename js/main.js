@@ -2,7 +2,7 @@
 // 1. YÖNETİCİ E-POSTASI VE ROL KONTROLÜ
 // ==========================================
 // Yönetici yetkisine sahip e-posta adresin ve gizli şifren
-const ADMIN_EMAIL = "maliyildirimtr@gmail.com"; // Kendi Gmail adresin
+const ADMIN_EMAIL = "maliyildirimtr@gmail.com"; 
 const ADMIN_PASSWORD = "258061"; // Logoya 3 kez basınca kullanılan şifre
 
 function isAdmin() {
@@ -162,7 +162,16 @@ function renderNavbar(activePage) {
 
             <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
                 <input type="email" id="auth-email" required placeholder="E-posta Adresiniz" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
-                <input type="password" id="auth-password" required placeholder="Şifreniz" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                <div>
+                    <input type="password" id="auth-password" required placeholder="Şifreniz" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                    
+                    <!-- ŞİFREMİ UNUTTUM LİNKİ -->
+                    <div class="text-right mt-1">
+                        <button type="button" onclick="handleForgotPassword()" class="text-[10px] text-tsMavi hover:underline">
+                            Şifrenizi mi unuttunuz?
+                        </button>
+                    </div>
+                </div>
                 
                 <button type="submit" id="auth-submit-btn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold text-xs shadow-md hover:opacity-90 transition-opacity">
                     Giriş Yap
@@ -228,20 +237,59 @@ function toggleAuthMode() {
     document.getElementById('auth-toggle-btn').innerText = isSignUpMode ? "Zaten hesabınız var mı? Giriş Yapın" : "Hesabınız yok mu? Kayıt Olun";
 }
 
+// E-POSTA İLE GİRİŞ & KAYIT
 function handleAuthSubmit(e) {
     e.preventDefault();
-    const email = document.getElementById('auth-email').value;
+    const email = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-password').value;
 
     if (isSignUpMode) {
         auth.createUserWithEmailAndPassword(email, password)
             .then(() => closeAuthModal())
-            .catch(err => alert("Kayıt Hatası: " + err.message));
+            .catch(err => {
+                if (err.code === 'auth/email-already-in-use') {
+                    alert("⚠️ Bu e-posta adresi zaten kullanımda! Lütfen 'Giriş Yap' sekmesini kullanın.");
+                } else if (err.code === 'auth/weak-password') {
+                    alert("⚠️ Şifreniz çok zayıf! En az 6 karakter giriniz.");
+                } else {
+                    alert("Kayıt Hatası: " + err.message);
+                }
+            });
     } else {
         auth.signInWithEmailAndPassword(email, password)
             .then(() => closeAuthModal())
-            .catch(err => alert("Giriş Hatası: " + err.message));
+            .catch(err => {
+                if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                    alert("⚠️ E-posta veya şifre hatalı!");
+                } else {
+                    alert("Giriş Hatası: " + err.message);
+                }
+            });
     }
+}
+
+// ŞİFREMİ UNUTTUM LOGIC
+function handleForgotPassword() {
+    const emailInput = document.getElementById('auth-email');
+    const email = emailInput ? emailInput.value.trim() : '';
+
+    if (!email) {
+        alert("Lütfen önce E-posta kutusuna adresinizi yazın, ardından 'Şifrenizi mi unuttunuz?' butonuna tıklayın.");
+        return;
+    }
+
+    auth.sendPasswordResetEmail(email)
+        .then(() => {
+            alert(`✅ ${email} adresine şifre sıfırlama bağlantısı gönderildi! Lütfen e-postanızı (ve Spam klasörünü) kontrol edin.`);
+            closeAuthModal();
+        })
+        .catch((err) => {
+            if (err.code === 'auth/user-not-found') {
+                alert("⚠️ Bu e-posta adresine ait kayıtlı bir kullanıcı bulunamadı.");
+            } else {
+                alert("Sıfırlama Hatası: " + err.message);
+            }
+        });
 }
 
 function loginWithGoogle() {

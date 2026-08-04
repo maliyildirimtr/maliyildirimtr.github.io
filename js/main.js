@@ -52,18 +52,20 @@ function filterCategory(cat) {
     });
 }
 // --- 🔐 ŞİFRELİ ADMIN GİRİŞİ LOGIC ---
-
-// Belirlediğin Yönetici Şifresi (Burayı dilediğin şifre yapabilirsin)
-const ADMIN_PASSWORD = "1967"; 
+const ADMIN_PASSWORD = "1967"; // Kendi belirlediğin şifre
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Daha önce başarılı giriş yapılmışsa + butonunu otomatik göster
+    const adminBtn = document.getElementById('admin-add-btn');
+
+    // Eğer daha önce giriş YAPILMAMIŞSA butonu kesin olarak gizle
     if (localStorage.getItem('is_admin') === 'true') {
-        showAdminButton();
+        if (adminBtn) adminBtn.classList.remove('hidden');
+    } else {
+        if (adminBtn) adminBtn.classList.add('hidden');
     }
 });
 
-// Klavyeden "Ctrl + Shift + A" basıldığında Şifre Penceresini Aç
+// Ctrl + Shift + A ile Şifre Penceresini Açma
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
         e.preventDefault();
@@ -88,10 +90,10 @@ function checkAdminPassword() {
     const errorMsg = document.getElementById('login-error-msg');
 
     if (inputPass === ADMIN_PASSWORD) {
-        localStorage.setItem('is_admin', 'true'); // Cihaza yönetici olduğunu kaydet
+        localStorage.setItem('is_admin', 'true');
         showAdminButton();
         closeLoginModal();
-        alert('Giriş Başarılı! Ders Ekle (+) butonu aktifleştirildi.');
+        alert('Giriş Başarılı! Yönetici modu aktif.');
     } else {
         if (errorMsg) errorMsg.classList.remove('hidden');
     }
@@ -100,10 +102,4 @@ function checkAdminPassword() {
 function showAdminButton() {
     const adminBtn = document.getElementById('admin-add-btn');
     if (adminBtn) adminBtn.classList.remove('hidden');
-}
-
-// İleride çıkış yapmak istersen konsoldan: logoutAdmin() çağırabilirsin
-function logoutAdmin() {
-    localStorage.removeItem('is_admin');
-    location.reload();
 }

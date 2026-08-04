@@ -103,3 +103,10 @@ function showAdminButton() {
     const adminBtn = document.getElementById('admin-add-btn');
     if (adminBtn) adminBtn.classList.remove('hidden');
 }
+// --- MOBİL MENÜ AÇ / KAPA LOGIC ---
+function toggleMobileMenu() {
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenu) {
+        mobileMenu.classList.toggle('hidden');
+    }
+}

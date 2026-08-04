@@ -25,6 +25,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
@@ -66,20 +67,58 @@
         <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
     </footer>
 
-    <script src="js/main.js"></script>
     <script src="js/firebase.js"></script>
+    <script src="js/main.js"></script>
     <script>
         renderNavbar('dersler');
 
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
         const container = document.getElementById('course-detail-container');
+        let completedTopicIds = new Set();
 
         function getYouTubeId(url) {
             if(!url) return null;
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        // --- İLERLEME ÇUBUĞU VE VERİLERİ HESAPLAMA ---
+        function fetchUserProgressAndRenderBar(totalTopics) {
+            const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+            const progressContainer = document.getElementById('course-progress-container');
+            
+            if (!user) {
+                if(progressContainer) progressContainer.innerHTML = '';
+                completedTopicIds.clear();
+                return;
+            }
+
+            db.collection("user_progress")
+              .where("userId", "==", user.uid)
+              .where("courseId", "==", courseId)
+              .where("completed", "==", true)
+              .get()
+              .then((snapshot) => {
+                  completedTopicIds = new Set(snapshot.docs.map(doc => doc.data().topicId));
+                  const completedCount = completedTopicIds.size;
+                  const percentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+
+                  if (progressContainer) {
+                      progressContainer.innerHTML = `
+                          <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-2 shadow-sm mb-6">
+                              <div class="flex justify-between items-center text-xs font-bold">
+                                  <span class="text-slate-600 dark:text-slate-400">📊 Ders İlerlemeniz</span>
+                                  <span class="text-emerald-500 font-extrabold">%${percentage} Tamamlandı (${completedCount}/${totalTopics})</span>
+                              </div>
+                              <div class="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                  <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full" style="width: ${percentage}%"></div>
+                              </div>
+                          </div>
+                      `;
+                  }
+              });
         }
 
         function openTopicModal(editId = null, currentTitle = '', currentVideo = '') {
@@ -131,6 +170,9 @@
                             <p class="text-sm text-slate-600 dark:text-slate-300">${course.description}</p>
                         </div>
 
+                        <!-- İLERLEME ÇUBUĞU KUTUSU -->
+                        <div id="course-progress-container"></div>
+
                         <div class="space-y-4">
                             <h3 class="text-lg font-bold">Konular & Video Serileri</h3>
                             <div id="topics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -148,8 +190,12 @@
                 const topicsGrid = document.getElementById('topics-grid');
                 if (snapshot.empty) {
                     topicsGrid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 text-xs border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">Henüz konu eklenmemiş.</div>`;
+                    fetchUserProgressAndRenderBar(0);
                     return;
                 }
+
+                const totalTopics = snapshot.docs.length;
+                fetchUserProgressAndRenderBar(totalTopics);
 
                 let html = "";
                 const docs = snapshot.docs;
@@ -160,9 +206,10 @@
                     const topicId = doc.id;
                     const ytId = getYouTubeId(topic.videoUrl);
                     const coverImg = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null;
+                    const isCompleted = completedTopicIds.has(topicId);
 
                     html += `
-                        <a href="konu-detay.html?courseId=${courseId}&topicId=${topicId}" class="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer">
+                        <a href="konu-detay.html?courseId=${courseId}&topicId=${topicId}" class="group relative rounded-2xl border ${isCompleted ? 'border-emerald-500/50 dark:border-emerald-500/40' : 'border-slate-200 dark:border-slate-800'} bg-white dark:bg-slate-900/60 overflow-hidden hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer">
                             
                             ${loggedIn ? `
                                 <div class="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.preventDefault(); event.stopPropagation();">
@@ -195,11 +242,24 @@
                             
                             <div class="px-5 pb-4 flex justify-between items-center border-t border-slate-100 dark:border-slate-800/60 pt-3 mt-auto">
                                 <span class="text-xs text-tsMavi font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">İçeriğe Git →</span>
+                                ${isCompleted ? `
+                                    <span class="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                        ✓ Tamamlandı
+                                    </span>
+                                ` : ''}
                             </div>
                         </a>
                     `;
                 });
                 topicsGrid.innerHTML = html;
+            });
+        }
+
+        // OTURUM DEĞİŞTİĞİNDE İLERLEMEYİ TAZELER
+        if (typeof auth !== 'undefined') {
+            auth.onAuthStateChanged(() => {
+                const topicCards = document.querySelectorAll('#topics-grid a');
+                fetchUserProgressAndRenderBar(topicCards.length);
             });
         }
 

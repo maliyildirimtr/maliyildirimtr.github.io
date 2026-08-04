@@ -60,8 +60,8 @@
         renderNavbar('dersler');
 
         // Yönetici kontrolü
-        if (isAdmin()) {
-            document.getElementById('admin-add-course-btn').classList.remove('hidden');
+        if (typeof isAdmin === "function" && isAdmin()) {
+            document.getElementById('admin-add-course-btn')?.classList.remove('hidden');
         }
 
         const courseGrid = document.getElementById('course-grid');
@@ -73,14 +73,14 @@
             }
 
             let htmlContent = "";
-            const loggedIn = isAdmin();
+            const loggedIn = typeof isAdmin === "function" && isAdmin();
 
             snapshot.forEach((doc) => {
                 const course = doc.data();
                 const courseId = doc.id;
 
                 htmlContent += `
-                    <div class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex flex-col justify-between relative overflow-hidden shadow-sm hover:shadow-md">
+                    <a href="ders-detay.html?id=${courseId}" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all duration-300 flex flex-col justify-between relative overflow-hidden shadow-sm hover:shadow-md cursor-pointer">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-tsBordo to-tsMavi"></div>
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
@@ -88,7 +88,7 @@
                                     ${course.icon || '📚'}
                                 </div>
                                 ${loggedIn ? `
-                                    <button onclick="deleteCourse('${courseId}', '${course.title}')" title="Dersi Sil" class="opacity-0 group-hover:opacity-100 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 text-xs hover:bg-red-500 hover:text-white transition-all">
+                                    <button onclick="event.preventDefault(); event.stopPropagation(); deleteCourse('${courseId}', '${course.title.replace(/'/g, "\\'")}')" title="Dersi Sil" class="opacity-0 group-hover:opacity-100 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 text-xs hover:bg-red-500 hover:text-white transition-all">
                                         🗑️ Sil
                                     </button>
                                 ` : ''}
@@ -100,9 +100,9 @@
                         </div>
                         <div class="pt-6 border-t border-slate-100 dark:border-slate-800/60 mt-6 flex items-center justify-between text-xs text-slate-500 font-mono">
                             <span>${course.code || 'Genel Notlar'}</span>
-                            <a href="ders-detay.html?id=${courseId}" class="group-hover:translate-x-1 transition-transform font-semibold text-tsMavi hover:underline">İncele →</a>
+                            <span class="group-hover:translate-x-1 transition-transform font-semibold text-tsMavi">İncele →</span>
                         </div>
-                    </div>
+                    </a>
                 `;
             });
 

@@ -297,7 +297,7 @@
                         </div>
                     ` : ''}
 
-                    <!-- YORUMLAR BÖLÜMÜ -->
+                    <!-- YORUMLAR VE YANITLAR BÖLÜMÜ -->
                     <section class="border-t border-slate-200 dark:border-slate-800 pt-8 space-y-6">
                         <div class="flex items-center justify-between">
                             <h3 class="text-xl font-bold flex items-center gap-2">
@@ -309,7 +309,7 @@
                         </div>
 
                         <div id="comment-form-container" class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
-                            <form id="add-comment-form" onsubmit="handleCommentSubmit(event)" class="space-y-3 hidden">
+                            <form id="add-comment-form" onsubmit="handleCommentSubmit(event, null)" class="space-y-3 hidden">
                                 <textarea id="comment-input" rows="3" required placeholder="Bu konu veya video hakkında bir şey sorun ya da yorum yapın..." class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi resize-none"></textarea>
                                 <div class="flex justify-end">
                                     <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold text-xs shadow-md hover:opacity-90 transition-opacity">
@@ -326,6 +326,7 @@
                             </div>
                         </div>
 
+                        <!-- YORUM VE YANIT LİSTESİ -->
                         <div id="comments-list" class="space-y-4">
                             <div class="text-center py-6 text-xs text-slate-500">Yorumlar yükleniyor...</div>
                         </div>
@@ -343,7 +344,7 @@
             });
         }
 
-        // --- YORUM SİSTEMİ LOGIC ---
+        // --- YORUM VE İÇ İÇE YANIT SİSTEMİ LOGIC ---
         function updateCommentFormUI() {
             const user = typeof auth !== 'undefined' ? auth.currentUser : null;
             const form = document.getElementById('add-comment-form');
@@ -363,7 +364,7 @@
 
             db.collection("comments")
               .where("topicId", "==", topicId)
-              .orderBy("createdAt", "desc")
+              .orderBy("createdAt", "asc")
               .onSnapshot((snapshot) => {
                   const list = document.getElementById('comments-list');
                   const countBadge = document.getElementById('comments-count');
@@ -378,33 +379,84 @@
                   const currentUser = typeof auth !== 'undefined' ? auth.currentUser : null;
                   const adminState = typeof isAdmin === 'function' && isAdmin();
 
+                  const allComments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                  
+                  // Ana Yorumlar ve Yanıtlar Olarak Grupla
+                  const mainComments = allComments.filter(c => !c.parentId);
+                  const replies = allComments.filter(c => c.parentId);
+
                   let html = "";
-                  snapshot.docs.forEach((doc) => {
-                      const data = doc.data();
-                      const commentId = doc.id;
-                      const isMyComment = currentUser && currentUser.uid === data.userId;
-                      const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
+                  mainComments.forEach((comment) => {
+                      const isMyComment = currentUser && currentUser.uid === comment.userId;
+                      const dateStr = comment.createdAt ? new Date(comment.createdAt.toDate()).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
+                      const commentReplies = replies.filter(r => r.parentId === comment.id);
 
                       html += `
-                          <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-2 shadow-sm">
+                          <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3 shadow-sm">
+                              <!-- ANA YORUM ÜST BİLGİ -->
                               <div class="flex items-center justify-between">
                                   <div class="flex items-center gap-2">
-                                      <div class="w-7 h-7 rounded-full bg-tsMavi/10 text-tsMavi flex items-center justify-center font-bold text-xs uppercase">
-                                          ${(data.userName || 'K')[0]}
+                                      <div class="w-8 h-8 rounded-full bg-tsMavi/10 text-tsMavi flex items-center justify-center font-bold text-xs uppercase">
+                                          ${(comment.userName || 'K')[0]}
                                       </div>
                                       <div>
-                                          <span class="text-xs font-bold">${data.userName || 'Kullanıcı'}</span>
+                                          <span class="text-xs font-bold">${comment.userName || 'Kullanıcı'}</span>
                                           <span class="text-[10px] text-slate-400 ml-2">${dateStr}</span>
                                       </div>
                                   </div>
                                   
                                   ${(isMyComment || adminState) ? `
-                                      <button onclick="deleteComment('${commentId}')" class="text-[10px] text-red-400 hover:text-red-600 font-semibold px-2 py-0.5 rounded bg-red-500/10">
+                                      <button onclick="deleteComment('${comment.id}')" class="text-[10px] text-red-400 hover:text-red-600 font-semibold px-2 py-0.5 rounded bg-red-500/10">
                                           Sil 🗑️
                                       </button>
                                   ` : ''}
                               </div>
-                              <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed pl-9">${data.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+
+                              <!-- ANA YORUM METNİ -->
+                              <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed pl-10">${comment.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+
+                              <!-- ALT BUTONLAR -->
+                              <div class="pl-10 flex items-center gap-4">
+                                  <button onclick="toggleReplyBox('${comment.id}')" class="text-[11px] font-semibold text-tsMavi hover:underline flex items-center gap-1">
+                                      ↪ Yanıtla
+                                  </button>
+                              </div>
+
+                              <!-- YANIT YAZMA KUTUSU (GİZLİ) -->
+                              <div id="reply-box-${comment.id}" class="hidden pl-10 pt-2">
+                                  <div class="flex gap-2">
+                                      <input type="text" id="reply-input-${comment.id}" placeholder="${comment.userName} kişisine yanıt ver..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                                      <button onclick="submitReply('${comment.id}')" class="px-4 py-2 rounded-xl bg-tsMavi text-white font-semibold text-xs shrink-0 shadow-sm">Gönder</button>
+                                  </div>
+                              </div>
+
+                              <!-- ALT YANITLAR LİSTESİ -->
+                              ${commentReplies.length > 0 ? `
+                                  <div class="pl-8 pt-2 space-y-2 border-l-2 border-slate-100 dark:border-slate-800/80 ml-4">
+                                      ${commentReplies.map(reply => {
+                                          const isMyReply = currentUser && currentUser.uid === reply.userId;
+                                          const replyDate = reply.createdAt ? new Date(reply.createdAt.toDate()).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'Az önce';
+                                          
+                                          return `
+                                              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/50 space-y-1.5">
+                                                  <div class="flex items-center justify-between">
+                                                      <div class="flex items-center gap-2">
+                                                          <div class="w-6 h-6 rounded-full bg-tsBordo/10 text-tsBordo dark:text-tsMavi flex items-center justify-center font-bold text-[10px] uppercase">
+                                                              ${(reply.userName || 'K')[0]}
+                                                          </div>
+                                                          <span class="text-xs font-bold">${reply.userName || 'Kullanıcı'}</span>
+                                                          <span class="text-[9px] text-slate-400">${replyDate}</span>
+                                                      </div>
+                                                      ${(isMyReply || adminState) ? `
+                                                          <button onclick="deleteComment('${reply.id}')" class="text-[9px] text-red-400 hover:text-red-600 px-1.5 py-0.5 rounded bg-red-500/10">Sil</button>
+                                                      ` : ''}
+                                                  </div>
+                                                  <p class="text-xs text-slate-600 dark:text-slate-300 pl-8 leading-snug">${reply.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+                                              </div>
+                                          `;
+                                      }).join('')}
+                                  </div>
+                              ` : ''}
                           </div>
                       `;
                   });
@@ -413,7 +465,44 @@
               }, (err) => console.log("Yorumlar çekilemedi:", err));
         }
 
-        function handleCommentSubmit(e) {
+        // YANIT KUTUSUNU AÇ/KAPAT
+        function toggleReplyBox(commentId) {
+            const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+            if (!user) {
+                alert("Yanıt verebilmek için giriş yapmalısınız.");
+                if (typeof openAuthModal === 'function') openAuthModal();
+                return;
+            }
+
+            const box = document.getElementById(`reply-box-${commentId}`);
+            if (box) box.classList.toggle('hidden');
+        }
+
+        // YANIT GÖNDER
+        function submitReply(parentId) {
+            const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+            if (!user) return;
+
+            const input = document.getElementById(`reply-input-${parentId}`);
+            const replyText = input ? input.value.trim() : '';
+
+            if (!replyText) return;
+
+            db.collection("comments").add({
+                topicId: topicId,
+                courseId: courseId,
+                parentId: parentId, // Alt yorum olduğunu belirtir
+                userId: user.uid,
+                userName: user.displayName || user.email.split('@')[0],
+                text: replyText,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                input.value = '';
+            }).catch(err => alert("Yanıt gönderilemedi: " + err.message));
+        }
+
+        // ANA YORUM GÖNDER
+        function handleCommentSubmit(e, parentId = null) {
             e.preventDefault();
             const user = typeof auth !== 'undefined' ? auth.currentUser : null;
             if (!user) {
@@ -430,6 +519,7 @@
             db.collection("comments").add({
                 topicId: topicId,
                 courseId: courseId,
+                parentId: null,
                 userId: user.uid,
                 userName: user.displayName || user.email.split('@')[0],
                 text: commentText,
@@ -440,7 +530,7 @@
         }
 
         function deleteComment(commentId) {
-            if (confirm("Bu yorumu silmek istediğinize emin misiniz?")) {
+            if (confirm("Bu yorumu (varsa alt yanıtlarıyla birlikte) silmek istediğinize emin misiniz?")) {
                 db.collection("comments").doc(commentId).delete();
             }
         }

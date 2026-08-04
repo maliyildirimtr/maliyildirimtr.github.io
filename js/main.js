@@ -1,15 +1,30 @@
 // ==========================================
-// 1. YÖNETİCİ E-POSTASI VE ROL KONTROLÜ
+// 1. KRİPTOGRAFİK GÜVENLİ YÖNETİCİ & ROL KONTROLÜ (SHA-256)
 // ==========================================
-const ADMIN_EMAIL = "maliyildirimtr@gmail.com"; 
-const ADMIN_PASSWORD = "258061"; 
+// E-posta ve şifre istemci tarafında düz metin (plaintext) tutulmaz.
+// Sadece tek yönlü SHA-256 özetleri (hashes) saklanır.
+const SEC_HASH_EMAIL = "e600a1c2260f2754f6f89485e51b5414da9e5899f66b6a5caa65c5b78576964b"; 
+const SEC_HASH_PASS  = "cb1a91d359d715251b9490d2611445cb454f96ee213e053a6cf99914d8e09103"; 
+
+let _cachedUserEmailHash = null;
+
+// Tarayıcı Web Crypto API ile yerel SHA-256 hesaplayıcı
+async function computeSHA256(text) {
+    if (!text) return "";
+    const msgUint8 = new TextEncoder().encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 function isAdmin() {
     const user = typeof auth !== 'undefined' ? auth.currentUser : null;
-    const isEmailAdmin = user && user.email === ADMIN_EMAIL;
-    const isLocalAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('mali_admin_session') === 'active';
+    const sessionToken = sessionStorage.getItem('_mali_adm_token') || localStorage.getItem('_mali_adm_token');
     
-    return isEmailAdmin || isLocalAdmin;
+    const isEmailAdmin = !!(user && user.email && _cachedUserEmailHash === SEC_HASH_EMAIL);
+    const isTokenValid = (sessionToken === SEC_HASH_PASS);
+
+    return isEmailAdmin || isTokenValid;
 }
 
 // ==========================================
@@ -230,7 +245,12 @@ function renderNavbar(activePage) {
 let isSignUpMode = false;
 
 if (typeof auth !== 'undefined') {
-    auth.onAuthStateChanged((user) => {
+    auth.onAuthStateChanged(async (user) => {
+        if (user && user.email) {
+            _cachedUserEmailHash = await computeSHA256(user.email.toLowerCase().trim());
+        } else {
+            _cachedUserEmailHash = null;
+        }
         const currentPath = window.location.pathname.split('/').pop() || 'index.html';
         renderNavbar(currentPath.replace('.html', ''));
     });
@@ -388,6 +408,8 @@ function loginWithGoogle() {
 }
 
 function logoutUser() {
+    localStorage.removeItem('_mali_adm_token');
+    sessionStorage.removeItem('_mali_adm_token');
     localStorage.removeItem('is_admin');
     localStorage.removeItem('mali_admin_session');
     if (typeof auth !== 'undefined' && auth.currentUser) {
@@ -442,13 +464,17 @@ function closeLoginModal() {
     if (inputPass) inputPass.value = '';
 }
 
-function checkAdminPassword() {
+async function checkAdminPassword() {
     const inputPass = document.getElementById('admin-password-input').value;
     const errorMsg = document.getElementById('login-error-msg');
 
-    if (inputPass === ADMIN_PASSWORD) {
-        localStorage.setItem('is_admin', 'true');
-        localStorage.setItem('mali_admin_session', 'active');
+    if (!inputPass) return;
+
+    const hashedInput = await computeSHA256(inputPass);
+
+    if (hashedInput === SEC_HASH_PASS) {
+        sessionStorage.setItem('_mali_adm_token', SEC_HASH_PASS);
+        localStorage.setItem('_mali_adm_token', SEC_HASH_PASS);
         closeLoginModal();
         location.reload();
     } else {

@@ -1,5 +1,5 @@
 // ==========================================
-// 1. ORTAK NAVBAR COMPONENT (EN ÜSTTE OLACAK)
+// 1. ORTAK NAVBAR COMPONENT & TEMA BAĞLANTISI
 // ==========================================
 function renderNavbar(activePage) {
     const navbarHTML = `
@@ -8,7 +8,7 @@ function renderNavbar(activePage) {
             
             <!-- Logo -->
             <a href="index.html" class="text-xl font-bold tracking-wider uppercase">
-                Memet Ali <span class="ts-gradient-text">Yıldırım</span>
+                M. Ali <span class="ts-gradient-text">Yıldırım</span>
             </a>
 
             <!-- MASAÜSTÜ MENÜ -->
@@ -21,15 +21,18 @@ function renderNavbar(activePage) {
 
             <!-- SAĞ BUTONLAR -->
             <div class="flex items-center gap-2">
-                <button id="admin-add-btn" onclick="openAddModal()" class="hidden flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold text-xs shadow-md">
-                    <span>+</span> Ders Ekle
+                <!-- Admin Ders Ekle (+) Butonu -->
+                <button id="admin-add-btn" onclick="openAddModal()" class="hidden flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold text-xs shadow-md hover:opacity-90 transition-opacity">
+                    <span class="text-base leading-none">+</span> Ders Ekle
                 </button>
 
-                <button id="theme-toggle" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
+                <!-- Tema Değiştirici -->
+                <button id="theme-toggle" onclick="toggleTheme()" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
                     <svg id="theme-toggle-dark-icon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                     <svg id="theme-toggle-light-icon" class="w-4 h-4 hidden text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                 </button>
 
+                <!-- Mobil Hamburger Menü Butonu -->
                 <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
                     ☰
                 </button>
@@ -49,11 +52,17 @@ function renderNavbar(activePage) {
     const navContainer = document.getElementById('navbar-container');
     if (navContainer) {
         navContainer.innerHTML = navbarHTML;
+        
+        // Navbar yüklendikten hemen sonra tema ve admin buton durumunu güncelle
+        initThemeIcons();
+        if (localStorage.getItem('is_admin') === 'true') {
+            showAdminButton();
+        }
     }
 }
 
 // ==========================================
-// 2. MOBİL MENÜ AÇ/KAPA LOGIC
+// 2. MOBİL MENÜ LOGIC
 // ==========================================
 function toggleMobileMenu() {
     const mobileMenu = document.getElementById('mobile-menu');
@@ -63,47 +72,55 @@ function toggleMobileMenu() {
 }
 
 // ==========================================
-// 3. TEMA DEĞİŞTİRME (DARK/LIGHT MODE) LOGIC
+// 3. DARK / LIGHT MODE LOGIC
 // ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    const themeToggleBtn = document.getElementById('theme-toggle');
+function initThemeIcons() {
     const darkIcon = document.getElementById('theme-toggle-dark-icon');
     const lightIcon = document.getElementById('theme-toggle-light-icon');
 
-    if (themeToggleBtn) {
-        if (localStorage.getItem('color-theme') === 'light' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
-            document.documentElement.classList.remove('dark');
-            if (lightIcon) lightIcon.classList.remove('hidden');
-        } else {
-            document.documentElement.classList.add('dark');
-            if (darkIcon) darkIcon.classList.remove('hidden');
-        }
+    if (!darkIcon || !lightIcon) return;
 
-        themeToggleBtn.addEventListener('click', function() {
-            if (darkIcon) darkIcon.classList.toggle('hidden');
-            if (lightIcon) lightIcon.classList.toggle('hidden');
-
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
-            }
-        });
+    if (document.documentElement.classList.contains('dark')) {
+        darkIcon.classList.remove('hidden');
+        lightIcon.classList.add('hidden');
+    } else {
+        lightIcon.classList.remove('hidden');
+        darkIcon.classList.add('hidden');
     }
-});
+}
+
+function toggleTheme() {
+    const darkIcon = document.getElementById('theme-toggle-dark-icon');
+    const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+    if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('color-theme', 'light');
+    } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('color-theme', 'dark');
+    }
+
+    if (darkIcon && lightIcon) {
+        darkIcon.classList.toggle('hidden');
+        lightIcon.classList.toggle('hidden');
+    }
+}
+
+// Sayfa ilk yüklendiğinde hafızadaki temayı uygula
+(function applyInitialTheme() {
+    const savedTheme = localStorage.getItem('color-theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+})();
+
 // ==========================================
 // 4. 🔐 ŞİFRELİ ADMIN GİRİŞİ LOGIC
 // ==========================================
-const ADMIN_PASSWORD = "1967"; // Kendi yönetici şifren
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Sayfa yüklendiğinde hafızada admin kaydı varsa + butonunu göster
-    if (localStorage.getItem('is_admin') === 'true') {
-        showAdminButton();
-    }
-});
+const ADMIN_PASSWORD = "1967"; // Yönetici şifren
 
 // Klavyeden Ctrl + Shift + A basıldığında Şifre Penceresini Aç
 document.addEventListener('keydown', (e) => {
@@ -144,7 +161,6 @@ function showAdminButton() {
     if (adminBtn) adminBtn.classList.remove('hidden');
 }
 
-// Çıkış yapmak istersen konsoldan logoutAdmin() çağırabilirsin
 function logoutAdmin() {
     localStorage.removeItem('is_admin');
     location.reload();

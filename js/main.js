@@ -1,139 +1,29 @@
 // ==========================================
-// 1. ORTAK NAVBAR COMPONENT & TEMA BAĞLANTISI
+// 1. YÖNETİCİ ŞİFRE VE OTURUM KONTROLÜ
 // ==========================================
-function renderNavbar(activePage) {
-    const navbarHTML = `
-    <nav class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0d0f12]/80 glass-card">
-        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            
-            <!-- Logo -->
-            <a href="index.html" class="text-xl font-bold tracking-wider uppercase">
-                M. Ali <span class="ts-gradient-text">Yıldırım</span>
-            </a>
+const ADMIN_PASSWORD = "258061";
 
-            <!-- MASAÜSTÜ MENÜ -->
-            <div class="hidden md:flex items-center space-x-1 border border-slate-200 dark:border-slate-800 p-1 rounded-full bg-slate-100/50 dark:bg-slate-900/50">
-                <a href="index.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'index' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Hakkımda</a>
-                <a href="projeler.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'projeler' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Projeler</a>
-                <a href="dersler.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'dersler' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Dersler & Notlar</a>
-                <a href="sosyal.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'sosyal' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">İletişim</a>
-            </div>
+function isAdmin() {
+    return localStorage.getItem('mali_admin_session') === 'active';
+}
 
-            <!-- SAĞ BUTONLAR -->
-            <div class="flex items-center gap-2">
-                <!-- Admin Ders Ekle (+) Butonu -->
-                <button id="admin-add-btn" onclick="openAddModal()" class="hidden flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-tsBordo to-tsMavi text-white font-semibold text-xs shadow-md hover:opacity-90 transition-opacity">
-                    <span class="text-base leading-none">+</span> Ders Ekle
-                </button>
-
-                <!-- Admin Çıkış Yap Butonu -->
-                <button id="admin-logout-btn" onclick="logoutAdmin()" title="Yönetici Çıkışı" class="hidden px-2.5 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 font-semibold text-xs transition-colors">
-                    🚪 Çıkış
-                </button>
-
-                <!-- Tema Değiştirici -->
-                <button id="theme-toggle" onclick="toggleTheme()" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
-                    <svg id="theme-toggle-dark-icon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                    <svg id="theme-toggle-light-icon" class="w-4 h-4 hidden text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-                </button>
-
-                <!-- Mobil Hamburger Menü Butonu -->
-                <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
-                    ☰
-                </button>
-            </div>
-        </div>
-
-        <!-- MOBİL MENÜ -->
-        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d0f12] px-4 py-4 space-y-2">
-            <a href="index.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Hakkımda</a>
-            <a href="projeler.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Projeler</a>
-            <a href="dersler.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Dersler & Notlar</a>
-            <a href="sosyal.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">İletişim</a>
-        </div>
-    </nav>
-    `;
-
-    const navContainer = document.getElementById('navbar-container');
-    if (navContainer) {
-        navContainer.innerHTML = navbarHTML;
-        
-        // Navbar yüklendikten sonra tema ikonu ve admin buton durumunu kontrol et
-        initThemeIcons();
-        if (localStorage.getItem('is_admin') === 'true') {
-            showAdminButtons();
-        }
+function checkAdminPassword() {
+    const input = document.getElementById('admin-password-input');
+    const errorMsg = document.getElementById('login-error-msg');
+    
+    if (input && input.value === ADMIN_PASSWORD) {
+        localStorage.setItem('mali_admin_session', 'active');
+        closeLoginModal();
+        location.reload(); // Butonların görünmesi için sayfayı yenile
+    } else if (errorMsg) {
+        errorMsg.classList.remove('hidden');
     }
 }
 
-// ==========================================
-// 2. MOBİL MENÜ LOGIC
-// ==========================================
-function toggleMobileMenu() {
-    const mobileMenu = document.getElementById('mobile-menu');
-    if (mobileMenu) {
-        mobileMenu.classList.toggle('hidden');
-    }
+function logoutAdmin() {
+    localStorage.removeItem('mali_admin_session');
+    location.reload();
 }
-
-// ==========================================
-// 3. DARK / LIGHT MODE LOGIC
-// ==========================================
-function initThemeIcons() {
-    const darkIcon = document.getElementById('theme-toggle-dark-icon');
-    const lightIcon = document.getElementById('theme-toggle-light-icon');
-
-    if (!darkIcon || !lightIcon) return;
-
-    if (document.documentElement.classList.contains('dark')) {
-        darkIcon.classList.remove('hidden');
-        lightIcon.classList.add('hidden');
-    } else {
-        lightIcon.classList.remove('hidden');
-        darkIcon.classList.add('hidden');
-    }
-}
-
-function toggleTheme() {
-    const darkIcon = document.getElementById('theme-toggle-dark-icon');
-    const lightIcon = document.getElementById('theme-toggle-light-icon');
-
-    if (document.documentElement.classList.contains('dark')) {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('color-theme', 'light');
-    } else {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('color-theme', 'dark');
-    }
-
-    if (darkIcon && lightIcon) {
-        darkIcon.classList.toggle('hidden');
-        lightIcon.classList.toggle('hidden');
-    }
-}
-
-// Sayfa ilk açıldığında hafızadaki temayı uygula
-(function applyInitialTheme() {
-    const savedTheme = localStorage.getItem('color-theme');
-    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-})();
-
-// ==========================================
-// 4. 🔐 ŞİFRELİ ADMIN GİRİŞİ & ÇIKIŞI LOGIC
-// ==========================================
-const ADMIN_PASSWORD = "1967"; // Yönetici şifren
-
-// Klavyeden Ctrl + Shift + A basıldığında Şifre Penceresini Aç
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-        e.preventDefault();
-        openLoginModal();
-    }
-});
 
 function openLoginModal() {
     const modal = document.getElementById('admin-login-modal');
@@ -142,62 +32,86 @@ function openLoginModal() {
 
 function closeLoginModal() {
     const modal = document.getElementById('admin-login-modal');
-    const errorMsg = document.getElementById('login-error-msg');
-    if (modal) modal.classList.add('hidden');
-    if (errorMsg) errorMsg.classList.add('hidden');
-}
-
-function checkAdminPassword() {
-    const inputPass = document.getElementById('admin-password-input').value;
-    const errorMsg = document.getElementById('login-error-msg');
-
-    if (inputPass === ADMIN_PASSWORD) {
-        localStorage.setItem('is_admin', 'true');
-        showAdminButtons();
-        closeLoginModal();
-        alert('Giriş Başarılı! Yönetici modu aktif.');
-    } else {
-        if (errorMsg) errorMsg.classList.remove('hidden');
-    }
-}
-
-function showAdminButtons() {
-    const adminBtn = document.getElementById('admin-add-btn');
-    const logoutBtn = document.getElementById('admin-logout-btn');
-    if (adminBtn) adminBtn.classList.remove('hidden');
-    if (logoutBtn) logoutBtn.classList.remove('hidden');
-}
-
-function logoutAdmin() {
-    localStorage.removeItem('is_admin');
-    alert('Yönetici oturumu kapatıldı.');
-    location.reload();
-}
-
-// ==========================================
-// 5. DERS EKLE MODALINI AÇMA & SAYFA YÖNLENDİRME LOGIC
-// ==========================================
-function openAddModal() {
-    // Eğer dersler.html sayfasında değilsek, dersler.html'e yönlendirip modalı aç
-    if (!window.location.pathname.includes('dersler.html')) {
-        window.location.href = 'dersler.html?openModal=true';
-        return;
-    }
-
-    // Eğer zaten dersler.html sayfasındaysak modalı aç
-    const modal = document.getElementById('add-course-modal');
     if (modal) {
-        modal.classList.remove('hidden');
+        modal.classList.add('hidden');
+        const errorMsg = document.getElementById('login-error-msg');
+        const input = document.getElementById('admin-password-input');
+        if (errorMsg) errorMsg.classList.add('hidden');
+        if (input) input.value = '';
     }
 }
 
-// Farklı sayfadan yönlendirilerek gelindiğinde (URL'de ?openModal=true varsa) modalı otomatik aç
-document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('openModal') === 'true') {
-        const modal = document.getElementById('add-course-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-        }
+// Enter tuşuyla şifre girişini tetikleme
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('admin-login-modal');
+    if (modal && !modal.classList.contains('hidden') && e.key === 'Enter') {
+        checkAdminPassword();
+    }
+});
+
+// ==========================================
+// 2. ORTAK NAVBAR RENDER FONKSİYONU
+// ==========================================
+function renderNavbar(activePage) {
+    const container = document.getElementById('navbar-container');
+    if (!container) return;
+
+    const loggedIn = isAdmin();
+
+    container.innerHTML = `
+        <nav class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0d0f12]/80 backdrop-blur-md sticky top-0 z-40">
+            <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                <a href="index.html" class="font-extrabold text-lg tracking-wider text-slate-900 dark:text-white hover:opacity-80 transition-opacity">
+                    M. ALİ <span class="text-tsMavi">YILDIRIM</span>
+                </a>
+
+                <div class="flex items-center gap-6 text-xs font-semibold">
+                    <a href="index.html" class="${activePage === 'home' ? 'text-tsMavi font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'} transition-colors">Hakkımda</a>
+                    <a href="dersler.html" class="${activePage === 'dersler' ? 'text-tsMavi font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'} transition-colors">Dersler & Notlar</a>
+                    
+                    ${loggedIn ? `
+                        <button onclick="logoutAdmin()" class="px-3 py-1.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center gap-1 font-sans">
+                            🔓 Çıkış Yap
+                        </button>
+                    ` : `
+                        <button onclick="openLoginModal()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-tsMavi transition-all flex items-center gap-1 font-sans">
+                            🔒 Yönetici Girişi
+                        </button>
+                    `}
+                </div>
+            </div>
+        </nav>
+
+        <!-- YÖNETİCİ GİRİŞ MODAL -->
+        <div id="admin-login-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl text-center">
+                <div class="w-12 h-12 rounded-2xl bg-tsBordo/10 text-tsBordo dark:bg-tsMavi/10 dark:text-tsMavi mx-auto flex items-center justify-center text-xl font-bold">
+                    🔒
+                </div>
+                <div>
+                    <h3 class="text-base font-bold">Yönetici Girişi</h3>
+                    <p class="text-xs text-slate-500 mt-1">İçerik düzenlemek için lütfen şifrenizi girin.</p>
+                </div>
+                <div>
+                    <input type="password" id="admin-password-input" placeholder="Şifreniz..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm text-center focus:outline-none focus:border-tsMavi">
+                    <p id="login-error-msg" class="text-xs text-red-500 mt-2 hidden">Hatalı şifre! Lütfen tekrar deneyin.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeLoginModal()" class="w-1/2 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">İptal</button>
+                    <button type="button" onclick="checkAdminPassword()" class="w-1/2 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Giriş Yap</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ==========================================
+// 3. GENEL SAYFA YÜKLENME AYARLARI
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Sayfa yüklendiğinde varsayılan Dark Mode ayarı
+    if (!localStorage.getItem('theme')) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
     }
 });

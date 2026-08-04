@@ -8,7 +8,7 @@ function renderNavbar(activePage) {
             
             <!-- Logo -->
             <a href="index.html" class="text-xl font-bold tracking-wider uppercase">
-                M. Ali <span class="ts-gradient-text">Yıldırım</span>
+                Memet Ali <span class="ts-gradient-text">Yıldırım</span>
             </a>
 
             <!-- MASAÜSTÜ MENÜ -->

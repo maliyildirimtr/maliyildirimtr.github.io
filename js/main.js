@@ -165,3 +165,31 @@ function logoutAdmin() {
     localStorage.removeItem('is_admin');
     location.reload();
 }
+
+// ==========================================
+// 5. DERS EKLE MODALINI AÇMA & SAYFA YÖNLENDİRME LOGIC
+// ==========================================
+function openAddModal() {
+    // Eğer şu an dersler.html sayfasında değilsek, otomatik olarak dersler.html'e yönlendir ve modalı aç
+    if (!window.location.pathname.includes('dersler.html')) {
+        window.location.href = 'dersler.html?openModal=true';
+        return;
+    }
+
+    // Eğer zaten dersler.html sayfasındaysak modal penceresini direkt aç
+    const modal = document.getElementById('add-course-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+// Başka sayfadan tıklandığında (URL'de ?openModal=true varsa) formu otomatik açar
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('openModal') === 'true') {
+        const modal = document.getElementById('add-course-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+});

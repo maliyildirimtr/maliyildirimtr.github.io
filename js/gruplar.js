@@ -1,0 +1,317 @@
+// ==========================================
+// PROJE GRUPLARI MANTIGI & SEED VERILERI (js/gruplar.js)
+// ==========================================
+
+const DEMO_GROUPS = [
+    {
+        id: "fpga-ai-accel",
+        name: "FPGA Tabanlı YZ Hızlandırıcı Tasarımı",
+        category: "Donanım / FPGA",
+        inviteCode: "MP-8492",
+        leader: "Mehmet Ali Yıldırım",
+        description: "SystemVerilog ve Intel Quartus Prime kullanarak Evrişimli Sinir Ağları (CNN) matris çarpımlarını dikey boru hattı (pipelined) mimari ile FPGA üzerinde hızlandırma projesi.",
+        targetBudget: 7500,
+        spentBudget: 3200,
+        membersCount: 4,
+        tasksDone: 8,
+        tasksTotal: 12,
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "stm32-uav-flight",
+        name: "STM32 & FreeRTOS Otonom İHA Kartı",
+        category: "Gömülü Sistemler",
+        inviteCode: "UAV-9102",
+        leader: "Ahmet Yılmaz",
+        description: "STM32F4 serisi mikrodenetleyici üzerinde FreeRTOS gerçek zamanlı işletim sistemi ile Kalman filtresi destekli otonom uçuş kontrol kartı donanım ve yazılımı.",
+        targetBudget: 4800,
+        spentBudget: 2150,
+        membersCount: 3,
+        tasksDone: 5,
+        tasksTotal: 9,
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "edge-ai-camera",
+        name: "Edge AI Akıllı Güvenlik Kamerası",
+        category: "Yapay Zeka",
+        inviteCode: "AI-3341",
+        leader: "Zeynep Kaya",
+        description: "Raspberry Pi ve Coral NPU modülü ile nesne tespiti yapan, nesneleri yerel olarak işleyerek Firebase veritabanına anlık alarm gönderen akıllı kamera sistemi.",
+        targetBudget: 3200,
+        spentBudget: 1400,
+        membersCount: 3,
+        tasksDone: 6,
+        tasksTotal: 7,
+        createdAt: new Date().toISOString()
+    }
+];
+
+let allGroups = [];
+let currentCategoryFilter = 'all';
+
+// Sayfa Yüklendiğinde Admin Kontrolü ve Başlatma
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof renderNavbar === 'function') {
+        renderNavbar('gruplar');
+    }
+
+    const adminGuard = document.getElementById('admin-access-guard');
+    const mainContent = document.getElementById('groups-main-content');
+
+    const adminState = typeof isAdmin === 'function' && isAdmin();
+
+    if (!adminState) {
+        if (adminGuard) adminGuard.classList.remove('hidden');
+        if (mainContent) mainContent.classList.add('hidden');
+        return;
+    } else {
+        if (adminGuard) adminGuard.classList.add('hidden');
+        if (mainContent) mainContent.classList.remove('hidden');
+    }
+
+    loadGroupsList();
+});
+
+// Grupları Yükleme Fonksiyonu
+function loadGroupsList() {
+    const grid = document.getElementById('groups-grid');
+    if (!grid) return;
+
+    if (typeof db !== 'undefined') {
+        db.collection("groups").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+            let groups = [];
+            if (!snapshot.empty) {
+                snapshot.docs.forEach((doc) => {
+                    groups.push({ id: doc.id, ...doc.data() });
+                });
+            }
+
+            if (groups.length === 0) {
+                groups = DEMO_GROUPS;
+            }
+
+            allGroups = groups;
+            renderGroupsUI(allGroups);
+            updateStatsBar(allGroups);
+        }, (err) => {
+            console.warn("Firestore gruplar çekilemedi, demo gruplar gösteriliyor:", err);
+            allGroups = DEMO_GROUPS;
+            renderGroupsUI(allGroups);
+            updateStatsBar(allGroups);
+        });
+    } else {
+        allGroups = DEMO_GROUPS;
+        renderGroupsUI(allGroups);
+        updateStatsBar(allGroups);
+    }
+}
+
+// İstatistik Barını Güncelleme
+function updateStatsBar(groups) {
+    const groupCountEl = document.getElementById('stat-group-count');
+    const memberCountEl = document.getElementById('stat-member-count');
+    const budgetTotalEl = document.getElementById('stat-budget-total');
+    const tasksDoneEl = document.getElementById('stat-tasks-done');
+
+    let totalMembers = 0;
+    let totalSpent = 0;
+    let totalTasksDone = 0;
+
+    groups.forEach(g => {
+        totalMembers += (g.membersCount || 1);
+        totalSpent += (g.spentBudget || 0);
+        totalTasksDone += (g.tasksDone || 0);
+    });
+
+    if (groupCountEl) groupCountEl.innerText = groups.length;
+    if (memberCountEl) memberCountEl.innerText = totalMembers;
+    if (budgetTotalEl) budgetTotalEl.innerText = `₺${totalSpent.toLocaleString('tr-TR')}`;
+    if (tasksDoneEl) tasksDoneEl.innerText = totalTasksDone;
+}
+
+// Grupları Ekrana Çizme
+function renderGroupsUI(groups) {
+    const grid = document.getElementById('groups-grid');
+    if (!grid) return;
+
+    let filtered = groups;
+    if (currentCategoryFilter !== 'all') {
+        filtered = groups.filter(g => g.category === currentCategoryFilter);
+    }
+
+    const searchInput = document.getElementById('search-groups-input');
+    const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    if (q) {
+        filtered = filtered.filter(g => (g.name || '').toLowerCase().includes(q) || (g.description || '').toLowerCase().includes(q));
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-500 text-xs border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">Aradığınız kriterde proje grubu bulunamadı.</div>`;
+        return;
+    }
+
+    let html = "";
+    filtered.forEach(g => {
+        const progress = g.tasksTotal > 0 ? Math.round((g.tasksDone / g.tasksTotal) * 100) : 0;
+        const budgetPercent = g.targetBudget > 0 ? Math.min(100, Math.round((g.spentBudget / g.targetBudget) * 100)) : 0;
+
+        html += `
+            <div onclick="window.location.href='grup-detay.html?id=${g.id}'" class="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer overflow-hidden backdrop-blur-md">
+                
+                <div class="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-tsBordo to-tsMavi opacity-80 group-hover:opacity-100 transition-opacity"></div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <span class="px-3 py-1 rounded-full bg-tsMavi/10 text-tsMavi font-bold text-[10px] border border-tsMavi/20">
+                            ${g.category || 'Genel'}
+                        </span>
+                        <span class="text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                            🔑 ${g.inviteCode || 'MP-0000'}
+                        </span>
+                    </div>
+
+                    <h3 class="font-bold text-base group-hover:text-tsMavi transition-colors leading-snug">${g.name}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 leading-relaxed">${g.description}</p>
+
+                    <!-- LİDER & ÜYELER -->
+                    <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-tsBordo to-tsMavi text-white font-bold text-[10px] flex items-center justify-center">
+                            👤
+                        </div>
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">${g.leader || 'Takım Lideri'}</span>
+                        <span class="ml-auto text-[10px] text-slate-400">👥 ${g.membersCount || 1} Üye</span>
+                    </div>
+                </div>
+
+                <!-- GÖREV VE BÜTÇE İLERLEMESİ -->
+                <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60 space-y-3">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] font-bold">
+                            <span class="text-slate-400">Görev İlerlemesi</span>
+                            <span class="text-emerald-500">%${progress} (${g.tasksDone || 0}/${g.tasksTotal || 0})</span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div class="h-full bg-emerald-500 rounded-full transition-all" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] font-bold">
+                            <span class="text-slate-400">Ortak Kasa</span>
+                            <span class="text-rose-400">₺${(g.spentBudget||0).toLocaleString('tr-TR')} / ₺${(g.targetBudget||0).toLocaleString('tr-TR')}</span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div class="h-full bg-rose-500 rounded-full transition-all" style="width: ${budgetPercent}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-between">
+                        <span class="text-xs text-tsMavi font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            Çalışma Alanına Git →
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    grid.innerHTML = html;
+}
+
+// Filtreleme Fonksiyonları
+function filterGroups(category) {
+    currentCategoryFilter = category;
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-tsMavi', 'text-white');
+        btn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+    });
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active', 'bg-tsMavi', 'text-white');
+        event.currentTarget.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+    }
+    renderGroupsUI(allGroups);
+}
+
+function searchGroups() {
+    renderGroupsUI(allGroups);
+}
+
+// MODAL AÇMA / KAPAMA
+function openCreateGroupModal() {
+    document.getElementById('create-group-modal').classList.remove('hidden');
+}
+function closeCreateGroupModal() {
+    document.getElementById('create-group-modal').classList.add('hidden');
+    document.getElementById('create-group-form').reset();
+}
+
+function openJoinModal() {
+    document.getElementById('join-group-modal').classList.remove('hidden');
+}
+function closeJoinModal() {
+    document.getElementById('join-group-modal').classList.add('hidden');
+    document.getElementById('join-group-form').reset();
+}
+
+// YENİ GRUP OLUŞTURMA SÜRECİ
+function handleCreateGroup(e) {
+    e.preventDefault();
+    const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+    const name = document.getElementById('group-name').value.trim();
+    const category = document.getElementById('group-category').value;
+    const targetBudget = parseFloat(document.getElementById('group-target-budget').value) || 0;
+    const desc = document.getElementById('group-desc').value.trim();
+
+    if (!name || !desc) {
+        alert("Lütfen tüm zorunlu alanları doldurun!");
+        return;
+    }
+
+    const randomCode = 'MP-' + Math.floor(1000 + Math.random() * 9000);
+    const newGroup = {
+        name,
+        category,
+        inviteCode: randomCode,
+        leader: user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin",
+        leaderUid: user ? user.uid : "admin",
+        description: desc,
+        targetBudget,
+        spentBudget: 0,
+        membersCount: 1,
+        tasksDone: 0,
+        tasksTotal: 0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (typeof db !== 'undefined') {
+        db.collection("groups").add(newGroup).then((docRef) => {
+            alert(`✅ Proje grubu başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
+            closeCreateGroupModal();
+            window.location.href = `grup-detay.html?id=${docRef.id}`;
+        }).catch(err => {
+            alert("Grup Oluşturma Hatası: " + err.message);
+        });
+    } else {
+        alert(`✅ Proje grubu başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
+        closeCreateGroupModal();
+    }
+}
+
+// DAVET KODU İLE KATILMA
+function handleJoinGroup(e) {
+    e.preventDefault();
+    const code = document.getElementById('invite-code-input').value.trim().toUpperCase();
+
+    if (!code) return;
+
+    const matched = allGroups.find(g => (g.inviteCode || '').toUpperCase() === code);
+
+    if (matched) {
+        alert(`✅ "${matched.name}" grubuna başarıyla katıldınız!`);
+        closeJoinModal();
+        window.location.href = `grup-detay.html?id=${matched.id}`;
+    } else {
+        alert("⚠️ Geçersiz veya bulunamayan davet kodu! Lütfen doğru kodu girdiğinizden emin olun.");
+    }
+}

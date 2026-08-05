@@ -91,8 +91,19 @@ function isCurrentUserMember() {
 function loadGroupWorkspace() {
     if (typeof db !== 'undefined' && db && db.collection) {
         db.collection("groups").doc(groupId).onSnapshot((doc) => {
-            if (doc.exists) {
-                currentGroup = { id: doc.id, ...doc.data() };
+            if (doc && doc.exists) {
+                const data = doc.data() || {};
+                currentGroup = { 
+                    id: doc.id, 
+                    name: data.name || "Proje Çalışma Alanı",
+                    category: data.category || "Mühendislik & YZ",
+                    inviteCode: data.inviteCode || ("MP-" + Math.floor(1000 + Math.random() * 9000)),
+                    description: data.description || "Proje grup açıklaması.",
+                    lookingRoles: data.lookingRoles || "",
+                    members: Array.isArray(data.members) ? data.members : [],
+                    milestones: Array.isArray(data.milestones) ? data.milestones : [],
+                    ...data 
+                };
             } else {
                 fallbackLoadWorkspace();
             }
@@ -165,86 +176,115 @@ function fallbackLoadWorkspace() {
 
 // ANA ARAYÜZÜ RENDER ETME
 function renderWorkspaceUI() {
-    const container = document.getElementById('group-workspace-content');
-    if (!container || !currentGroup) return;
+    try {
+        const container = document.getElementById('group-workspace-content');
+        if (!container) return;
 
-    const isMember = isCurrentUserMember();
-    const roleText = getCurrentUserRole();
-    const targetBudget = currentGroup.targetBudget || 0;
+        if (!currentGroup) {
+            fallbackLoadWorkspace();
+        }
 
-    const lookingRolesBadges = currentGroup.lookingRoles ? `
-        <div class="flex items-center gap-1.5 mt-2 flex-wrap">
-            <span class="text-[10px] font-bold text-amber-500">🎯 Aranan Roller:</span>
-            ${currentGroup.lookingRoles.split(',').map(r => `<span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold border border-amber-500/20">${r.trim()}</span>`).join('')}
-        </div>
-    ` : '';
+        const isMember = isCurrentUserMember();
+        const roleText = getCurrentUserRole();
+        const targetBudget = currentGroup.targetBudget || 0;
 
-    container.innerHTML = `
-        <!-- HEADER BÖLÜMÜ -->
-        <div class="rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xl backdrop-blur-md space-y-4">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <div>
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span class="px-3 py-1 rounded-full bg-tsMavi/10 text-tsMavi font-bold text-xs border border-tsMavi/20">
-                            ${currentGroup.category || 'Genel'}
-                        </span>
-                        <button onclick="copyInviteCode('${currentGroup.inviteCode || 'MP-8492'}')" title="Kodu Kopyala" class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-xl text-slate-700 dark:text-slate-300 hover:text-tsMavi border border-slate-300 dark:border-slate-700 transition-colors">
-                            🔑 Davet Kodu: <strong class="text-slate-900 dark:text-slate-100">${currentGroup.inviteCode || 'MP-8492'}</strong> 📋
-                        </button>
+        let lookingRolesBadges = "";
+        if (currentGroup.lookingRoles) {
+            let rolesArr = [];
+            if (typeof currentGroup.lookingRoles === 'string') {
+                rolesArr = currentGroup.lookingRoles.split(',');
+            } else if (Array.isArray(currentGroup.lookingRoles)) {
+                rolesArr = currentGroup.lookingRoles;
+            }
+            if (rolesArr.length > 0) {
+                lookingRolesBadges = `
+                    <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                        <span class="text-[10px] font-bold text-amber-500">🎯 Aranan Roller:</span>
+                        ${rolesArr.map(r => `<span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold border border-amber-500/20">${String(r).trim()}</span>`).join('')}
                     </div>
-                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">${currentGroup.name}</h1>
-                    ${lookingRolesBadges}
+                `;
+            }
+        }
+
+        container.innerHTML = `
+            <!-- HEADER BÖLÜMÜ -->
+            <div class="rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xl backdrop-blur-md space-y-4">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span class="px-3 py-1 rounded-full bg-tsMavi/10 text-tsMavi font-bold text-xs border border-tsMavi/20">
+                                ${currentGroup.category || 'Genel'}
+                            </span>
+                            <button onclick="copyInviteCode('${currentGroup.inviteCode || 'MP-8492'}')" title="Kodu Kopyala" class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-xl text-slate-700 dark:text-slate-300 hover:text-tsMavi border border-slate-300 dark:border-slate-700 transition-colors">
+                                🔑 Davet Kodu: <strong class="text-slate-900 dark:text-slate-100">${currentGroup.inviteCode || 'MP-8492'}</strong> 📋
+                            </button>
+                        </div>
+                        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">${currentGroup.name || 'Proje Çalışma Alanı'}</h1>
+                        ${lookingRolesBadges}
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <button onclick="openJitsiMeeting()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-1.5">
+                            📹 Görüntülü Toplantı Başlat (Virtual Lab)
+                        </button>
+                        ${!isMember ? `
+                            <button onclick="joinCurrentGroup()" class="px-4 py-2.5 rounded-xl ts-gradient-btn text-white text-xs font-bold shadow-md hover:opacity-90 transition-all flex items-center gap-1.5">
+                                <span>➕</span> Gruba Üye Ol
+                            </button>
+                        ` : `
+                            <span class="px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 flex items-center gap-1">
+                                ✓ Grubun Üyesisiniz (${roleText})
+                            </span>
+                        `}
+                        ${((typeof isAdmin === 'function' && isAdmin()) || isUserAdmin()) ? `
+                            <button onclick="deleteCurrentWorkspaceGroup()" title="Grubu tamamen sil" class="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
+                                🗑️ Grubu Sil
+                            </button>
+                        ` : ''}
+                        <a href="gruplar.html" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-300 dark:border-slate-700">
+                            ← Gruplara Dön
+                        </a>
+                    </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 shrink-0">
-                    <button onclick="openJitsiMeeting()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-1.5">
-                        📹 Görüntülü Toplantı Başlat (Virtual Lab)
+                <!-- TAB MENÜSÜ -->
+                <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
+                    <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-tsMavi text-tsMavi transition-all shrink-0">
+                        📌 Genel Bakış & Üyeler
                     </button>
-                    ${!isMember ? `
-                        <button onclick="joinCurrentGroup()" class="px-4 py-2.5 rounded-xl ts-gradient-btn text-white text-xs font-bold shadow-md hover:opacity-90 transition-all flex items-center gap-1.5">
-                            <span>➕</span> Gruba Üye Ol
-                        </button>
-                    ` : `
-                        <span class="px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 flex items-center gap-1">
-                            ✓ Grubun Üyesisiniz (${roleText})
-                        </span>
-                    `}
-                    ${((typeof isAdmin === 'function' && isAdmin()) || isUserAdmin()) ? `
-                        <button onclick="deleteCurrentWorkspaceGroup()" title="Grubu tamamen sil" class="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
-                            🗑️ Grubu Sil
-                        </button>
-                    ` : ''}
-                    <a href="gruplar.html" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-300 dark:border-slate-700">
-                        ← Gruplara Dön
-                    </a>
+                    <button onclick="switchTab('archive')" id="tab-btn-archive" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
+                        📂 Arşiv & Dokümanlar (Resource Hub)
+                    </button>
+                    <button onclick="switchTab('kanban')" id="tab-btn-kanban" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
+                        📋 Görev Panosu (Kanban)
+                    </button>
+                    <button onclick="switchTab('budget')" id="tab-btn-budget" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
+                        💳 Ortak Kasa & Bütçe Takibi
+                    </button>
+                    <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
+                        💬 Grup İçi Sohbet
+                    </button>
                 </div>
             </div>
 
-            <!-- TAB MENÜSÜ -->
-            <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
-                <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-tsMavi text-tsMavi transition-all shrink-0">
-                    📌 Genel Bakış & Üyeler
-                </button>
-                <button onclick="switchTab('archive')" id="tab-btn-archive" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
-                    📂 Arşiv & Dokümanlar (Resource Hub)
-                </button>
-                <button onclick="switchTab('kanban')" id="tab-btn-kanban" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
-                    📋 Görev Panosu (Kanban)
-                </button>
-                <button onclick="switchTab('budget')" id="tab-btn-budget" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
-                    💳 Ortak Kasa & Bütçe Takibi
-                </button>
-                <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
-                    💬 Grup İçi Sohbet
-                </button>
-            </div>
-        </div>
+            <!-- TAB İÇERİK ALANI -->
+            <div id="tab-content-area" class="space-y-6"></div>
+        `;
 
-        <!-- TAB İÇERİK ALANI -->
-        <div id="tab-content-area" class="space-y-6"></div>
-    `;
-
-    switchTab(currentTab);
+        switchTab(currentTab);
+    } catch (err) {
+        console.error("renderWorkspaceUI kritik hata:", err);
+        const container = document.getElementById('group-workspace-content');
+        if (container) {
+            container.innerHTML = `
+                <div class="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 text-center">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">${(currentGroup && currentGroup.name) ? currentGroup.name : 'Proje Çalışma Alanı'}</h2>
+                    <p class="text-xs text-slate-500">${(currentGroup && currentGroup.description) ? currentGroup.description : 'Grup çalışma alanına hoş geldiniz.'}</p>
+                    <a href="gruplar.html" class="inline-block px-5 py-2.5 rounded-xl bg-tsMavi text-white font-bold text-xs">← Gruplara Dön</a>
+                </div>
+            `;
+        }
+    }
 }
 
 // JITSI MEET VIRTUAL LAB TOPLANTI ODA KONTROLÜ
@@ -1993,6 +2033,9 @@ function renderMessagesFeed(messages) {
                         <span>${timeStr} ✓✓</span>
                     </div>
                 </div>
+            `;
+        }
+
         let eventHTML = "";
         if (m.eventData) {
             const user = getCurrentUser();

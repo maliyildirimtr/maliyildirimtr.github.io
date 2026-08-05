@@ -554,6 +554,7 @@
                 <a id="direct-download-zip-btn" download="grup_yedek.zip" href="#" class="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2">
                     <span>💾</span> Yedeği Şimdi İndir (ZIP)
                 </a>
+                <div id="delete-group-email-status" class="text-center text-[11px] font-semibold text-slate-400 dark:text-slate-500 py-1"></div>
                 <button type="button" onclick="finishGroupDeletionRedirect()" class="w-full py-2.5 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
                     Gruplar Sayfasına Dön ➔
                 </button>
@@ -562,6 +563,7 @@
     </div>
 
     <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/firebase.js"></script>
     <script src="js/main.js"></script>

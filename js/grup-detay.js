@@ -3447,12 +3447,29 @@ function copyInviteCode(code) {
     });
 }
 
-// GÜVENLİ GRUP SİLME VE VERİ ARŞİVLEME SİSTEMİ (15 GÜN TTL GEÇİCİ İNDİRME LİNKİ & OTOMATİK İMHA)
+// ===========================================================
+// GÜVENLİ GRUP SİLME — TAM VERSİYON (groupResources FIX + JSZip + EmailJS + TTL)
+// ===========================================================
+
+// EmailJS Yapılandırması (Kendi EmailJS Public Key ve Service/Template ID'lerinizi girin)
+const EMAILJS_PUBLIC_KEY    = 'YOUR_EMAILJS_PUBLIC_KEY';   // emailjs.com > Account > Public Key
+const EMAILJS_SERVICE_ID    = 'YOUR_EMAILJS_SERVICE_ID';   // Services > Service ID
+const EMAILJS_TEMPLATE_ID   = 'YOUR_EMAILJS_TEMPLATE_ID';  // Email Templates > Template ID
+
+function formatBytes(bytes, decimals = 2) {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 function deleteCurrentWorkspaceGroup(e) {
     if (e && e.stopPropagation) e.stopPropagation();
     if (e && e.preventDefault) e.preventDefault();
 
-    const grp = currentGroup || (typeof window !== 'undefined' && window.currentGroup) || { name: 'Proje Grubu' };
+    const grp = currentGroup || { name: 'Proje Grubu' };
     const modal = document.getElementById('delete-group-confirm-modal');
     const nameEl = document.getElementById('delete-group-modal-name');
     if (nameEl) nameEl.innerText = grp.name || 'Proje Grubu';
@@ -3469,124 +3486,213 @@ function closeDeleteGroupConfirmModal() {
 
 let generatedZipBlobUrl = null;
 
-async function executeSafeGroupDeletion() {
-    const grp = currentGroup || (typeof window !== 'undefined' && window.currentGroup) || { name: 'Proje Grubu', inviteCode: 'N/A' };
+// Firestore koleksiyonundan tüm dökümanları güvenli şekilde çek
+async function fetchCollectionSafe(collectionPath) {
+    try {
+        if (typeof db !== 'undefined' && db && db.collection) {
+            const snap = await db.collection(collectionPath).get();
+            return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+    } catch(e) {
+        console.warn('Firestore fetch failed for', collectionPath, e);
+    }
+    return [];
+}
 
+async function executeSafeGroupDeletion() {
+    const grp = currentGroup || { name: 'Proje Grubu', inviteCode: 'N/A' };
+    const gId = groupId || grp.id || 'bilinmiyor';
+
+    // --- Buton: Yükleme durumuna geç ---
     const confirmBtn = document.getElementById('confirm-delete-group-btn');
     if (confirmBtn) {
         confirmBtn.disabled = true;
-        confirmBtn.innerHTML = `<span>⏳</span> Arşiv ZIP Oluşturuluyor...`;
+        confirmBtn.innerHTML = `
+            <span class="inline-block animate-spin mr-1">⏳</span>
+            Veriler toplanıyor & ZIP hazırlanıyor...
+        `;
     }
 
-    const groupName = grp.name || 'Proje_Grubu';
-    const cleanGroupName = groupName.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const now = Date.now();
-    const expiresAt = now + (15 * 24 * 60 * 60 * 1000); // 15 Gün TTL Süresi
+    const groupName     = grp.name || 'Proje_Grubu';
+    const cleanName     = groupName.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const now           = Date.now();
+    const expiresAt     = now + (15 * 24 * 60 * 60 * 1000);
     const expireDateStr = new Date(expiresAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const nowStr        = new Date(now).toLocaleString('tr-TR');
 
-    // 1. Gruba ait tüm Firestore ve RAM verilerini paketle
-    const archivePackage = {
-        info: grp,
-        messages: window.currentLoadedMessages || DEMO_MESSAGES || [],
-        resources: groupResources || [],
-        tasks: groupTasks || [],
-        expenses: groupExpenses || [],
-        deletedAt: new Date(now).toISOString(),
-        expiresAt: expiresAt
-    };
-
-    // 2. JSZip kütüphanesi ile ZIP dosyası paketle
-    let zipBlob;
     try {
-        if (typeof JSZip !== 'undefined') {
-            const zip = new JSZip();
-            zip.file("01_grup_bilgileri.json", JSON.stringify(archivePackage.info, null, 2));
-            zip.file("02_sohbet_gecmisi.json", JSON.stringify(archivePackage.messages, null, 2));
-            zip.file("03_arsiv_dokumanlar.json", JSON.stringify(archivePackage.resources, null, 2));
-            zip.file("04_gorev_panosu.json", JSON.stringify(archivePackage.tasks, null, 2));
-            zip.file("05_butce_kayitlari.json", JSON.stringify(archivePackage.expenses, null, 2));
+        // === 1. FIRESTORE'DAN TÜM VERİLERİ DİNAMİK OLARAK ÇEK ===
+        const basePath = `groups/${gId}`;
 
-            const readme = `===================================================================
-MALI ACADEMY - PROJE GRUBU YEDEK & ARŞİV DOSYASI
+        const [
+            chatMsgs,
+            documents,
+            kanban,
+            budget,
+            polls,
+            events,
+            members
+        ] = await Promise.all([
+            fetchCollectionSafe(`${basePath}/messages`),
+            fetchCollectionSafe(`${basePath}/documents`),
+            fetchCollectionSafe(`${basePath}/tasks`),
+            fetchCollectionSafe(`${basePath}/expenses`),
+            fetchCollectionSafe(`${basePath}/polls`),
+            fetchCollectionSafe(`${basePath}/events`),
+            Promise.resolve(grp.members || [])
+        ]);
+
+        // RAM'daki verileri Firestore sonuçlarıyla birleştir (eksikse yedeği kullan)
+        const finalMessages  = chatMsgs.length  > 0 ? chatMsgs  : (groupMessages  || []);
+        const finalDocuments = documents.length  > 0 ? documents : (groupDocuments || []);
+        const finalTasks     = kanban.length     > 0 ? kanban    : (groupTasks     || []);
+        const finalExpenses  = budget.length     > 0 ? budget    : (groupExpenses  || []);
+        const finalPolls     = polls.length      > 0 ? polls     : [];
+        const finalEvents    = events.length     > 0 ? events    : [];
+
+        // === 2. JSZIP İLE GERÇEK ZIP OLUŞTUR ===
+        let zipBlob;
+        const zipFileName = `${cleanName}_YEDEK_${new Date().toISOString().slice(0,10)}.zip`;
+
+        const readme = `===================================================================
+MALI ACADEMY — PROJE GRUBU YEDEK & ARŞİV DOSYASI
 ===================================================================
-Grup Adı         : ${groupName}
-Davet Kodu       : ${currentGroup.inviteCode || 'N/A'}
-Silinme Tarihi   : ${new Date(now).toLocaleString('tr-TR')}
-Son Kullanma (TTL): ${expireDateStr} (15 Gün Geçerli)
+Grup Adı          : ${groupName}
+Davet Kodu        : ${grp.inviteCode || 'N/A'}
+Silinme Tarihi    : ${nowStr}
+TTL Son Kullanma  : ${expireDateStr} (15 Gün Geçerli)
 ===================================================================
 
 İÇERİK ÖZETİ:
-- 01_grup_bilgileri.json   : Grup künye bilgileri, açıklamalar ve roller
-- 02_sohbet_gecmisi.json   : Tüm sohbet mesajları, anketler ve etkinlikler
-- 03_arsiv_dokumanlar.json : Resource Hub arşivlenmiş dosya ve bağlantılar
-- 04_gorev_panosu.json     : Kanban görev kartları ve durumları
-- 05_butce_kayitlari.json  : Bütçe gelir/gider hareketleri
+  01_grup_bilgileri.json  — Grup meta bilgileri ve üye listesi
+  02_sohbet_gecmisi.json  — Tüm sohbet mesajları
+  03_arsiv_dokumanlar.json— Arşivlenmiş dosyalar & bağlantılar
+  04_gorev_panosu.json    — Kanban görev kartları
+  05_butce_kayitlari.json — Gelir/Gider hareketleri
+  06_anketler.json        — Oluşturulan anketler
+  07_etkinlikler.json     — Etkinlik kayıtları
 
-UYARI: Bu indirme bağlantısı ve veriler 15 gün sonra güvenlik protokolü 
-gereği otomatik olarak kalıcı olarak imha edilecektir.
+UYARI: Bu arşiv ve geçici indirme bağlantısı 15 gün sonra 
+güvenlik protokolü gereği kalıcı olarak imha edilecektir.
 ===================================================================
 `;
-            zip.file("README_ARSIV.txt", readme);
-            zipBlob = await zip.generateAsync({ type: "blob" });
+
+        if (typeof JSZip !== 'undefined') {
+            const zip = new JSZip();
+            zip.file('README_ARSIV.txt', readme);
+            zip.file('01_grup_bilgileri.json',   JSON.stringify({ ...grp, members: members || grp.members || [] }, null, 2));
+            zip.file('02_sohbet_gecmisi.json',   JSON.stringify(finalMessages,  null, 2));
+            zip.file('03_arsiv_dokumanlar.json', JSON.stringify(finalDocuments, null, 2));
+            zip.file('04_gorev_panosu.json',     JSON.stringify(finalTasks,     null, 2));
+            zip.file('05_butce_kayitlari.json',  JSON.stringify(finalExpenses,  null, 2));
+            zip.file('06_anketler.json',         JSON.stringify(finalPolls,     null, 2));
+            zip.file('07_etkinlikler.json',      JSON.stringify(finalEvents,    null, 2));
+
+            zipBlob = await zip.generateAsync({
+                type: 'blob',
+                compression: 'DEFLATE',
+                compressionOptions: { level: 6 }
+            });
         } else {
-            const jsonStr = JSON.stringify(archivePackage, null, 2);
-            zipBlob = new Blob([jsonStr], { type: "application/json" });
+            // JSZip yoksa JSON fallback
+            const fallback = { grup: grp, mesajlar: finalMessages, dokümanlar: finalDocuments, görevler: finalTasks, harcamalar: finalExpenses };
+            zipBlob = new Blob([JSON.stringify(fallback, null, 2)], { type: 'application/json' });
         }
-    } catch(e) {
-        console.warn("ZIP oluşturma hatası, standart JSON kullanılıyor:", e);
-        const jsonStr = JSON.stringify(archivePackage, null, 2);
-        zipBlob = new Blob([jsonStr], { type: "application/json" });
+
+        // === 3. OTOMATİK İNDİRME ===
+        generatedZipBlobUrl = URL.createObjectURL(zipBlob);
+        const zipSizeStr = formatBytes(zipBlob.size);
+
+        // Tarayıcıda otomatik indir
+        const autoLink = document.createElement('a');
+        autoLink.href     = generatedZipBlobUrl;
+        autoLink.download = zipFileName;
+        document.body.appendChild(autoLink);
+        autoLink.click();
+        document.body.removeChild(autoLink);
+
+        // === 4. 15 GÜN TTL ARŞİV KAYDI ===
+        const archiveId    = 'arc_' + Math.random().toString(36).substring(2, 9);
+        const shareableLink = `${window.location.origin}${window.location.pathname.replace('grup-detay.html', '')}gruplar.html?download_archive=${archiveId}&expires=${expiresAt}`;
+
+        const archiveRecord = {
+            archiveId,
+            groupId: gId,
+            groupName,
+            zipSize: zipSizeStr,
+            createdAt: now,
+            expiresAt,
+            archiveUrl: shareableLink
+        };
+        saveArchiveRecord(archiveRecord);
+
+        // === 5. EMAİLJS OTOMATİK BİLDİRİM MAİLİ ===
+        const user       = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+        const userEmail  = user ? user.email  : (grp.createdByEmail || '');
+        const userName   = user ? (user.displayName || user.email) : groupName + ' Yöneticisi';
+
+        if (userEmail && typeof emailjs !== 'undefined') {
+            try {
+                emailjs.init(EMAILJS_PUBLIC_KEY);
+                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                    to_email   : userEmail,
+                    to_name    : userName,
+                    group_name : groupName,
+                    archive_link: shareableLink,
+                    expire_date: expireDateStr,
+                    zip_size   : zipSizeStr,
+                    delete_date: nowStr
+                });
+                console.log('✅ EmailJS bildirim maili gönderildi:', userEmail);
+            } catch(mailErr) {
+                console.warn('EmailJS mail gönderilemedi (yapılandırma eksik olabilir):', mailErr);
+            }
+        }
+
+        // === 6. GRUBU FİRESTORE VE LOCAL STORAGE'DAN SİL ===
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection('groups').doc(gId).delete().catch(e => console.warn('Firestore silme:', e));
+        }
+
+        try {
+            let saved = JSON.parse(localStorage.getItem('mali_created_groups') || '[]');
+            saved = saved.filter(g => g.id !== gId && g.inviteCode !== (grp.inviteCode || ''));
+            localStorage.setItem('mali_created_groups', JSON.stringify(saved));
+        } catch(e) {}
+
+        // === 7. BAŞARI MODAL'INI AÇ ===
+        closeDeleteGroupConfirmModal();
+
+        const successModal  = document.getElementById('delete-group-success-modal');
+        const sizeEl        = document.getElementById('delete-group-zip-size');
+        const linkInput     = document.getElementById('delete-group-archive-link');
+        const expireEl      = document.getElementById('delete-group-expire-date');
+        const downloadBtn   = document.getElementById('direct-download-zip-btn');
+        const emailStatusEl = document.getElementById('delete-group-email-status');
+
+        if (sizeEl)      sizeEl.innerText   = zipSizeStr;
+        if (linkInput)   linkInput.value    = shareableLink;
+        if (expireEl)    expireEl.innerText = expireDateStr;
+        if (downloadBtn) {
+            downloadBtn.href     = generatedZipBlobUrl;
+            downloadBtn.download = zipFileName;
+        }
+        if (emailStatusEl) {
+            emailStatusEl.innerText = userEmail
+                ? `✅ Bildirim maili gönderildi: ${userEmail}`
+                : `⚠️ E-posta adresi bulunamadı, mail gönderilemedi.`;
+        }
+
+        if (successModal) successModal.classList.remove('hidden');
+
+    } catch(err) {
+        console.error('executeSafeGroupDeletion kritik hata:', err);
+        if (confirmBtn) {
+            confirmBtn.disabled  = false;
+            confirmBtn.innerHTML = `<span>📦</span> Grubu Kalıcı Olarak Sil ve Arşivi İndir`;
+        }
+        alert(`❌ Arşiv oluşturulurken bir hata oluştu:\n${err.message || err}\n\nLütfen tekrar deneyin.`);
     }
-
-    // 3. Blob URL ve 15 Günlük Geçici Bağlantı Oluştur
-    generatedZipBlobUrl = URL.createObjectURL(zipBlob);
-    const archiveId = 'arc_' + Math.random().toString(36).substring(2, 9);
-    const zipSizeStr = formatBytes(zipBlob.size || 0);
-
-    const shareableLink = `${window.location.origin}${window.location.pathname.replace('grup-detay.html', '')}gruplar.html?download_archive=${archiveId}&expires=${expiresAt}`;
-
-    // 4. Arşiv kaydını veritabanına / Cache'e işle
-    const archiveRecord = {
-        archiveId: archiveId,
-        groupId: groupId,
-        groupName: groupName,
-        zipSize: zipSizeStr,
-        createdAt: now,
-        expiresAt: expiresAt,
-        archiveUrl: shareableLink
-    };
-
-    saveArchiveRecord(archiveRecord);
-
-    // 5. Grubu Firestore ve Local Storage Cache'den Sil
-    if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).delete().catch(err => console.warn("Firestore silme:", err));
-    }
-
-    try {
-        let createdGroups = JSON.parse(localStorage.getItem('mali_created_groups') || '[]');
-        createdGroups = createdGroups.filter(g => (g.id !== groupId && g.inviteCode !== (currentGroup ? currentGroup.inviteCode : '')));
-        localStorage.setItem('mali_created_groups', JSON.stringify(createdGroups));
-    } catch(e) {}
-
-    // 6. Başarı ve İndirme Linki Modalını Aç
-    closeDeleteGroupConfirmModal();
-
-    const successModal = document.getElementById('delete-group-success-modal');
-    const sizeEl = document.getElementById('delete-group-zip-size');
-    const linkInput = document.getElementById('delete-group-archive-link');
-    const expireEl = document.getElementById('delete-group-expire-date');
-    const downloadBtn = document.getElementById('direct-download-zip-btn');
-
-    if (sizeEl) sizeEl.innerText = zipSizeStr;
-    if (linkInput) linkInput.value = shareableLink;
-    if (expireEl) expireEl.innerText = expireDateStr;
-    if (downloadBtn) {
-        downloadBtn.href = generatedZipBlobUrl;
-        downloadBtn.download = `${cleanGroupName}_YEDEK_${new Date().toISOString().slice(0, 10)}.zip`;
-    }
-
-    if (successModal) successModal.classList.remove('hidden');
 }
 
 function saveArchiveRecord(record) {
@@ -3597,7 +3703,7 @@ function saveArchiveRecord(record) {
     } catch(e) {}
 
     if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("deleted_group_archives").doc(record.archiveId).set(record).catch(() => {});
+        db.collection('deleted_group_archives').doc(record.archiveId).set(record).catch(() => {});
     }
 }
 
@@ -3605,41 +3711,38 @@ function copyArchiveDownloadLink() {
     const input = document.getElementById('delete-group-archive-link');
     if (input) {
         navigator.clipboard.writeText(input.value).then(() => {
-            alert("📋 15 günlük geçici indirme bağlantısı panoya kopyalandı!");
+            alert('📋 15 günlük geçici indirme bağlantısı panoya kopyalandı!');
         });
     }
 }
 
 function finishGroupDeletionRedirect() {
-    window.location.href = "gruplar.html";
+    window.location.href = 'gruplar.html';
 }
 
-// 15 GÜN TTL TEMİZLEME MOTORU (Zamanı geçen arşivleri otomatik imha et)
+// 15 GÜN TTL TEMİZLEME MOTORU
 function checkAndPurgeExpiredArchives() {
     const now = Date.now();
-
-    // Local Storage Temizliği
     try {
         let archives = JSON.parse(localStorage.getItem('mali_deleted_group_archives') || '[]');
-        const validArchives = archives.filter(arc => arc.expiresAt > now);
-        if (validArchives.length !== archives.length) {
-            localStorage.setItem('mali_deleted_group_archives', JSON.stringify(validArchives));
+        const valid  = archives.filter(a => a.expiresAt > now);
+        if (valid.length !== archives.length) {
+            localStorage.setItem('mali_deleted_group_archives', JSON.stringify(valid));
         }
     } catch(e) {}
 
-    // Firestore TTL Temizliği
     if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("deleted_group_archives").where("expiresAt", "<", now).get().then(snapshot => {
-            snapshot.forEach(doc => {
-                db.collection("deleted_group_archives").doc(doc.id).delete();
-            });
+        db.collection('deleted_group_archives').where('expiresAt', '<', now).get().then(snap => {
+            snap.forEach(doc => db.collection('deleted_group_archives').doc(doc.id).delete());
         }).catch(() => {});
     }
 }
 
-// Sayfa yüklendiğinde TTL arşiv kontrolü çalıştır
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', checkAndPurgeExpiredArchives);
 } else {
     checkAndPurgeExpiredArchives();
 }
+
+
+

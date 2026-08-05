@@ -1297,19 +1297,45 @@ function renderChatTab(container) {
                 </div>
             </div>
 
-            <!-- SES KAYDI AKTİF UYARI / SAYAC PANELİ -->
-            <div id="voice-recording-panel" class="hidden p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
-                    <span class="text-xs font-bold text-rose-600 dark:text-rose-400">🎤 Ses Kaydediliyor...</span>
-                    <span id="voice-recording-timer" class="font-mono text-xs font-extrabold text-slate-900 dark:text-slate-100">00:00</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="stopAndSendVoiceNote()" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-md hover:bg-emerald-600">
-                        ▶️ Kaydı Tamamla & Gönder
+            <!-- WHATSAPP TARZI SES KAYIT BARI (RECORDING STATE - EKRAN GÖRÜNTÜSÜ BİREBİR) -->
+            <div id="voice-recording-panel" class="hidden flex items-center gap-3 p-1 w-full">
+                <!-- TRASH BIN (CANCEL) -->
+                <button type="button" onclick="cancelVoiceRecording()" title="Kaydı İptal Et / Sil" class="p-2.5 rounded-full text-slate-400 hover:text-rose-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-lg shrink-0">
+                    🗑️
+                </button>
+
+                <!-- RECORDING CAPSULE BAR -->
+                <div class="flex-grow flex items-center justify-between gap-3 px-4 py-2 rounded-full border border-slate-300 dark:border-slate-800 bg-white dark:bg-[#202c33] shadow-md">
+                    <!-- RED DOT + COUNTER -->
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
+                        <span id="voice-recording-timer" class="font-mono text-xs font-bold text-slate-900 dark:text-slate-100">0:00</span>
+                    </div>
+
+                    <!-- WAVEFORM ANIMATION -->
+                    <div class="flex-grow flex items-center justify-center gap-0.5 h-6 overflow-hidden px-2">
+                        <div class="w-0.5 h-3 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse"></div>
+                        <div class="w-0.5 h-5 bg-slate-400 dark:bg-slate-300 rounded-full animate-pulse" style="animation-delay: 0.1s"></div>
+                        <div class="w-0.5 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                        <div class="w-0.5 h-6 bg-slate-400 dark:bg-slate-200 rounded-full animate-pulse" style="animation-delay: 0.15s"></div>
+                        <div class="w-0.5 h-4 bg-slate-400 dark:bg-slate-400 rounded-full animate-pulse" style="animation-delay: 0.25s"></div>
+                        <div class="w-0.5 h-5 bg-slate-400 dark:bg-slate-300 rounded-full animate-pulse" style="animation-delay: 0.05s"></div>
+                        <div class="w-0.5 h-3 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse" style="animation-delay: 0.3s"></div>
+                        <div class="w-0.5 h-6 bg-slate-400 dark:bg-slate-200 rounded-full animate-pulse" style="animation-delay: 0.12s"></div>
+                        <div class="w-0.5 h-4 bg-slate-400 dark:bg-slate-400 rounded-full animate-pulse" style="animation-delay: 0.22s"></div>
+                        <div class="w-0.5 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse" style="animation-delay: 0.18s"></div>
+                        <div class="w-0.5 h-5 bg-slate-400 dark:bg-slate-300 rounded-full animate-pulse" style="animation-delay: 0.08s"></div>
+                        <div class="w-0.5 h-3 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse" style="animation-delay: 0.28s"></div>
+                    </div>
+
+                    <!-- PAUSE / RESUME BUTTON -->
+                    <button type="button" onclick="togglePauseVoiceRecording()" id="voice-pause-btn" title="Duraklat / Devam Et" class="p-1.5 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors text-sm shrink-0">
+                        ⏸️
                     </button>
-                    <button type="button" onclick="cancelVoiceRecording()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300">
-                        ✕ İptal
+
+                    <!-- SEND CIRCLE BUTTON -->
+                    <button type="button" onclick="stopAndSendVoiceNote()" title="Kaydı Gönder" class="w-8 h-8 rounded-full bg-tsMavi hover:bg-sky-500 text-white flex items-center justify-center text-xs font-bold shadow-md transition-transform active:scale-95 shrink-0">
+                        ➔
                     </button>
                 </div>
             </div>
@@ -1669,8 +1695,11 @@ function cancelPendingAttachment() {
     if (imgInp) imgInp.value = '';
 }
 
-// SES KAYDI (VOICE NOTE) MANTIĞI
+// SES KAYDI (VOICE NOTE) MANTIĞI & PLAYBACK ENGINE
 let recordedAudioStream = null;
+let isVoiceRecordingPaused = false;
+let currentActiveAudio = null;
+let currentActiveAudioId = null;
 
 function getCurrentUserName() {
     const user = getCurrentUser();
@@ -1706,19 +1735,24 @@ function startVoiceRecording() {
             }
         };
 
-        // 100ms aralıklarla veri dilimlerini sürekli topla
+        // 100ms aralıklarla veri dilimlerini topla
         mediaRecorder.start(100);
         voiceRecordSeconds = 0;
+        isVoiceRecordingPaused = false;
 
+        const chatForm = document.getElementById('chat-form');
         const panel = document.getElementById('voice-recording-panel');
+        if (chatForm) chatForm.classList.add('hidden');
         if (panel) panel.classList.remove('hidden');
         
         voiceTimerInterval = setInterval(() => {
-            voiceRecordSeconds++;
-            const mins = String(Math.floor(voiceRecordSeconds / 60)).padStart(2, '0');
-            const secs = String(voiceRecordSeconds % 60).padStart(2, '0');
-            const timerEl = document.getElementById('voice-recording-timer');
-            if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+            if (!isVoiceRecordingPaused) {
+                voiceRecordSeconds++;
+                const mins = Math.floor(voiceRecordSeconds / 60);
+                const secs = String(voiceRecordSeconds % 60).padStart(2, '0');
+                const timerEl = document.getElementById('voice-recording-timer');
+                if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+            }
         }, 1000);
 
     }).catch(err => {
@@ -1727,12 +1761,33 @@ function startVoiceRecording() {
     });
 }
 
+function togglePauseVoiceRecording() {
+    if (!mediaRecorder) return;
+    const btn = document.getElementById('voice-pause-btn');
+
+    if (mediaRecorder.state === 'recording') {
+        mediaRecorder.pause();
+        isVoiceRecordingPaused = true;
+        if (btn) btn.innerText = '▶️';
+    } else if (mediaRecorder.state === 'paused') {
+        mediaRecorder.resume();
+        isVoiceRecordingPaused = false;
+        if (btn) btn.innerText = '⏸️';
+    }
+}
+
 function stopAndSendVoiceNote() {
     if (!mediaRecorder) return;
     
     clearInterval(voiceTimerInterval);
+    const chatForm = document.getElementById('chat-form');
     const panel = document.getElementById('voice-recording-panel');
     if (panel) panel.classList.add('hidden');
+    if (chatForm) chatForm.classList.remove('hidden');
+
+    const totalDurMins = Math.floor(voiceRecordSeconds / 60);
+    const totalDurSecs = String(voiceRecordSeconds % 60).padStart(2, '0');
+    const durationStr = `${totalDurMins}:${totalDurSecs}`;
 
     mediaRecorder.onstop = () => {
         if (recordedAudioStream) {
@@ -1745,7 +1800,7 @@ function stopAndSendVoiceNote() {
         const fileName = `ses-kaydi-${Date.now()}.webm`;
         
         showUploadProgress(fileName, 30);
-        fallbackDataURL(audioBlob, 'voice', fileName, getCurrentUserName(), '');
+        fallbackDataURLWithDuration(audioBlob, 'voice', fileName, getCurrentUserName(), '', durationStr);
     };
 
     if (mediaRecorder.state !== 'inactive') {
@@ -1755,8 +1810,33 @@ function stopAndSendVoiceNote() {
         const audioBlob = new Blob(audioChunks, { type });
         const fileName = `ses-kaydi-${Date.now()}.webm`;
         showUploadProgress(fileName, 30);
-        fallbackDataURL(audioBlob, 'voice', fileName, getCurrentUserName(), '');
+        fallbackDataURLWithDuration(audioBlob, 'voice', fileName, getCurrentUserName(), '', durationStr);
     }
+}
+
+function fallbackDataURLWithDuration(fileOrBlob, type, fileName, currentName, messageText, durationStr) {
+    const reader = new FileReader();
+
+    reader.onprogress = function(e) {
+        if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100);
+            showUploadProgress(fileName, Math.max(20, progress));
+        }
+    };
+
+    reader.onload = function(e) {
+        showUploadProgress(fileName, 100);
+        setTimeout(() => {
+            hideUploadProgress();
+            const url = e.target.result;
+            sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0), duration: durationStr });
+            cancelPendingAttachment();
+            const input = document.getElementById('chat-input');
+            if (input) input.value = '';
+        }, 150);
+    };
+
+    reader.readAsDataURL(fileOrBlob);
 }
 
 function cancelVoiceRecording() {
@@ -1772,8 +1852,71 @@ function cancelVoiceRecording() {
         recordedAudioStream = null;
     }
     audioChunks = [];
+    const chatForm = document.getElementById('chat-form');
     const panel = document.getElementById('voice-recording-panel');
     if (panel) panel.classList.add('hidden');
+    if (chatForm) chatForm.classList.remove('hidden');
+}
+
+function toggleVoicePlayback(msgId, encodedUrl) {
+    const playBtn = document.getElementById('voice-play-btn-' + msgId);
+    const progressEl = document.getElementById('voice-progress-' + msgId);
+    const timeEl = document.getElementById('voice-current-time-' + msgId);
+    const durEl = document.getElementById('voice-duration-' + msgId);
+
+    if (currentActiveAudio && currentActiveAudioId === msgId) {
+        if (currentActiveAudio.paused) {
+            currentActiveAudio.play();
+            if (playBtn) playBtn.innerText = '⏸️';
+        } else {
+            currentActiveAudio.pause();
+            if (playBtn) playBtn.innerText = '▶️';
+        }
+        return;
+    }
+
+    if (currentActiveAudio) {
+        currentActiveAudio.pause();
+        const oldBtn = document.getElementById('voice-play-btn-' + currentActiveAudioId);
+        if (oldBtn) oldBtn.innerText = '▶️';
+    }
+
+    const url = decodeURIComponent(encodedUrl);
+    const audio = new Audio(url);
+    currentActiveAudio = audio;
+    currentActiveAudioId = msgId;
+
+    if (playBtn) playBtn.innerText = '⏸️';
+
+    audio.onloadedmetadata = () => {
+        if (durEl && audio.duration && !isNaN(audio.duration)) {
+            const mins = Math.floor(audio.duration / 60);
+            const secs = String(Math.floor(audio.duration % 60)).padStart(2, '0');
+            durEl.innerText = `${mins}:${secs}`;
+        }
+    };
+
+    audio.ontimeupdate = () => {
+        if (audio.duration && !isNaN(audio.duration)) {
+            const pct = (audio.currentTime / audio.duration) * 100;
+            if (progressEl) progressEl.style.width = pct + '%';
+            if (timeEl) {
+                const mins = Math.floor(audio.currentTime / 60);
+                const secs = String(Math.floor(audio.currentTime % 60)).padStart(2, '0');
+                timeEl.innerText = `${mins}:${secs}`;
+            }
+        }
+    };
+
+    audio.onended = () => {
+        if (playBtn) playBtn.innerText = '▶️';
+        if (progressEl) progressEl.style.width = '0%';
+        if (timeEl) timeEl.innerText = '0:00';
+        currentActiveAudio = null;
+        currentActiveAudioId = null;
+    };
+
+    audio.play().catch(e => console.warn("Ses dosyası oynatılamadı:", e));
 }
 
 // MESAJ GÖNDERME SÜRECİ

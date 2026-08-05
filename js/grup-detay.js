@@ -1547,7 +1547,8 @@ function toggleWhatsappAttachMenu() {
 function handleChatInputTyping(input) {
     const micBtn = document.getElementById('chat-mic-btn');
     const sendBtn = document.getElementById('chat-send-btn');
-    const val = input ? input.value.trim() : '';
+    const inputEl = input || document.getElementById('chat-input');
+    const val = inputEl ? inputEl.value.trim() : '';
 
     if (val.length > 0 || pendingAttachment) {
         if (micBtn) micBtn.classList.add('hidden');
@@ -2153,7 +2154,16 @@ function renderMessagesFeed(messages) {
                 <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} relative max-w-md">
                     ${!isMe ? `<span class="text-[10px] font-bold text-tsMavi dark:text-tsMavi mb-0.5 ml-1">${m.sender}</span>` : ''}
                     
-                    <div id="msg-bubble-${msgId}" class="relative p-3 ${bubbleBg} msg-bubble-card transition-all">
+                    <div id="msg-bubble-${msgId}" 
+                         ondblclick="handleMessageDoubleClick('${msgId}', event)" 
+                         onmousedown="handleBubbleTouchStart(event, '${msgId}')" 
+                         onmousemove="handleBubbleTouchMove(event, '${msgId}')" 
+                         onmouseup="handleBubbleTouchEnd(event, '${msgId}')" 
+                         onmouseleave="handleBubbleTouchEnd(event, '${msgId}')" 
+                         ontouchstart="handleBubbleTouchStart(event, '${msgId}')" 
+                         ontouchmove="handleBubbleTouchMove(event, '${msgId}')" 
+                         ontouchend="handleBubbleTouchEnd(event, '${msgId}')" 
+                         class="relative p-3 ${bubbleBg} msg-bubble-card transition-all select-none cursor-grab active:cursor-grabbing">
                         
                         ${!isDeleted ? `
                             <!-- EMOJI REACTION HOVER BUTTON -->
@@ -2546,6 +2556,9 @@ function handleSendMessage(e) {
         sendChatMessage(currentName, text, null);
         if (input) input.value = '';
     }
+
+    cancelReplyMessage();
+    if (input) handleChatInputTyping(input);
 }
 
 // WHATSAPP TARZI YÜKLEME İLERLEME KONTROLÜ (PROGRESS TRACKING)
@@ -2712,6 +2725,78 @@ function cancelReplyMessage() {
     });
     const container = document.getElementById('chat-reply-container');
     if (container) container.classList.add('hidden');
+
+    const input = document.getElementById('chat-input');
+    handleChatInputTyping(input);
+}
+
+// ÇİFT TIKLAMA İLE KALP (❤️) TEPKİSİ VERME
+function handleMessageDoubleClick(msgId, e) {
+    if (e && e.target && e.target.closest('button, input, a, select')) return;
+
+    addReactionToMessage(msgId, '❤️');
+
+    const bubble = document.getElementById('msg-bubble-' + msgId);
+    if (bubble) {
+        const heartAnim = document.createElement('div');
+        heartAnim.className = 'absolute inset-0 flex items-center justify-center pointer-events-none z-50 animate-bounce text-3xl drop-shadow-lg';
+        heartAnim.innerText = '❤️';
+        bubble.appendChild(heartAnim);
+        setTimeout(() => {
+            if (heartAnim && heartAnim.parentNode) {
+                heartAnim.parentNode.removeChild(heartAnim);
+            }
+        }, 700);
+    }
+}
+
+// FARE VEYA DOKUNMATİK İLE SOLA KAYDIRARAK YANITLAMA (SWIPE LEFT TO REPLY GESTURE)
+let dragStartX = 0;
+let dragDeltaX = 0;
+let isDraggingBubble = false;
+let activeDragMsgId = null;
+
+function handleBubbleTouchStart(e, msgId) {
+    if (isSelectModeActive || (e.button && e.button !== 0)) return;
+
+    isDraggingBubble = true;
+    activeDragMsgId = msgId;
+    dragStartX = e.touches ? e.touches[0].clientX : e.clientX;
+    dragDeltaX = 0;
+}
+
+function handleBubbleTouchMove(e, msgId) {
+    if (!isDraggingBubble || activeDragMsgId !== msgId) return;
+
+    const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+    dragDeltaX = currentX - dragStartX;
+
+    if (dragDeltaX < 0) {
+        const bubble = document.getElementById('msg-bubble-' + msgId);
+        if (bubble) {
+            const translateVal = Math.max(dragDeltaX, -60);
+            bubble.style.transform = `translateX(${translateVal}px)`;
+            bubble.style.transition = 'none';
+        }
+    }
+}
+
+function handleBubbleTouchEnd(e, msgId) {
+    if (!isDraggingBubble || activeDragMsgId !== msgId) return;
+
+    const bubble = document.getElementById('msg-bubble-' + msgId);
+    if (bubble) {
+        bubble.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        bubble.style.transform = 'translateX(0px)';
+    }
+
+    if (dragDeltaX < -40) {
+        replyToMessage(msgId);
+    }
+
+    isDraggingBubble = false;
+    activeDragMsgId = null;
+    dragDeltaX = 0;
 }
 
 // SESLİ MESAJ (VOICE NOTE) PLAYBACK VE HIZ KONTROL MOTORU (1x -> 1.5x -> 2x)

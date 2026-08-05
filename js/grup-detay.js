@@ -248,62 +248,59 @@ function renderWorkspaceUI() {
                 </div>
             </div>
 
-            <!-- DİKEY MİMARİ: SOL SIDEBAR VE SAĞ İÇERİK ALANI -->
-            <div class="flex flex-col lg:flex-row gap-6 w-full items-start">
-                <!-- DİKEY SOL MENÜ (YOUTUBE USULÜ COLLAPSIBLE SIDEBAR TABS) -->
-                <aside id="workspace-sidebar" class="w-full lg:w-64 xl:w-72 shrink-0 bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-800 rounded-3xl p-3 shadow-xl space-y-1 backdrop-blur-md sticky top-6 transition-all duration-300">
-                    
-                    <!-- SIDEBAR HEADER (3 ÇİZGİ HAMBURGER TUŞU & BAŞLIK) -->
-                    <div class="flex items-center justify-between px-2 py-1.5 mb-1 border-b border-slate-100 dark:border-slate-800/80">
-                        <button type="button" onclick="toggleSidebarCollapse()" title="Menüyü Daralt/Genişlet (YouTube Modu)" class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center text-lg font-bold transition-all shrink-0">
-                            ☰
-                        </button>
-                        <span class="sidebar-text px-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
-                            Çalışma Alanı
-                        </span>
-                    </div>
+            <!-- DİKEY MİMARİ: SOL SIDEBAR (İNCE ŞERİT) + SAĞ İÇERİK YAN YANA -->
+            <div class="flex flex-row gap-4 w-full items-start">
 
-                    <nav class="space-y-1.5" id="workspace-sidebar-nav">
-                        <button onclick="switchTab('overview')" id="tab-btn-overview" title="Genel Bakış & Üyeler" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="text-base shrink-0 w-6 text-center">📌</span>
-                                <span class="sidebar-text truncate">Genel Bakış & Üyeler</span>
-                            </div>
-                        </button>
+                <!-- SOL SIDEBAR: Varsayılan = İNCE ŞERİT (sadece ikonlar) -->
+                <aside id="workspace-sidebar"
+                    style="width:64px; min-width:64px; transition: width 0.28s cubic-bezier(.4,0,.2,1), min-width 0.28s cubic-bezier(.4,0,.2,1);"
+                    class="shrink-0 bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-2 shadow-xl backdrop-blur-md sticky top-6 flex flex-col gap-1 overflow-hidden">
 
-                        <button onclick="switchTab('archive')" id="tab-btn-archive" title="Arşiv & Dokümanlar" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="text-base shrink-0 w-6 text-center">📂</span>
-                                <span class="sidebar-text truncate">Arşiv & Dokümanlar</span>
-                            </div>
+                    <!-- 3 ÇİZGİ HAMBURGER BUTONU -->
+                    <button type="button" onclick="toggleSidebarCollapse()"
+                        title="Menüyü Genişlet / Daralt"
+                        class="w-10 h-10 rounded-xl flex items-center justify-center text-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all mb-2 shrink-0 mx-auto">
+                        ☰
+                    </button>
+
+                    <nav id="workspace-sidebar-nav" class="flex flex-col gap-1 w-full">
+
+                        <button onclick="switchTab('overview')" id="tab-btn-overview" title="Genel Bakış & Üyeler"
+                            class="tab-btn group flex items-center gap-3 w-full px-2 py-2.5 rounded-xl text-xs font-bold transition-all border border-transparent overflow-hidden whitespace-nowrap">
+                            <span class="text-lg shrink-0 mx-auto group-[.expanded]:mx-0">📌</span>
+                            <span class="sidebar-label hidden">Genel Bakış & Üyeler</span>
                         </button>
 
-                        <button onclick="switchTab('kanban')" id="tab-btn-kanban" title="Görev Panosu (Kanban)" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="text-base shrink-0 w-6 text-center">📋</span>
-                                <span class="sidebar-text truncate">Görev Panosu (Kanban)</span>
-                            </div>
+                        <button onclick="switchTab('archive')" id="tab-btn-archive" title="Arşiv & Dokümanlar"
+                            class="tab-btn group flex items-center gap-3 w-full px-2 py-2.5 rounded-xl text-xs font-bold transition-all border border-transparent overflow-hidden whitespace-nowrap">
+                            <span class="text-lg shrink-0 mx-auto group-[.expanded]:mx-0">📂</span>
+                            <span class="sidebar-label hidden">Arşiv & Dokümanlar</span>
                         </button>
 
-                        <button onclick="switchTab('budget')" id="tab-btn-budget" title="Ortak Kasa & Bütçe" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="text-base shrink-0 w-6 text-center">💳</span>
-                                <span class="sidebar-text truncate">Ortak Kasa & Bütçe</span>
-                            </div>
+                        <button onclick="switchTab('kanban')" id="tab-btn-kanban" title="Görev Panosu"
+                            class="tab-btn group flex items-center gap-3 w-full px-2 py-2.5 rounded-xl text-xs font-bold transition-all border border-transparent overflow-hidden whitespace-nowrap">
+                            <span class="text-lg shrink-0 mx-auto group-[.expanded]:mx-0">📋</span>
+                            <span class="sidebar-label hidden">Görev Panosu (Kanban)</span>
                         </button>
 
-                        <button onclick="switchTab('chat')" id="tab-btn-chat" title="Grup İçi Sohbet" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="text-base shrink-0 w-6 text-center">💬</span>
-                                <span class="sidebar-text truncate">Grup İçi Sohbet</span>
-                            </div>
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                        <button onclick="switchTab('budget')" id="tab-btn-budget" title="Ortak Kasa & Bütçe"
+                            class="tab-btn group flex items-center gap-3 w-full px-2 py-2.5 rounded-xl text-xs font-bold transition-all border border-transparent overflow-hidden whitespace-nowrap">
+                            <span class="text-lg shrink-0 mx-auto group-[.expanded]:mx-0">💳</span>
+                            <span class="sidebar-label hidden">Ortak Kasa & Bütçe</span>
                         </button>
+
+                        <button onclick="switchTab('chat')" id="tab-btn-chat" title="Grup İçi Sohbet"
+                            class="tab-btn group flex items-center gap-3 w-full px-2 py-2.5 rounded-xl text-xs font-bold transition-all border border-transparent overflow-hidden whitespace-nowrap relative">
+                            <span class="text-lg shrink-0 mx-auto group-[.expanded]:mx-0">💬</span>
+                            <span class="sidebar-label hidden">Grup İçi Sohbet</span>
+                            <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse sidebar-badge"></span>
+                        </button>
+
                     </nav>
                 </aside>
 
                 <!-- SAĞ İÇERİK ALANI -->
-                <main id="tab-content-area" class="flex-grow w-full min-w-0 space-y-6"></main>
+                <main id="tab-content-area" class="flex-grow min-w-0 space-y-6"></main>
             </div>
         `;
 
@@ -384,11 +381,11 @@ function joinCurrentGroup() {
     }
 }
 
-// YOUTUBE USULÜ 3 ÇİZGİ HAMBURGER MENÜ VE SIDEBAR DARALTMA MANTIĞI
-let isSidebarCollapsed = false;
+// YOUTUBE USULÜ: Varsayılan = İNCE ŞERİT (sadece ikonlar), tıklayınca açılır
+let isSidebarExpanded = false;
 
 function toggleSidebarCollapse() {
-    isSidebarCollapsed = !isSidebarCollapsed;
+    isSidebarExpanded = !isSidebarExpanded;
     applySidebarState();
 }
 
@@ -396,28 +393,28 @@ function applySidebarState() {
     const sidebar = document.getElementById('workspace-sidebar');
     if (!sidebar) return;
 
-    const texts = sidebar.querySelectorAll('.sidebar-text');
+    const labels = sidebar.querySelectorAll('.sidebar-label');
+    const icons  = sidebar.querySelectorAll('.tab-btn span.text-lg');
+    const badge  = sidebar.querySelectorAll('.sidebar-badge');
 
-    if (isSidebarCollapsed) {
-        // YOUTUBE DARALTILMIŞ MİNİ MODU (w-20)
-        sidebar.classList.remove('lg:w-64', 'xl:w-72');
-        sidebar.classList.add('lg:w-20');
-        texts.forEach(t => t.classList.add('hidden'));
+    if (isSidebarExpanded) {
+        // AÇIK MOD: genişlet, etiketleri göster
+        sidebar.style.width    = '220px';
+        sidebar.style.minWidth = '220px';
+        sidebar.style.padding  = '12px 10px';
+        labels.forEach(l => l.classList.remove('hidden'));
+        icons.forEach(i  => { i.style.marginLeft = '0'; i.style.marginRight = '0'; });
+        badge.forEach(b  => b.classList.remove('hidden'));
     } else {
-        // GENİŞLETİLMİŞ DÜZEN (lg:w-64 xl:w-72)
-        sidebar.classList.remove('lg:w-20');
-        sidebar.classList.add('lg:w-64', 'xl:w-72');
-        texts.forEach(t => t.classList.remove('hidden'));
+        // KAPALI MOD: ince şerit, sadece ikonlar
+        sidebar.style.width    = '64px';
+        sidebar.style.minWidth = '64px';
+        sidebar.style.padding  = '12px 8px';
+        labels.forEach(l => l.classList.add('hidden'));
+        icons.forEach(i  => { i.style.marginLeft = 'auto'; i.style.marginRight = 'auto'; });
+        badge.forEach(b  => b.classList.add('hidden'));
     }
 }
-
-// Ekran genişliği küçüldüğünde otomatik mini moda geçme
-window.addEventListener('resize', () => {
-    if (window.innerWidth < 1024 && !isSidebarCollapsed) {
-        isSidebarCollapsed = true;
-        applySidebarState();
-    }
-});
 
 // TAB DEĞİŞTİRME MANTIĞI
 function switchTab(tabName) {

@@ -1111,6 +1111,17 @@ function renderChatTab(container) {
                 <button type="button" onclick="cancelPendingAttachment()" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2 py-1">✕ Kaldır</button>
             </div>
 
+            <!-- YÜKLENİYOR / İLERLEME ÇUBUĞU (WHATSAPP TARZI PROGRESS BAR) -->
+            <div id="chat-upload-progress-panel" class="hidden p-3 rounded-2xl bg-tsMavi/10 border border-tsMavi/30 space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-tsMavi">
+                    <span id="upload-progress-filename" class="truncate max-w-xs">⏳ Dosya Gönderiliyor...</span>
+                    <span id="upload-progress-percent" class="font-mono text-slate-900 dark:text-slate-100">%0</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                    <div id="upload-progress-bar" class="h-full bg-tsMavi rounded-full transition-all duration-200" style="width: 0%"></div>
+                </div>
+            </div>
+
             <!-- SES KAYDI AKTİF UYARI / SAYAC PANELİ -->
             <div id="voice-recording-panel" class="hidden p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
@@ -1153,7 +1164,7 @@ function renderChatTab(container) {
                     <input type="text" id="chat-input" placeholder="Takım arkadaşlarınıza mesaj yazın veya dosya/ses ekleyin..." class="flex-grow bg-transparent text-slate-900 dark:text-slate-100 text-xs focus:outline-none px-2 py-1.5">
 
                     <!-- GÖNDER BUTONU -->
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-all shadow-md shrink-0 flex items-center gap-1">
+                    <button type="submit" id="chat-send-btn" class="px-5 py-2.5 rounded-xl bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-all shadow-md shrink-0 flex items-center gap-1">
                         Gönder ➔
                     </button>
                 </div>
@@ -1370,25 +1381,68 @@ function handleSendMessage(e) {
     }
 }
 
+// WHATSAPP TARZI YÜKLEME İLERLEME KONTROLÜ (PROGRESS TRACKING)
+function showUploadProgress(fileName, percent = 0) {
+    const panel = document.getElementById('chat-upload-progress-panel');
+    const nameEl = document.getElementById('upload-progress-filename');
+    const percentEl = document.getElementById('upload-progress-percent');
+    const barEl = document.getElementById('upload-progress-bar');
+    const sendBtn = document.getElementById('chat-send-btn');
+
+    if (panel) panel.classList.remove('hidden');
+    if (nameEl) nameEl.innerText = `⏳ Yükleniyor: ${fileName}`;
+    if (percentEl) percentEl.innerText = `%${percent}`;
+    if (barEl) barEl.style.width = `${percent}%`;
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerText = `⏳ %${percent}`;
+        sendBtn.classList.add('opacity-70', 'cursor-not-allowed');
+    }
+}
+
+function hideUploadProgress() {
+    const panel = document.getElementById('chat-upload-progress-panel');
+    const sendBtn = document.getElementById('chat-send-btn');
+    if (panel) panel.classList.add('hidden');
+    if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerText = `Gönder ➔`;
+        sendBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+    }
+}
+
 function uploadAndSendAttachment(fileOrBlob, type, fileName, messageText = '') {
     const user = getCurrentUser();
     const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
+
+    showUploadProgress(fileName, 5);
 
     if (typeof firebase !== 'undefined' && firebase.storage) {
         try {
             const storageRef = firebase.storage().ref();
             const filePath = `groups/${groupId}/chat/${Date.now()}_${fileName}`;
             const fileRef = storageRef.child(filePath);
+            const uploadTask = fileRef.put(fileOrBlob);
 
-            fileRef.put(fileOrBlob).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
-                sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0) });
-                cancelPendingAttachment();
-                const input = document.getElementById('chat-input');
-                if (input) input.value = '';
-            }).catch(err => {
-                console.warn("Storage hatası, DataURL kullanılıyor:", err);
-                fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
-            });
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    showUploadProgress(fileName, progress);
+                }, 
+                (err) => {
+                    console.warn("Storage yükleme hatası, DataURL kullanılıyor:", err);
+                    fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
+                }, 
+                () => {
+                    uploadTask.snapshot.ref.getDownloadURL().then(url => {
+                        hideUploadProgress();
+                        sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0) });
+                        cancelPendingAttachment();
+                        const input = document.getElementById('chat-input');
+                        if (input) input.value = '';
+                    });
+                }
+            );
         } catch (err) {
             fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
         }
@@ -1399,13 +1453,23 @@ function uploadAndSendAttachment(fileOrBlob, type, fileName, messageText = '') {
 
 function fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText) {
     const reader = new FileReader();
+
+    reader.onprogress = function(e) {
+        if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100);
+            showUploadProgress(fileName, progress);
+        }
+    };
+
     reader.onload = function(e) {
+        hideUploadProgress();
         const url = e.target.result;
         sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0) });
         cancelPendingAttachment();
         const input = document.getElementById('chat-input');
         if (input) input.value = '';
     };
+
     reader.readAsDataURL(fileOrBlob);
 }
 

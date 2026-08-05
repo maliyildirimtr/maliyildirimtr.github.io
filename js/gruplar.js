@@ -313,9 +313,9 @@ function handleCreateGroup(e) {
             ? firebase.firestore.FieldValue.serverTimestamp() 
             : new Date().toISOString();
 
-        const creatorName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
-        const creatorEmail = user ? user.email : "admin@maliyildirimtr.com";
-        const creatorUid = user ? user.uid : "admin-uid";
+        let creatorName = user ? (user.displayName || user.email.split('@')[0]) : "Mehmet Ali Yıldırım";
+        let creatorEmail = user ? user.email : "maliyildirimtr@gmail.com";
+        let creatorUid = user ? user.uid : "admin-mali-uid";
 
         const newGroup = {
             name: name,

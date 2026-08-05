@@ -143,9 +143,15 @@ function renderGroupsUI(groups) {
     }
 
     let html = "";
+    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
+    const isPlatformAdmin = (typeof isAdmin === 'function' && isAdmin());
+
     filtered.forEach(g => {
         const progress = g.tasksTotal > 0 ? Math.round((g.tasksDone / g.tasksTotal) * 100) : 0;
         const budgetPercent = g.targetBudget > 0 ? Math.min(100, Math.round((g.spentBudget / g.targetBudget) * 100)) : 0;
+        
+        const isCreator = user && (g.leaderUid === user.uid || (g.leader && user.displayName && g.leader === user.displayName));
+        const canDelete = isPlatformAdmin || isCreator;
 
         html += `
             <div onclick="window.location.href='grup-detay.html?id=${g.id}'" class="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer overflow-hidden backdrop-blur-md">
@@ -157,21 +163,28 @@ function renderGroupsUI(groups) {
                         <span class="px-3 py-1 rounded-full bg-tsMavi/10 text-tsMavi font-bold text-[10px] border border-tsMavi/20">
                             ${g.category || 'Genel'}
                         </span>
-                        <span class="text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                            🔑 ${g.inviteCode || 'MP-0000'}
-                        </span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                🔑 ${g.inviteCode || 'MP-0000'}
+                            </span>
+                            ${canDelete ? `
+                                <button onclick="event.stopPropagation(); deleteGroup('${g.id}', '${(g.name||'').replace(/'/g, "\\'")}')" title="Grubu Sil" class="px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-[10px] font-bold transition-all">
+                                    🗑️ Sil
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
 
-                    <h3 class="font-bold text-base group-hover:text-tsMavi transition-colors leading-snug">${g.name}</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 leading-relaxed">${g.description}</p>
+                    <h3 class="font-bold text-base group-hover:text-tsMavi transition-colors leading-snug text-slate-900 dark:text-slate-100">${g.name}</h3>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-2 leading-relaxed">${g.description}</p>
 
                     <!-- LİDER & ÜYELER -->
                     <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                         <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-tsBordo to-tsMavi text-white font-bold text-[10px] flex items-center justify-center">
                             👤
                         </div>
-                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">${g.leader || 'Takım Lideri'}</span>
-                        <span class="ml-auto text-[10px] text-slate-400">👥 ${g.membersCount || 1} Üye</span>
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">${g.leader || 'Yönetici Admin'}</span>
+                        <span class="ml-auto text-[10px] text-slate-500 dark:text-slate-400 font-medium">👥 ${g.membersCount || 1} Üye</span>
                     </div>
                 </div>
 
@@ -179,7 +192,7 @@ function renderGroupsUI(groups) {
                 <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60 space-y-3">
                     <div class="space-y-1">
                         <div class="flex justify-between text-[10px] font-bold">
-                            <span class="text-slate-400">Görev İlerlemesi</span>
+                            <span class="text-slate-500 dark:text-slate-400">Görev İlerlemesi</span>
                             <span class="text-emerald-500">%${progress} (${g.tasksDone || 0}/${g.tasksTotal || 0})</span>
                         </div>
                         <div class="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -189,8 +202,8 @@ function renderGroupsUI(groups) {
 
                     <div class="space-y-1">
                         <div class="flex justify-between text-[10px] font-bold">
-                            <span class="text-slate-400">Ortak Kasa</span>
-                            <span class="text-rose-400">₺${(g.spentBudget||0).toLocaleString('tr-TR')} / ₺${(g.targetBudget||0).toLocaleString('tr-TR')}</span>
+                            <span class="text-slate-500 dark:text-slate-400">Ortak Kasa</span>
+                            <span class="text-rose-500 dark:text-rose-400">₺${(g.spentBudget||0).toLocaleString('tr-TR')} / ₺${(g.targetBudget||0).toLocaleString('tr-TR')}</span>
                         </div>
                         <div class="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                             <div class="h-full bg-rose-500 rounded-full transition-all" style="width: ${budgetPercent}%"></div>
@@ -208,6 +221,24 @@ function renderGroupsUI(groups) {
     });
 
     grid.innerHTML = html;
+}
+
+// GRUP SİLME MANTIĞI
+function deleteGroup(groupId, groupName) {
+    if (!confirm(`"${groupName}" projesini ve tüm çalışma alanı verilerini tamamen silmek istediğinizden emin misiniz?`)) return;
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).delete().then(() => {
+            alert(`✅ "${groupName}" projesi başarıyla silindi.`);
+        }).catch(err => {
+            alert("Silme Hatası: " + err.message);
+        });
+    } else {
+        allGroups = allGroups.filter(g => g.id !== groupId);
+        renderGroupsUI(allGroups);
+        updateStatsBar(allGroups);
+        alert(`✅ "${groupName}" projesi silindi.`);
+    }
 }
 
 // Filtreleme Fonksiyonları

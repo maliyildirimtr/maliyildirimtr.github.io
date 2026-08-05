@@ -162,6 +162,11 @@ function renderWorkspaceUI() {
                             ✓ Grubun Üyesisiniz (${roleText})
                         </span>
                     `}
+                    ${((typeof isAdmin === 'function' && isAdmin()) || isUserAdmin()) ? `
+                        <button onclick="deleteCurrentWorkspaceGroup()" title="Grubu tamamen sil" class="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
+                            🗑️ Grubu Sil
+                        </button>
+                    ` : ''}
                     <a href="gruplar.html" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-300 dark:border-slate-700">
                         ← Gruplara Dön
                     </a>
@@ -1037,4 +1042,21 @@ function copyInviteCode(code) {
     navigator.clipboard.writeText(code).then(() => {
         alert(`📋 Davet Kodu (${code}) kopyalandı! Takım arkadaşlarınıza gönderebilirsiniz.`);
     });
+}
+
+function deleteCurrentWorkspaceGroup() {
+    if (!currentGroup) return;
+    if (!confirm(`"${currentGroup.name}" projesini ve tüm çalışma alanı verilerini tamamen silmek istediğinizden emin misiniz?`)) return;
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).delete().then(() => {
+            alert(`✅ "${currentGroup.name}" projesi başarıyla silindi.`);
+            window.location.href = "gruplar.html";
+        }).catch(err => {
+            alert("Silme Hatası: " + err.message);
+        });
+    } else {
+        alert(`✅ "${currentGroup.name}" projesi silindi.`);
+        window.location.href = "gruplar.html";
+    }
 }

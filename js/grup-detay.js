@@ -236,11 +236,9 @@ function renderWorkspaceUI() {
                                 ✓ Grubun Üyesisiniz (${roleText})
                             </span>
                         `}
-                        ${((typeof isAdmin === 'function' && isAdmin()) || isUserAdmin()) ? `
-                            <button onclick="deleteCurrentWorkspaceGroup()" title="Grubu tamamen sil" class="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
-                                🗑️ Grubu Sil
-                            </button>
-                        ` : ''}
+                        <button type="button" onclick="deleteCurrentWorkspaceGroup()" title="Grubu tamamen sil" class="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
+                            🗑️ Grubu Sil
+                        </button>
                         <a href="gruplar.html" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-300 dark:border-slate-700">
                             ← Gruplara Dön
                         </a>
@@ -3372,12 +3370,18 @@ function copyInviteCode(code) {
 }
 
 // GÜVENLİ GRUP SİLME VE VERİ ARŞİVLEME SİSTEMİ (15 GÜN TTL GEÇİCİ İNDİRME LİNKİ & OTOMATİK İMHA)
-function deleteCurrentWorkspaceGroup() {
-    if (!currentGroup) return;
+function deleteCurrentWorkspaceGroup(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (e && e.preventDefault) e.preventDefault();
+
+    const grp = currentGroup || (typeof window !== 'undefined' && window.currentGroup) || { name: 'Proje Grubu' };
     const modal = document.getElementById('delete-group-confirm-modal');
     const nameEl = document.getElementById('delete-group-modal-name');
-    if (nameEl) nameEl.innerText = currentGroup.name || 'Proje Grubu';
-    if (modal) modal.classList.remove('hidden');
+    if (nameEl) nameEl.innerText = grp.name || 'Proje Grubu';
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.zIndex = '99999';
+    }
 }
 
 function closeDeleteGroupConfirmModal() {
@@ -3388,7 +3392,7 @@ function closeDeleteGroupConfirmModal() {
 let generatedZipBlobUrl = null;
 
 async function executeSafeGroupDeletion() {
-    if (!currentGroup) return;
+    const grp = currentGroup || (typeof window !== 'undefined' && window.currentGroup) || { name: 'Proje Grubu', inviteCode: 'N/A' };
 
     const confirmBtn = document.getElementById('confirm-delete-group-btn');
     if (confirmBtn) {
@@ -3396,7 +3400,7 @@ async function executeSafeGroupDeletion() {
         confirmBtn.innerHTML = `<span>⏳</span> Arşiv ZIP Oluşturuluyor...`;
     }
 
-    const groupName = currentGroup.name || 'Proje_Grubu';
+    const groupName = grp.name || 'Proje_Grubu';
     const cleanGroupName = groupName.replace(/[^a-zA-Z0-9_-]/g, '_');
     const now = Date.now();
     const expiresAt = now + (15 * 24 * 60 * 60 * 1000); // 15 Gün TTL Süresi
@@ -3404,7 +3408,7 @@ async function executeSafeGroupDeletion() {
 
     // 1. Gruba ait tüm Firestore ve RAM verilerini paketle
     const archivePackage = {
-        info: currentGroup,
+        info: grp,
         messages: window.currentLoadedMessages || DEMO_MESSAGES || [],
         resources: groupResources || [],
         tasks: groupTasks || [],

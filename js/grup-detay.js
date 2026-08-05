@@ -1092,29 +1092,42 @@ let audioChunks = [];
 let voiceTimerInterval = null;
 let voiceRecordSeconds = 0;
 
+// 5. GRUP İÇİ SOHBET (WHATSAPP WEB TASARIMI & İŞLEMLERİ)
 function renderChatTab(container) {
     container.innerHTML = `
-        <div class="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4 max-w-4xl mx-auto shadow-xl">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">💬 Takım İçi Canlı Sohbet & Medya Paylaşımı</h3>
-                <span class="text-[10px] text-emerald-500 dark:text-emerald-400 flex items-center gap-1 font-semibold">● Canlı Akış</span>
+        <div class="p-4 md:p-6 rounded-3xl bg-[#efeae2] dark:bg-[#0b141a] border border-slate-200 dark:border-slate-800/80 space-y-4 max-w-4xl mx-auto shadow-2xl transition-colors">
+            
+            <!-- HEADER -->
+            <div class="flex items-center justify-between border-b border-slate-300 dark:border-slate-800 pb-3 px-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-tsBordo to-tsMavi text-white font-bold flex items-center justify-center shadow-md">
+                        👥
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">${currentGroup.name}</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Takım Üyeleri (${currentGroup.members ? currentGroup.members.length : 1})</p>
+                    </div>
+                </div>
+                <span class="text-[10px] text-emerald-500 dark:text-emerald-400 font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    ● Canlı Sohbet
+                </span>
             </div>
 
-            <!-- SOHBET AKIŞ ALANI -->
-            <div id="chat-messages-container" class="space-y-3 h-[420px] overflow-y-auto p-2 no-scrollbar">
+            <!-- SOHBET AKIŞ ALANI (WHATSAPP DUVAR KAĞIDI HİSSİ) -->
+            <div id="chat-messages-container" class="space-y-4 h-[440px] overflow-y-auto p-3 no-scrollbar rounded-2xl bg-white/40 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/50">
                 <div class="text-center py-10 text-slate-500 text-xs">Mesajlar yükleniyor...</div>
             </div>
 
             <!-- EKLENTİ SEÇİM ÖNİZLEME ALANI -->
-            <div id="chat-preview-container" class="hidden p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2 text-xs text-slate-800 dark:text-slate-200 truncate" id="chat-preview-content"></div>
+            <div id="chat-preview-container" class="hidden p-3 rounded-2xl bg-white dark:bg-[#202c33] border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 shadow-md">
+                <div class="flex items-center gap-2 text-xs text-slate-900 dark:text-slate-100 truncate" id="chat-preview-content"></div>
                 <button type="button" onclick="cancelPendingAttachment()" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2 py-1">✕ Kaldır</button>
             </div>
 
-            <!-- YÜKLENİYOR / İLERLEME ÇUBUĞU (WHATSAPP TARZI PROGRESS BAR) -->
+            <!-- YÜKLENİYOR / İLERLEME ÇUBUĞU (WHATSAPP PROGRESS BAR) -->
             <div id="chat-upload-progress-panel" class="hidden p-3 rounded-2xl bg-tsMavi/10 border border-tsMavi/30 space-y-2">
                 <div class="flex items-center justify-between text-xs font-bold text-tsMavi">
-                    <span id="upload-progress-filename" class="truncate max-w-xs">⏳ Dosya Gönderiliyor...</span>
+                    <span id="upload-progress-filename" class="truncate max-w-xs">⏳ Yükleniyor...</span>
                     <span id="upload-progress-percent" class="font-mono text-slate-900 dark:text-slate-100">%0</span>
                 </div>
                 <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
@@ -1143,30 +1156,79 @@ function renderChatTab(container) {
             <input type="file" id="chat-file-input" class="hidden" accept=".pdf,.doc,.docx,.txt,.zip,.rar,.v,.sv,.c,.cpp,.py,.json" onchange="handleFileSelection(event)">
             <input type="file" id="chat-image-input" class="hidden" accept="image/*" onchange="handleImageSelection(event)">
 
-            <!-- MESAJ YAZMA & EKLENTİ BARI -->
-            <form id="chat-form" onsubmit="handleSendMessage(event)" class="space-y-2">
-                <div class="flex items-center gap-2 p-1.5 rounded-2xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 focus-within:border-tsMavi transition-all shadow-inner">
-                    
-                    <!-- EKLENTİ BUTONLARI -->
-                    <div class="flex items-center gap-1 pl-1 shrink-0">
-                        <button type="button" onclick="document.getElementById('chat-file-input').click()" title="Dosya / Doküman Ekle (PDF, Code, Zip)" class="p-2 rounded-xl text-slate-500 hover:text-tsMavi dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                            📎
-                        </button>
-                        <button type="button" onclick="document.getElementById('chat-image-input').click()" title="Görsel / Fotoğraf Ekle" class="p-2 rounded-xl text-slate-500 hover:text-tsMavi dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+            <!-- WHATSAPP (+) AÇILIR EKLENTİ MENÜSÜ -->
+            <div id="whatsapp-attach-menu" class="hidden absolute bottom-20 left-6 z-40 p-4 rounded-3xl bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700 shadow-2xl backdrop-blur-xl animate-fade-in space-y-4 max-w-xs w-full">
+                <div class="grid grid-cols-4 gap-3 text-center">
+                    <!-- File -->
+                    <button type="button" onclick="document.getElementById('chat-file-input').click(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                        <div class="w-12 h-12 rounded-full bg-blue-600/20 text-blue-500 border border-blue-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
+                            📁
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">File</span>
+                    </button>
+
+                    <!-- Photos & Videos -->
+                    <button type="button" onclick="document.getElementById('chat-image-input').click(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                        <div class="w-12 h-12 rounded-full bg-sky-600/20 text-sky-500 border border-sky-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
                             🖼️
-                        </button>
-                        <button type="button" onclick="startVoiceRecording()" title="Ses Kaydı Gönder (Mikrofon)" class="p-2 rounded-xl text-slate-500 hover:text-rose-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                            🎤
-                        </button>
-                    </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Photos</span>
+                    </button>
+
+                    <!-- Poll -->
+                    <button type="button" onclick="insertQuickPoll(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                        <div class="w-12 h-12 rounded-full bg-amber-600/20 text-amber-500 border border-amber-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
+                            📊
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Poll</span>
+                    </button>
+
+                    <!-- Event -->
+                    <button type="button" onclick="openAddMilestoneModal(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                        <div class="w-12 h-12 rounded-full bg-rose-600/20 text-rose-500 border border-rose-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
+                            📅
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Event</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-4 gap-3 text-center border-t border-slate-200 dark:border-slate-800 pt-3">
+                    <!-- Contact -->
+                    <button type="button" onclick="shareLeaderContact(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                        <div class="w-12 h-12 rounded-full bg-orange-600/20 text-orange-500 border border-orange-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
+                            👤
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Contact</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- WHATSAPP TARZI MESAJ YAZMA BARI -->
+            <form id="chat-form" onsubmit="handleSendMessage(event)" class="relative space-y-2">
+                <div class="flex items-center gap-2 px-3 py-2 rounded-full border border-slate-300 dark:border-slate-800 bg-white dark:bg-[#202c33] focus-within:border-tsMavi transition-all shadow-md">
+                    
+                    <!-- (+) ATTACHMENT MENU BUTTON -->
+                    <button type="button" id="whatsapp-attach-btn" onclick="toggleWhatsappAttachMenu()" title="Eklenti Ekle (+)" class="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-lg transition-transform active:scale-95 shrink-0">
+                        ➕
+                    </button>
 
                     <!-- METİN GİRDİ ALANI -->
-                    <input type="text" id="chat-input" placeholder="Takım arkadaşlarınıza mesaj yazın veya dosya/ses ekleyin..." class="flex-grow bg-transparent text-slate-900 dark:text-slate-100 text-xs focus:outline-none px-2 py-1.5">
+                    <input type="text" id="chat-input" oninput="handleChatInputTyping(this)" placeholder="Bir mesaj yazın..." class="flex-grow bg-transparent text-slate-900 dark:text-slate-100 text-xs focus:outline-none px-2 py-1">
 
-                    <!-- GÖNDER BUTONU -->
-                    <button type="submit" id="chat-send-btn" class="px-5 py-2.5 rounded-xl bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-all shadow-md shrink-0 flex items-center gap-1">
-                        Gönder ➔
+                    <!-- 😊 EMOJI BUTONU -->
+                    <button type="button" onclick="insertQuickEmoji('😊')" title="Emoji Ekle" class="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:text-amber-500 text-base transition-colors shrink-0">
+                        😊
                     </button>
+
+                    <!-- SAĞ AKSİYON (MİKROFON VEYA GÖNDER) -->
+                    <div id="chat-actions-right" class="shrink-0 flex items-center gap-1">
+                        <button type="button" onclick="startVoiceRecording()" id="chat-mic-btn" title="Ses Kaydı Gönder" class="p-2 rounded-full text-slate-500 dark:text-slate-300 hover:text-rose-500 transition-colors text-base">
+                            🎤
+                        </button>
+                        <button type="submit" id="chat-send-btn" title="Gönder" class="hidden px-4 py-2 rounded-full bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-transform active:scale-95 shadow-md">
+                            ➔
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1175,20 +1237,51 @@ function renderChatTab(container) {
     loadMessages();
 }
 
-function loadMessages() {
-    if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).collection("messages").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
-            let messages = [];
-            if (!snapshot.empty) {
-                snapshot.docs.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
-            } else {
-                messages = DEMO_MESSAGES;
-            }
-            renderMessagesFeed(messages);
-        }, () => renderMessagesFeed(DEMO_MESSAGES));
+function toggleWhatsappAttachMenu() {
+    const menu = document.getElementById('whatsapp-attach-menu');
+    if (menu) menu.classList.toggle('hidden');
+}
+
+function handleChatInputTyping(input) {
+    const micBtn = document.getElementById('chat-mic-btn');
+    const sendBtn = document.getElementById('chat-send-btn');
+    const val = input ? input.value.trim() : '';
+
+    if (val.length > 0 || pendingAttachment) {
+        if (micBtn) micBtn.classList.add('hidden');
+        if (sendBtn) sendBtn.classList.remove('hidden');
     } else {
-        renderMessagesFeed(DEMO_MESSAGES);
+        if (micBtn) micBtn.classList.remove('hidden');
+        if (sendBtn) sendBtn.classList.add('hidden');
     }
+}
+
+function insertQuickEmoji(emoji) {
+    const input = document.getElementById('chat-input');
+    if (input) {
+        input.value += emoji;
+        handleChatInputTyping(input);
+        input.focus();
+    }
+}
+
+function shareLeaderContact() {
+    const leaderName = currentGroup ? currentGroup.leader : "Mehmet Ali Yıldırım";
+    const leaderEmail = "maliyildirimtr@gmail.com";
+    const user = getCurrentUser();
+    const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
+
+    sendChatMessage(currentName, `👤 Contact Card: ${leaderName} (${leaderEmail})`, null);
+}
+
+function insertQuickPoll() {
+    const question = prompt("Anket Sorusu Girin:", "Bu haftaki toplantı günü hangi gün olsun?");
+    if (!question) return;
+
+    const user = getCurrentUser();
+    const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
+
+    sendChatMessage(currentName, `📊 Anket: ${question}\n• Seçenek 1: Salı 20:00\n• Seçenek 2: Perşembe 20:00`, null);
 }
 
 function renderMessagesFeed(messages) {
@@ -1199,40 +1292,47 @@ function renderMessagesFeed(messages) {
     const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
 
     if (messages.length === 0) {
-        c.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs italic">Henüz sohbet mesajı gönderilmedi. İlk mesajı veya medya dosyasını gönderin!</div>`;
+        c.innerHTML = `<div class="text-center py-16 text-slate-400 text-xs italic">Henüz sohbet mesajı gönderilmedi. İlk mesajı gönderin!</div>`;
         return;
     }
 
     let html = "";
     messages.forEach(m => {
         const isMe = m.sender === currentName;
+        const timeStr = m.time || '17:09';
 
         let attachmentHTML = "";
         if (m.attachment) {
             if (m.attachment.type === 'image') {
                 attachmentHTML = `
-                    <div class="my-1.5">
-                        <img src="${m.attachment.url}" alt="Görsel" onclick="window.open('${m.attachment.url}', '_blank')" class="max-w-xs max-h-60 rounded-xl shadow-md cursor-pointer hover:opacity-95 transition-opacity border border-slate-200 dark:border-slate-700">
+                    <div class="my-1.5 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/60 shadow-md max-w-xs">
+                        <img src="${m.attachment.url}" alt="Görsel" onclick="window.open('${m.attachment.url}', '_blank')" class="w-full max-h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity">
                     </div>
                 `;
             } else if (m.attachment.type === 'file') {
+                // WHATSAPP PDF VE DOKÜMAN KARTI (EKRAN GÖRÜNTÜSÜ BİREBİR TASARIMI)
                 attachmentHTML = `
-                    <div class="my-1.5 p-3 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 text-slate-900 dark:text-slate-100 max-w-sm">
-                        <div class="flex items-center gap-2 truncate">
-                            <span class="text-lg">📄</span>
+                    <div class="my-1.5 rounded-2xl bg-slate-900 text-white overflow-hidden border border-slate-700/80 shadow-lg max-w-xs">
+                        <div class="p-3.5 flex items-center gap-3 bg-gradient-to-r from-rose-950/60 to-slate-900">
+                            <div class="w-10 h-10 rounded-xl bg-rose-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-md">
+                                PDF
+                            </div>
                             <div class="truncate">
-                                <p class="font-bold text-xs truncate">${m.attachment.name}</p>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400">${m.attachment.size || 'Doküman'}</p>
+                                <h5 class="font-bold text-xs truncate text-white">${m.attachment.name}</h5>
+                                <p class="text-[10px] text-slate-300 font-mono mt-0.5">${m.attachment.size || '588 KB'} • pdf</p>
                             </div>
                         </div>
-                        <a href="${m.attachment.url}" download="${m.attachment.name}" target="_blank" class="px-2.5 py-1 rounded-lg bg-tsMavi text-white font-bold text-[10px] hover:bg-sky-500 transition-colors shrink-0">
-                            💾 İndir ↗
-                        </a>
+                        <div class="px-3.5 py-2 bg-slate-950/60 flex items-center justify-between border-t border-slate-800">
+                            <span class="text-[10px] text-slate-400">İndirmek için tıklayın</span>
+                            <a href="${m.attachment.url}" download="${m.attachment.name}" target="_blank" class="px-3 py-1 rounded-xl bg-tsMavi text-white font-bold text-[10px] hover:bg-sky-500 transition-colors">
+                                💾 İndir ↗
+                            </a>
+                        </div>
                     </div>
                 `;
             } else if (m.attachment.type === 'voice') {
                 attachmentHTML = `
-                    <div class="my-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 space-y-1 max-w-xs">
+                    <div class="my-1.5 p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 space-y-1 max-w-xs shadow-inner">
                         <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300">
                             <span>🎙️ Ses Mesajı</span>
                         </div>
@@ -1242,20 +1342,24 @@ function renderMessagesFeed(messages) {
             }
         }
 
+        // WHATSAPP RENK PALETİ VE ÇİFT MAVİ TİK (READ RECEIPT)
+        const bubbleBg = isMe 
+            ? 'bg-[#005c4b] text-white rounded-2xl rounded-tr-none shadow-md' 
+            : 'bg-white dark:bg-[#202c33] text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/60 shadow-md';
+
         html += `
             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                <div class="flex items-center gap-1.5 mb-1 text-[10px] text-slate-600 dark:text-slate-400">
-                    <span class="font-bold text-slate-800 dark:text-slate-200">${m.sender}</span>
-                    <span>• ${m.time || '12:00'}</span>
-                </div>
+                ${!isMe ? `<span class="text-[10px] font-bold text-tsMavi dark:text-tsMavi mb-0.5 ml-1">${m.sender}</span>` : ''}
                 
-                ${m.text ? `
-                    <div class="max-w-md px-4 py-2.5 rounded-2xl text-xs ${isMe ? 'bg-tsMavi text-white rounded-tr-none shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700 shadow-sm'}">
-                        ${m.text}
+                <div class="max-w-md p-3 ${bubbleBg}">
+                    ${m.text ? `<p class="text-xs leading-relaxed whitespace-pre-wrap">${m.text}</p>` : ''}
+                    ${attachmentHTML}
+                    
+                    <div class="flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-slate-300' : 'text-slate-400 dark:text-slate-400'} mt-1">
+                        <span>${timeStr}</span>
+                        ${isMe ? `<span class="text-sky-300 font-bold ml-1 text-[11px]" title="Okundu">✓✓</span>` : ''}
                     </div>
-                ` : ''}
-
-                ${attachmentHTML}
+                </div>
             </div>
         `;
     });

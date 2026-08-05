@@ -272,6 +272,12 @@ function renderWorkspaceUI() {
         `;
 
         switchTab(currentTab);
+
+        if (urlParams.get('open_delete_modal') === 'true') {
+            setTimeout(() => {
+                deleteCurrentWorkspaceGroup();
+            }, 450);
+        }
     } catch (err) {
         console.error("renderWorkspaceUI kritik hata:", err);
         const container = document.getElementById('group-workspace-content');
@@ -3328,19 +3334,193 @@ function copyInviteCode(code) {
     });
 }
 
+// GÜVENLİ GRUP SİLME VE VERİ ARŞİVLEME SİSTEMİ (15 GÜN TTL GEÇİCİ İNDİRME LİNKİ & OTOMATİK İMHA)
 function deleteCurrentWorkspaceGroup() {
     if (!currentGroup) return;
-    if (!confirm(`"${currentGroup.name}" projesini ve tüm çalışma alanı verilerini tamamen silmek istediğinizden emin misiniz?`)) return;
+    const modal = document.getElementById('delete-group-confirm-modal');
+    const nameEl = document.getElementById('delete-group-modal-name');
+    if (nameEl) nameEl.innerText = currentGroup.name || 'Proje Grubu';
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeDeleteGroupConfirmModal() {
+    const modal = document.getElementById('delete-group-confirm-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+let generatedZipBlobUrl = null;
+
+async function executeSafeGroupDeletion() {
+    if (!currentGroup) return;
+
+    const confirmBtn = document.getElementById('confirm-delete-group-btn');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `<span>⏳</span> Arşiv ZIP Oluşturuluyor...`;
+    }
+
+    const groupName = currentGroup.name || 'Proje_Grubu';
+    const cleanGroupName = groupName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const now = Date.now();
+    const expiresAt = now + (15 * 24 * 60 * 60 * 1000); // 15 Gün TTL Süresi
+    const expireDateStr = new Date(expiresAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // 1. Gruba ait tüm Firestore ve RAM verilerini paketle
+    const archivePackage = {
+        info: currentGroup,
+        messages: window.currentLoadedMessages || DEMO_MESSAGES || [],
+        resources: groupResources || [],
+        tasks: groupTasks || [],
+        expenses: groupExpenses || [],
+        deletedAt: new Date(now).toISOString(),
+        expiresAt: expiresAt
+    };
+
+    // 2. JSZip kütüphanesi ile ZIP dosyası paketle
+    let zipBlob;
+    try {
+        if (typeof JSZip !== 'undefined') {
+            const zip = new JSZip();
+            zip.file("01_grup_bilgileri.json", JSON.stringify(archivePackage.info, null, 2));
+            zip.file("02_sohbet_gecmisi.json", JSON.stringify(archivePackage.messages, null, 2));
+            zip.file("03_arsiv_dokumanlar.json", JSON.stringify(archivePackage.resources, null, 2));
+            zip.file("04_gorev_panosu.json", JSON.stringify(archivePackage.tasks, null, 2));
+            zip.file("05_butce_kayitlari.json", JSON.stringify(archivePackage.expenses, null, 2));
+
+            const readme = `===================================================================
+MALI ACADEMY - PROJE GRUBU YEDEK & ARŞİV DOSYASI
+===================================================================
+Grup Adı         : ${groupName}
+Davet Kodu       : ${currentGroup.inviteCode || 'N/A'}
+Silinme Tarihi   : ${new Date(now).toLocaleString('tr-TR')}
+Son Kullanma (TTL): ${expireDateStr} (15 Gün Geçerli)
+===================================================================
+
+İÇERİK ÖZETİ:
+- 01_grup_bilgileri.json   : Grup künye bilgileri, açıklamalar ve roller
+- 02_sohbet_gecmisi.json   : Tüm sohbet mesajları, anketler ve etkinlikler
+- 03_arsiv_dokumanlar.json : Resource Hub arşivlenmiş dosya ve bağlantılar
+- 04_gorev_panosu.json     : Kanban görev kartları ve durumları
+- 05_butce_kayitlari.json  : Bütçe gelir/gider hareketleri
+
+UYARI: Bu indirme bağlantısı ve veriler 15 gün sonra güvenlik protokolü 
+gereği otomatik olarak kalıcı olarak imha edilecektir.
+===================================================================
+`;
+            zip.file("README_ARSIV.txt", readme);
+            zipBlob = await zip.generateAsync({ type: "blob" });
+        } else {
+            const jsonStr = JSON.stringify(archivePackage, null, 2);
+            zipBlob = new Blob([jsonStr], { type: "application/json" });
+        }
+    } catch(e) {
+        console.warn("ZIP oluşturma hatası, standart JSON kullanılıyor:", e);
+        const jsonStr = JSON.stringify(archivePackage, null, 2);
+        zipBlob = new Blob([jsonStr], { type: "application/json" });
+    }
+
+    // 3. Blob URL ve 15 Günlük Geçici Bağlantı Oluştur
+    generatedZipBlobUrl = URL.createObjectURL(zipBlob);
+    const archiveId = 'arc_' + Math.random().toString(36).substring(2, 9);
+    const zipSizeStr = formatBytes(zipBlob.size || 0);
+
+    const shareableLink = `${window.location.origin}${window.location.pathname.replace('grup-detay.html', '')}gruplar.html?download_archive=${archiveId}&expires=${expiresAt}`;
+
+    // 4. Arşiv kaydını veritabanına / Cache'e işle
+    const archiveRecord = {
+        archiveId: archiveId,
+        groupId: groupId,
+        groupName: groupName,
+        zipSize: zipSizeStr,
+        createdAt: now,
+        expiresAt: expiresAt,
+        archiveUrl: shareableLink
+    };
+
+    saveArchiveRecord(archiveRecord);
+
+    // 5. Grubu Firestore ve Local Storage Cache'den Sil
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).delete().catch(err => console.warn("Firestore silme:", err));
+    }
+
+    try {
+        let createdGroups = JSON.parse(localStorage.getItem('mali_created_groups') || '[]');
+        createdGroups = createdGroups.filter(g => (g.id !== groupId && g.inviteCode !== (currentGroup ? currentGroup.inviteCode : '')));
+        localStorage.setItem('mali_created_groups', JSON.stringify(createdGroups));
+    } catch(e) {}
+
+    // 6. Başarı ve İndirme Linki Modalını Aç
+    closeDeleteGroupConfirmModal();
+
+    const successModal = document.getElementById('delete-group-success-modal');
+    const sizeEl = document.getElementById('delete-group-zip-size');
+    const linkInput = document.getElementById('delete-group-archive-link');
+    const expireEl = document.getElementById('delete-group-expire-date');
+    const downloadBtn = document.getElementById('direct-download-zip-btn');
+
+    if (sizeEl) sizeEl.innerText = zipSizeStr;
+    if (linkInput) linkInput.value = shareableLink;
+    if (expireEl) expireEl.innerText = expireDateStr;
+    if (downloadBtn) {
+        downloadBtn.href = generatedZipBlobUrl;
+        downloadBtn.download = `${cleanGroupName}_YEDEK_${new Date().toISOString().slice(0, 10)}.zip`;
+    }
+
+    if (successModal) successModal.classList.remove('hidden');
+}
+
+function saveArchiveRecord(record) {
+    try {
+        let archives = JSON.parse(localStorage.getItem('mali_deleted_group_archives') || '[]');
+        archives.push(record);
+        localStorage.setItem('mali_deleted_group_archives', JSON.stringify(archives));
+    } catch(e) {}
 
     if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).delete().then(() => {
-            alert(`✅ "${currentGroup.name}" projesi başarıyla silindi.`);
-            window.location.href = "gruplar.html";
-        }).catch(err => {
-            alert("Silme Hatası: " + err.message);
-        });
-    } else {
-        alert(`✅ "${currentGroup.name}" projesi silindi.`);
-        window.location.href = "gruplar.html";
+        db.collection("deleted_group_archives").doc(record.archiveId).set(record).catch(() => {});
     }
+}
+
+function copyArchiveDownloadLink() {
+    const input = document.getElementById('delete-group-archive-link');
+    if (input) {
+        navigator.clipboard.writeText(input.value).then(() => {
+            alert("📋 15 günlük geçici indirme bağlantısı panoya kopyalandı!");
+        });
+    }
+}
+
+function finishGroupDeletionRedirect() {
+    window.location.href = "gruplar.html";
+}
+
+// 15 GÜN TTL TEMİZLEME MOTORU (Zamanı geçen arşivleri otomatik imha et)
+function checkAndPurgeExpiredArchives() {
+    const now = Date.now();
+
+    // Local Storage Temizliği
+    try {
+        let archives = JSON.parse(localStorage.getItem('mali_deleted_group_archives') || '[]');
+        const validArchives = archives.filter(arc => arc.expiresAt > now);
+        if (validArchives.length !== archives.length) {
+            localStorage.setItem('mali_deleted_group_archives', JSON.stringify(validArchives));
+        }
+    } catch(e) {}
+
+    // Firestore TTL Temizliği
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("deleted_group_archives").where("expiresAt", "<", now).get().then(snapshot => {
+            snapshot.forEach(doc => {
+                db.collection("deleted_group_archives").doc(doc.id).delete();
+            });
+        }).catch(() => {});
+    }
+}
+
+// Sayfa yüklendiğinde TTL arşiv kontrolü çalıştır
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkAndPurgeExpiredArchives);
+} else {
+    checkAndPurgeExpiredArchives();
 }

@@ -232,22 +232,9 @@ function renderGroupsUI(groups) {
     grid.innerHTML = html;
 }
 
-// GRUP SİLME MANTIĞI
+// GRUP SİLME MANTIĞI (Güvenli ZIP Arşivi ve 15 Günlük İndirme Modalı)
 function deleteGroup(groupId, groupName) {
-    if (!confirm(`"${groupName}" projesini ve tüm çalışma alanı verilerini tamamen silmek istediğinizden emin misiniz?`)) return;
-
-    if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).delete().then(() => {
-            alert(`✅ "${groupName}" projesi başarıyla silindi.`);
-        }).catch(err => {
-            alert("Silme Hatası: " + err.message);
-        });
-    } else {
-        allGroups = allGroups.filter(g => g.id !== groupId);
-        renderGroupsUI(allGroups);
-        updateStatsBar(allGroups);
-        alert(`✅ "${groupName}" projesi silindi.`);
-    }
+    window.location.href = `grup-detay.html?id=${groupId}&open_delete_modal=true`;
 }
 
 // Filtreleme Fonksiyonları

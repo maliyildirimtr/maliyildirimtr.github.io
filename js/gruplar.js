@@ -259,7 +259,7 @@ function handleCreateGroup(e) {
     if (e && e.preventDefault) e.preventDefault();
 
     try {
-        const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+        const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
         const nameEl = document.getElementById('group-name');
         const categoryEl = document.getElementById('group-category');
         const budgetEl = document.getElementById('group-target-budget');

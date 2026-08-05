@@ -308,7 +308,7 @@ function openJitsiMeeting() {
 function closeJitsiMeeting() {
     const iframe = document.getElementById('jitsi-iframe');
     const modal = document.getElementById('jitsi-modal');
-    if (iframe) iframe.src = '';
+    if (iframe) iframe.src = 'about:blank';
     if (modal) modal.classList.add('hidden');
 }
 

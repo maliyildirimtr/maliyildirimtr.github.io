@@ -651,14 +651,58 @@ function filterArchiveDocs(cat, btn) {
     renderDocumentsTable(groupDocuments);
 }
 
-// SAFE FILE DOWNLOAD & IMAGE VIEWING HELPERS (Boş sayfa about:blank ve CORS engellerini tamamen çözer)
-function downloadChatAttachment(encodedUrl, fileName) {
-    if (!encodedUrl || encodedUrl === '#' || encodedUrl === 'null' || encodedUrl === 'undefined') {
+// SAFE FILE DOWNLOAD, LIGHTBOX & IMAGE VIEWING HELPERS
+let activePreviewImageUrl = "";
+let activePreviewImageName = "";
+
+function openChatAttachment(msgId) {
+    let msg = null;
+    if (window.currentLoadedMessages) {
+        msg = window.currentLoadedMessages.find((m, idx) => (m.id === msgId || ('m_' + idx) === msgId));
+    }
+    
+    if (!msg || !msg.attachment || !msg.attachment.url) {
+        alert("Bağlantıya ulaşılamadı veya dosya henüz hazır değil!");
+        return;
+    }
+
+    const att = msg.attachment;
+    if (att.type === 'image') {
+        openImagePreviewModal(att.url, att.name || 'Görsel');
+    } else {
+        downloadBlobOrUrl(att.url, att.name || 'dokuman');
+    }
+}
+
+function openImagePreviewModal(url, fileName) {
+    activePreviewImageUrl = url;
+    activePreviewImageName = fileName || 'Görsel';
+    const modal = document.getElementById('image-preview-modal');
+    const img = document.getElementById('image-preview-img');
+    const title = document.getElementById('image-preview-title');
+
+    if (img) img.src = url;
+    if (title) title.innerText = fileName || 'Görsel Önizleme';
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeImagePreviewModal() {
+    const modal = document.getElementById('image-preview-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function downloadActivePreviewImage() {
+    if (activePreviewImageUrl) {
+        downloadBlobOrUrl(activePreviewImageUrl, activePreviewImageName);
+    }
+}
+
+function downloadBlobOrUrl(url, fileName) {
+    if (!url || url === '#' || url === 'null' || url === 'undefined') {
         alert("Üzgünüz, dosya bağlantısı geçerli değil veya bulunamadı!");
         return;
     }
 
-    const url = decodeURIComponent(encodedUrl);
     const safeFileName = fileName || 'dokuman';
 
     if (url.startsWith('data:')) {
@@ -686,7 +730,7 @@ function downloadChatAttachment(encodedUrl, fileName) {
                 URL.revokeObjectURL(blobUrl);
             }, 2000);
         } catch (e) {
-            console.error("DataURL Blob dönüşüm hatası:", e);
+            console.error("DataURL indirme hatası:", e);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
@@ -722,37 +766,12 @@ function downloadChatAttachment(encodedUrl, fileName) {
     }
 }
 
+function downloadChatAttachment(encodedUrl, fileName) {
+    downloadBlobOrUrl(decodeURIComponent(encodedUrl || ''), fileName);
+}
+
 function viewChatImage(encodedUrl, fileName) {
-    if (!encodedUrl || encodedUrl === '#' || encodedUrl === 'null' || encodedUrl === 'undefined') {
-        alert("Görsel bağlantısı bulunamadı!");
-        return;
-    }
-
-    const url = decodeURIComponent(encodedUrl);
-
-    if (url.startsWith('data:')) {
-        try {
-            const parts = url.split(';base64,');
-            const contentType = parts[0].split(':')[1] || 'image/png';
-            const raw = window.atob(parts[1]);
-            const rawLength = raw.length;
-            const uInt8Array = new Uint8Array(rawLength);
-            for (let i = 0; i < rawLength; ++i) {
-                uInt8Array[i] = raw.charCodeAt(i);
-            }
-            const blob = new Blob([uInt8Array], { type: contentType });
-            const blobUrl = URL.createObjectURL(blob);
-            
-            const win = window.open(blobUrl, '_blank');
-            if (!win) {
-                downloadChatAttachment(encodedUrl, fileName);
-            }
-        } catch(e) {
-            downloadChatAttachment(encodedUrl, fileName);
-        }
-    } else {
-        window.open(url, '_blank', 'noopener,noreferrer');
-    }
+    openImagePreviewModal(decodeURIComponent(encodedUrl || ''), fileName);
 }
 
 function renderDocumentsTable(docs) {
@@ -1684,6 +1703,7 @@ function addChatMessageToArchive(sender, text, attachmentJsonStr) {
 }
 
 function renderMessagesFeed(messages) {
+    window.currentLoadedMessages = messages || [];
     const c = document.getElementById('chat-messages-container');
     if (!c) return;
 
@@ -1704,19 +1724,16 @@ function renderMessagesFeed(messages) {
 
         let attachmentHTML = "";
         if (m.attachment) {
-            const encAttUrl = encodeURIComponent(m.attachment.url || '');
-            const encAttName = (m.attachment.name || 'dokuman').replace(/'/g, "\\'");
-
             if (m.attachment.type === 'image') {
                 attachmentHTML = `
                     <div class="my-1.5 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/60 shadow-md max-w-xs">
-                        <img src="${m.attachment.url}" alt="Görsel" onclick="viewChatImage('${encAttUrl}', '${encAttName}')" class="w-full max-h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity">
+                        <img src="${m.attachment.url}" alt="Görsel" onclick="openChatAttachment('${msgId}')" class="w-full max-h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity">
                     </div>
                 `;
             } else if (m.attachment.type === 'file') {
                 // WHATSAPP PDF VE DOKÜMAN KARTI
                 attachmentHTML = `
-                    <div class="my-1.5 rounded-2xl bg-slate-900 text-white overflow-hidden border border-slate-700/80 shadow-lg max-w-xs">
+                    <div onclick="openChatAttachment('${msgId}')" class="my-1.5 rounded-2xl bg-slate-900 text-white overflow-hidden border border-slate-700/80 shadow-lg max-w-xs cursor-pointer hover:border-tsMavi transition-all">
                         <div class="p-3.5 flex items-center gap-3 bg-gradient-to-r from-rose-950/60 to-slate-900">
                             <div class="w-10 h-10 rounded-xl bg-rose-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-md">
                                 PDF
@@ -1728,7 +1745,7 @@ function renderMessagesFeed(messages) {
                         </div>
                         <div class="px-3.5 py-2 bg-slate-950/60 flex items-center justify-between border-t border-slate-800">
                             <span class="text-[10px] text-slate-400">İndirmek için tıklayın</span>
-                            <button type="button" onclick="downloadChatAttachment('${encAttUrl}', '${encAttName}')" class="px-3 py-1 rounded-xl bg-tsMavi text-white font-bold text-[10px] hover:bg-sky-500 transition-colors shadow-sm">
+                            <button type="button" onclick="openChatAttachment('${msgId}'); event.stopPropagation();" class="px-3 py-1 rounded-xl bg-tsMavi text-white font-bold text-[10px] hover:bg-sky-500 transition-colors shadow-sm">
                                 💾 İndir ↗
                             </button>
                         </div>

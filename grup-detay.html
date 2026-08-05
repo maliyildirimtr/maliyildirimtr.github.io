@@ -354,6 +354,29 @@
         </div>
     </div>
 
+    <!-- MODAL: GÖRSEL BÜYÜTME / ÖNİZLEME (IMAGE LIGHTBOX) -->
+    <div id="image-preview-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-lg flex flex-col items-center justify-between p-4">
+        <!-- TOP BAR WITH FILENAME AND CLOSE / DOWNLOAD BUTTONS -->
+        <div class="w-full max-w-4xl flex items-center justify-between py-2 px-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-white">
+            <span id="image-preview-title" class="text-xs font-bold truncate max-w-md">Görsel Önizleme</span>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="downloadActivePreviewImage()" class="px-4 py-1.5 rounded-full bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-colors shadow-md">
+                    💾 İndir
+                </button>
+                <button type="button" onclick="closeImagePreviewModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm flex items-center justify-center transition-colors">
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <!-- CENTERED IMAGE -->
+        <div class="flex-grow flex items-center justify-center w-full max-w-5xl p-2 overflow-hidden">
+            <img id="image-preview-img" src="" alt="Önizleme" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl">
+        </div>
+
+        <div></div>
+    </div>
+
     <!-- SCRIPTS -->
     <script src="js/firebase.js"></script>
     <script src="js/main.js"></script>

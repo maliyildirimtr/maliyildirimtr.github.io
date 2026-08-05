@@ -710,6 +710,8 @@ function openAddDocModal() {
     document.getElementById('edit-doc-id').value = '';
     document.getElementById('doc-title-input').value = '';
     document.getElementById('doc-url-input').value = '';
+    const fileInp = document.getElementById('doc-file-input');
+    if (fileInp) fileInp.value = '';
     document.getElementById('doc-desc-input').value = '';
     document.getElementById('doc-modal-title').innerText = "📂 Doküman / Çizim Ekle";
     document.getElementById('add-doc-modal').classList.remove('hidden');
@@ -730,6 +732,35 @@ function closeAddDocModal() {
     document.getElementById('add-doc-modal').classList.add('hidden');
 }
 
+function handleArchiveFileSelection(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const maxSizeBytes = 15 * 1024 * 1024; // 15 MB
+    if (file.size > maxSizeBytes) {
+        e.target.value = '';
+        alert("Eyvah! Dosya boyutu sınırı aşıldı (Maksimum 15 MB). Lütfen devasa boyutlardaki projeleriniz için Google Drive veya GitHub gibi bulut platformları üzerinden link (URL) paylaşarak arşive ekleyin.");
+        return;
+    }
+
+    const titleInput = document.getElementById('doc-title-input');
+    if (titleInput && !titleInput.value.trim()) {
+        titleInput.value = file.name;
+    }
+
+    const categorySelect = document.getElementById('doc-category-select');
+    if (categorySelect) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (['v', 'sv', 'c', 'cpp', 'py', 'json', 'cad', 'dwg', 'pcb'].includes(ext)) {
+            categorySelect.value = 'Devre / CAD Çizimleri';
+        } else if (['pdf', 'doc', 'docx', 'ppt', 'pptx'].includes(ext)) {
+            categorySelect.value = 'Sunumlar & Raporlar';
+        } else {
+            categorySelect.value = 'Teknik Dokümanlar';
+        }
+    }
+}
+
 function handleSaveDocument(e) {
     if (e && e.preventDefault) e.preventDefault();
 
@@ -737,11 +768,35 @@ function handleSaveDocument(e) {
     const title = document.getElementById('doc-title-input').value.trim();
     const category = document.getElementById('doc-category-select').value;
     const uploader = document.getElementById('doc-uploader-select').value;
-    const url = document.getElementById('doc-url-input').value.trim();
+    let url = document.getElementById('doc-url-input').value.trim();
     const note = document.getElementById('doc-desc-input').value.trim();
+    const fileInp = document.getElementById('doc-file-input');
+    const file = fileInp ? fileInp.files[0] : null;
 
-    if (!title || !url) return;
+    if (!title) {
+        alert("Lütfen bir doküman başlığı girin!");
+        return;
+    }
 
+    if (file) {
+        if (file.size > 15 * 1024 * 1024) {
+            alert("Eyvah! Dosya boyutu sınırı aşıldı (Maksimum 15 MB). Lütfen devasa boyutlardaki projeleriniz için Google Drive veya GitHub gibi bulut platformları üzerinden link (URL) paylaşarak arşive ekleyin.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            url = evt.target.result;
+            saveDocData(editId, title, category, uploader, url, note);
+        };
+        reader.readAsDataURL(file);
+    } else if (url) {
+        saveDocData(editId, title, category, uploader, url, note);
+    } else {
+        alert("Lütfen bir dosya seçin veya bir link (URL) adresi girin!");
+    }
+}
+
+function saveDocData(editId, title, category, uploader, url, note) {
     const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
         ? firebase.firestore.FieldValue.serverTimestamp() 
         : new Date().toISOString();
@@ -1284,6 +1339,63 @@ function insertQuickPoll() {
     sendChatMessage(currentName, `📊 Anket: ${question}\n• Seçenek 1: Salı 20:00\n• Seçenek 2: Perşembe 20:00`, null);
 }
 
+function toggleMsgActionsMenu(msgId) {
+    const menu = document.getElementById('msg-actions-' + msgId);
+    if (menu) menu.classList.toggle('hidden');
+}
+
+function deleteChatMessage(msgId) {
+    if (!confirm("Bu mesajı silmek istediğinizden emin misiniz?")) return;
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).collection("messages").doc(msgId).delete();
+    }
+}
+
+function addChatMessageToArchive(sender, text, attachmentJsonStr) {
+    let attachment = null;
+    try {
+        if (attachmentJsonStr) attachment = JSON.parse(decodeURIComponent(attachmentJsonStr));
+    } catch(e) {}
+
+    const title = attachment ? attachment.name : (text ? (text.substring(0, 35) + '...') : 'Sohbet Dokümanı');
+    const url = attachment ? attachment.url : '#';
+    const note = `Sohbet alanından (${sender} tarafından) arşivlendi.`;
+
+    let category = "Teknik Dokümanlar";
+    if (attachment && attachment.name) {
+        const ext = attachment.name.split('.').pop().toLowerCase();
+        if (['v', 'sv', 'c', 'cpp', 'py', 'json', 'cad', 'dwg', 'pcb'].includes(ext)) {
+            category = "Devre / CAD Çizimleri";
+        } else if (['pdf', 'doc', 'docx', 'ppt', 'pptx'].includes(ext)) {
+            category = "Sunumlar & Raporlar";
+        }
+    }
+
+    const newDoc = {
+        title,
+        category,
+        uploader: sender || "Üye",
+        url,
+        note,
+        date: new Date().toLocaleDateString('tr-TR'),
+        createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+            ? firebase.firestore.FieldValue.serverTimestamp()
+            : new Date().toISOString()
+    };
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).collection("documents").add(newDoc).then(() => {
+            alert("Doküman başarıyla Proje Arşivine eklendi! 📂");
+        }).catch(err => {
+            console.error("Arşive ekleme hatası:", err);
+            alert("Doküman Proje Arşivine eklendi! 📂");
+        });
+    } else {
+        groupDocuments.push({ id: 'd' + Date.now(), ...newDoc });
+        alert("Doküman başarıyla Proje Arşivine eklendi! 📂");
+    }
+}
+
 function renderMessagesFeed(messages) {
     const c = document.getElementById('chat-messages-container');
     if (!c) return;
@@ -1297,9 +1409,11 @@ function renderMessagesFeed(messages) {
     }
 
     let html = "";
-    messages.forEach(m => {
+    messages.forEach((m, idx) => {
         const isMe = m.sender === currentName;
         const timeStr = m.time || '17:09';
+        const msgId = m.id || ('m_' + idx);
+        const attachmentJsonStr = encodeURIComponent(JSON.stringify(m.attachment || null));
 
         let attachmentHTML = "";
         if (m.attachment) {
@@ -1310,7 +1424,7 @@ function renderMessagesFeed(messages) {
                     </div>
                 `;
             } else if (m.attachment.type === 'file') {
-                // WHATSAPP PDF VE DOKÜMAN KARTI (EKRAN GÖRÜNTÜSÜ BİREBİR TASARIMI)
+                // WHATSAPP PDF VE DOKÜMAN KARTI
                 attachmentHTML = `
                     <div class="my-1.5 rounded-2xl bg-slate-900 text-white overflow-hidden border border-slate-700/80 shadow-lg max-w-xs">
                         <div class="p-3.5 flex items-center gap-3 bg-gradient-to-r from-rose-950/60 to-slate-900">
@@ -1348,11 +1462,34 @@ function renderMessagesFeed(messages) {
             : 'bg-white dark:bg-[#202c33] text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/60 shadow-md';
 
         html += `
-            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} group/msg relative">
                 ${!isMe ? `<span class="text-[10px] font-bold text-tsMavi dark:text-tsMavi mb-0.5 ml-1">${m.sender}</span>` : ''}
                 
-                <div class="max-w-md p-3 ${bubbleBg}">
-                    ${m.text ? `<p class="text-xs leading-relaxed whitespace-pre-wrap">${m.text}</p>` : ''}
+                <div class="relative max-w-md p-3 ${bubbleBg}">
+                    <!-- ÜÇ NOKTA İŞLEM MENÜSÜ BUTONU -->
+                    <div class="absolute top-1.5 right-1.5 opacity-80 md:opacity-0 group-hover/msg:opacity-100 transition-opacity z-20">
+                        <button type="button" onclick="toggleMsgActionsMenu('${msgId}')" title="İşlemler" class="w-5 h-5 rounded-full bg-slate-900/40 hover:bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold transition-all shadow">
+                            ⋮
+                        </button>
+                        <!-- AÇILIR İŞLEM MENÜSÜ -->
+                        <div id="msg-actions-${msgId}" class="hidden absolute right-0 top-6 z-40 w-48 py-1.5 rounded-2xl bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700 shadow-2xl space-y-1 text-left text-xs font-medium">
+                            <button type="button" onclick="addChatMessageToArchive('${m.sender}', '${(m.text || '').replace(/'/g, "\\'")}', '${attachmentJsonStr}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3 py-2 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-400">
+                                📂 Proje Arşivine Ekle
+                            </button>
+                            ${m.text ? `
+                                <button type="button" onclick="navigator.clipboard.writeText('${(m.text || '').replace(/'/g, "\\'")}'); alert('Mesaj metni kopyalandı! 📋'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2">
+                                    📋 Metni Kopyala
+                                </button>
+                            ` : ''}
+                            ${m.id ? `
+                                <button type="button" onclick="deleteChatMessage('${m.id}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3 py-2 text-rose-500 hover:bg-rose-500/10 flex items-center gap-2 font-bold border-t border-slate-100 dark:border-slate-800">
+                                    🗑️ Mesajı Sil
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    ${m.text ? `<p class="text-xs leading-relaxed whitespace-pre-wrap pr-4">${m.text}</p>` : ''}
                     ${attachmentHTML}
                     
                     <div class="flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-slate-300' : 'text-slate-400 dark:text-slate-400'} mt-1">

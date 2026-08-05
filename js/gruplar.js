@@ -50,7 +50,7 @@ const DEMO_GROUPS = [
 let allGroups = [];
 let currentCategoryFilter = 'all';
 
-// Sayfa Yüklendiğinde Admin Kontrolü ve Başlatma
+// Sayfa Yüklendiğinde Grupları Yükleme
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof renderNavbar === 'function') {
         renderNavbar('gruplar');
@@ -59,16 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminGuard = document.getElementById('admin-access-guard');
     const mainContent = document.getElementById('groups-main-content');
 
-    const adminState = typeof isAdmin === 'function' && isAdmin();
-
-    if (!adminState) {
-        if (adminGuard) adminGuard.classList.remove('hidden');
-        if (mainContent) mainContent.classList.add('hidden');
-        return;
-    } else {
-        if (adminGuard) adminGuard.classList.add('hidden');
-        if (mainContent) mainContent.classList.remove('hidden');
-    }
+    // Herkes proje gruplarını görüntüleyebilir ve katılabilir
+    if (adminGuard) adminGuard.classList.add('hidden');
+    if (mainContent) mainContent.classList.remove('hidden');
 
     loadGroupsList();
 });
@@ -390,8 +383,19 @@ function handleCreateGroup(e) {
             createdAt: timestamp
         };
 
+        function saveGroupToLocalCache(grp) {
+            try {
+                let cached = JSON.parse(localStorage.getItem('mali_created_groups') || '[]');
+                cached = cached.filter(g => g.id !== grp.id);
+                cached.unshift(grp);
+                localStorage.setItem('mali_created_groups', JSON.stringify(cached));
+            } catch(e) {}
+        }
+
         if (typeof db !== 'undefined' && db && db.collection) {
             db.collection("groups").add(newGroup).then((docRef) => {
+                newGroup.id = docRef.id;
+                saveGroupToLocalCache(newGroup);
                 alert(`✅ "${name}" projesi başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
                 closeCreateGroupModal();
                 window.location.href = `grup-detay.html?id=${docRef.id}`;
@@ -399,6 +403,7 @@ function handleCreateGroup(e) {
                 console.warn("Firestore kayıt hatası, yerel yönlendirme yapılıyor:", err);
                 const localId = 'grp-' + Date.now();
                 newGroup.id = localId;
+                saveGroupToLocalCache(newGroup);
                 DEMO_GROUPS.unshift(newGroup);
                 alert(`✅ "${name}" projesi başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
                 closeCreateGroupModal();
@@ -407,6 +412,7 @@ function handleCreateGroup(e) {
         } else {
             const localId = 'grp-' + Date.now();
             newGroup.id = localId;
+            saveGroupToLocalCache(newGroup);
             DEMO_GROUPS.unshift(newGroup);
             alert(`✅ "${name}" projesi başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
             closeCreateGroupModal();

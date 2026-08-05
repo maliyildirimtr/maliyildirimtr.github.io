@@ -30,18 +30,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminGuard = document.getElementById('admin-access-guard');
     const workspaceContent = document.getElementById('group-workspace-content');
 
-    const adminState = typeof isAdmin === 'function' && isAdmin();
-
-    if (!adminState) {
-        if (adminGuard) adminGuard.classList.remove('hidden');
-        if (workspaceContent) workspaceContent.classList.add('hidden');
-        return;
-    } else {
-        if (adminGuard) adminGuard.classList.add('hidden');
-        if (workspaceContent) workspaceContent.classList.remove('hidden');
-    }
+    // Tüm kullanıcılar ve ziyaretçiler grup çalışma alanına erişebilir
+    if (adminGuard) adminGuard.classList.add('hidden');
+    if (workspaceContent) workspaceContent.classList.remove('hidden');
 
     loadGroupWorkspace();
+
+    if (typeof auth !== 'undefined' && auth && auth.onAuthStateChanged) {
+        auth.onAuthStateChanged(() => {
+            if (currentGroup) {
+                renderWorkspaceUI();
+            }
+        });
+    }
 });
 
 // KULLANICI ROLÜ VE YETKİ KONTROLLERİ
@@ -96,7 +97,8 @@ function loadGroupWorkspace() {
                 fallbackLoadWorkspace();
             }
             renderWorkspaceUI();
-        }, () => {
+        }, (err) => {
+            console.warn("Firestore grup yükleme uyarısı:", err);
             fallbackLoadWorkspace();
             renderWorkspaceUI();
         });
@@ -110,16 +112,43 @@ function fallbackLoadWorkspace() {
     const user = getCurrentUser();
     const adminName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
 
+    // 1. Önce localStorage'da yerel önbellekte var mı kontrol et
+    let localGroups = [];
+    try {
+        const stored = localStorage.getItem('mali_created_groups');
+        if (stored) localGroups = JSON.parse(stored);
+    } catch(e) {}
+
+    const foundLocal = localGroups.find(g => g.id === groupId);
+    if (foundLocal) {
+        currentGroup = { ...foundLocal };
+        return;
+    }
+
+    // 2. Demo grupları dizisinde var mı bak
+    const foundDemo = (typeof DEMO_GROUPS !== 'undefined' && Array.isArray(DEMO_GROUPS)) 
+        ? DEMO_GROUPS.find(g => g.id === groupId) 
+        : null;
+
+    if (foundDemo) {
+        currentGroup = { ...foundDemo };
+        if (!currentGroup.members) {
+            currentGroup.members = [
+                { uid: user ? user.uid : 'admin-uid', name: currentGroup.leader || adminName, email: user ? user.email : 'admin@maliyildirimtr.com', role: 'Yönetici' }
+            ];
+        }
+        return;
+    }
+
+    // 3. Bulunamadıysa dinamik grup nesnesi oluştur
     currentGroup = {
         id: groupId,
-        name: "FPGA Tabanlı YZ Hızlandırıcı Tasarımı",
-        category: "FPGA / Donanım",
-        inviteCode: "MP-8492",
+        name: "Proje Çalışma Alanı",
+        category: "Mühendislik & YZ",
+        inviteCode: "MP-" + Math.floor(1000 + Math.random() * 9000),
         leader: adminName,
-        description: "SystemVerilog ve Intel Quartus Prime kullanarak Evrişimli Sinir Ağları (CNN) matris çarpımlarını dikey boru hattı (pipelined) mimari ile FPGA üzerinde hızlandırma projesi.",
-        lookingRoles: "Verilog / FPGA Uzmanı, PCB Tasarımcısı",
-        githubRepoUrl: "https://github.com/maliyildirimtr/fpga-ai-accelerator",
-        gdriveUrl: "https://drive.google.com/drive/folders/mali-academy-fpga-demo",
+        description: "Bu proje kuluçka grubu üniversiteler arası ortak mühendislik ve geliştirme alanıdır.",
+        lookingRoles: "Yazılımcı, Donanım Geliştirici",
         targetBudget: 5000,
         spentBudget: 0,
         membersCount: 1,
@@ -127,9 +156,9 @@ function fallbackLoadWorkspace() {
             { uid: user ? user.uid : 'admin-uid', name: adminName, email: user ? user.email : 'admin@maliyildirimtr.com', role: 'Yönetici' }
         ],
         milestones: [
-            { id: "m1", text: "SystemVerilog Top-Level Modül Mimarisi", status: "completed" },
-            { id: "m2", text: "Pipelined Matris Çarpanı Sentezi ve ModelSim Verifikasyonu", status: "in_progress" },
-            { id: "m3", text: "FPGA Donanım Testi ve Canlıya Alma", status: "planned" }
+            { id: "m1", text: "Proje Mimarisi ve İhtiyaç Analizi", status: "completed" },
+            { id: "m2", text: "Donanım ve Yazılım Geliştirme Fazı", status: "in_progress" },
+            { id: "m3", text: "Test, Doğrulama ve Canlıya Alma", status: "planned" }
         ]
     };
 }

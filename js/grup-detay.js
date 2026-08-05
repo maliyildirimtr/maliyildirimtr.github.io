@@ -1859,8 +1859,31 @@ function toggleEventAttendance(msgId) {
 
 function toggleMsgActionsMenu(msgId) {
     const menu = document.getElementById('msg-actions-' + msgId);
-    if (menu) menu.classList.toggle('hidden');
+    const bubble = document.getElementById('msg-bubble-' + msgId);
+    const row = bubble ? bubble.closest('.group\\/msg') : null;
+
+    const isCurrentlyHidden = menu ? menu.classList.contains('hidden') : false;
+
+    // Tüm açık menülerin ve z-index yükseltmelerinin sıfırlanması
+    document.querySelectorAll('[id^="msg-actions-"]').forEach(m => m.classList.add('hidden'));
+    document.querySelectorAll('.group\\/msg').forEach(r => r.style.zIndex = '');
+    document.querySelectorAll('.msg-bubble-card').forEach(b => b.style.zIndex = '');
+
+    if (menu && isCurrentlyHidden) {
+        menu.classList.remove('hidden');
+        if (row) row.style.zIndex = '50';
+        if (bubble) bubble.style.zIndex = '50';
+    }
 }
+
+// Dışarıya tıklanınca tüm açılır menüleri kapat
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('[id^="msg-actions-"]') && !e.target.closest('button[title="İşlemler"]') && !e.target.closest('.msg-bubble-card')) {
+        document.querySelectorAll('[id^="msg-actions-"]').forEach(m => m.classList.add('hidden'));
+        document.querySelectorAll('.group\\/msg').forEach(r => r.style.zIndex = '');
+        document.querySelectorAll('.msg-bubble-card').forEach(b => b.style.zIndex = '');
+    }
+});
 
 function deleteChatMessage(msgId) {
     if (!confirm("Bu mesajı silmek istediğinizden emin misiniz?")) return;
@@ -2155,6 +2178,7 @@ function renderMessagesFeed(messages) {
                     ${!isMe ? `<span class="text-[10px] font-bold text-tsMavi dark:text-tsMavi mb-0.5 ml-1">${m.sender}</span>` : ''}
                     
                     <div id="msg-bubble-${msgId}" 
+                         onclick="handleBubbleClick('${msgId}', event)" 
                          ondblclick="handleMessageDoubleClick('${msgId}', event)" 
                          onmousedown="handleBubbleTouchStart(event, '${msgId}')" 
                          onmousemove="handleBubbleTouchMove(event, '${msgId}')" 
@@ -2163,7 +2187,7 @@ function renderMessagesFeed(messages) {
                          ontouchstart="handleBubbleTouchStart(event, '${msgId}')" 
                          ontouchmove="handleBubbleTouchMove(event, '${msgId}')" 
                          ontouchend="handleBubbleTouchEnd(event, '${msgId}')" 
-                         class="relative p-3 ${bubbleBg} msg-bubble-card transition-all select-none cursor-grab active:cursor-grabbing">
+                         class="relative p-3 ${bubbleBg} msg-bubble-card transition-all select-none cursor-pointer">
                         
                         ${!isDeleted ? `
                             <!-- EMOJI REACTION HOVER BUTTON -->
@@ -2728,6 +2752,14 @@ function cancelReplyMessage() {
 
     const input = document.getElementById('chat-input');
     handleChatInputTyping(input);
+}
+
+// MESAJ BALONUNA SOL TIKLANINCA İŞLEM MENÜSÜNÜ OTOMATİK AÇMA
+function handleBubbleClick(msgId, e) {
+    if (isSelectModeActive || (dragDeltaX && Math.abs(dragDeltaX) > 10)) return;
+    if (e && e.target && e.target.closest('button, input, a, select, audio, label')) return;
+
+    toggleMsgActionsMenu(msgId);
 }
 
 // ÇİFT TIKLAMA İLE KALP (❤️) TEPKİSİ VERME

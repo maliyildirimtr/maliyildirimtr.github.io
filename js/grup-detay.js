@@ -1085,24 +1085,78 @@ function deleteExpense(expenseId, amount) {
     }
 }
 
-// 5. GRUP İÇİ SOHBET (TEAM CHAT) TABI
+// 5. GRUP İÇİ SOHBET (TEAM CHAT) TABI METOTLARI
+let pendingAttachment = null;
+let mediaRecorder = null;
+let audioChunks = [];
+let voiceTimerInterval = null;
+let voiceRecordSeconds = 0;
+
 function renderChatTab(container) {
     container.innerHTML = `
-        <div class="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4 max-w-3xl mx-auto shadow-xl">
+        <div class="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4 max-w-4xl mx-auto shadow-xl">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">💬 Takım İçi Canlı Sohbet</h3>
-                <span class="text-[10px] text-emerald-500 dark:text-emerald-400 flex items-center gap-1 font-semibold">● Canlı Takım Akışı</span>
+                <h3 class="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">💬 Takım İçi Canlı Sohbet & Medya Paylaşımı</h3>
+                <span class="text-[10px] text-emerald-500 dark:text-emerald-400 flex items-center gap-1 font-semibold">● Canlı Akış</span>
             </div>
 
-            <div id="chat-messages-container" class="space-y-3 h-[380px] overflow-y-auto p-2 no-scrollbar">
+            <!-- SOHBET AKIŞ ALANI -->
+            <div id="chat-messages-container" class="space-y-3 h-[420px] overflow-y-auto p-2 no-scrollbar">
                 <div class="text-center py-10 text-slate-500 text-xs">Mesajlar yükleniyor...</div>
             </div>
 
-            <form id="chat-form" onsubmit="handleSendMessage(event)" class="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <input type="text" id="chat-input" required placeholder="Takım arkadaşlarınıza bir mesaj yazın..." class="flex-grow px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
-                <button type="submit" class="px-5 py-2.5 rounded-xl bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-all shadow-md">
-                    Gönder ➔
-                </button>
+            <!-- EKLENTİ SEÇİM ÖNİZLEME ALANI -->
+            <div id="chat-preview-container" class="hidden p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-xs text-slate-800 dark:text-slate-200 truncate" id="chat-preview-content"></div>
+                <button type="button" onclick="cancelPendingAttachment()" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2 py-1">✕ Kaldır</button>
+            </div>
+
+            <!-- SES KAYDI AKTİF UYARI / SAYAC PANELİ -->
+            <div id="voice-recording-panel" class="hidden p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
+                    <span class="text-xs font-bold text-rose-600 dark:text-rose-400">🎤 Ses Kaydediliyor...</span>
+                    <span id="voice-recording-timer" class="font-mono text-xs font-extrabold text-slate-900 dark:text-slate-100">00:00</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="stopAndSendVoiceNote()" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-md hover:bg-emerald-600">
+                        ▶️ Kaydı Tamamla & Gönder
+                    </button>
+                    <button type="button" onclick="cancelVoiceRecording()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300">
+                        ✕ İptal
+                    </button>
+                </div>
+            </div>
+
+            <!-- GİZLİ DOSYA / GÖRSEL YÜKLEME INPUTLARI -->
+            <input type="file" id="chat-file-input" class="hidden" accept=".pdf,.doc,.docx,.txt,.zip,.rar,.v,.sv,.c,.cpp,.py,.json" onchange="handleFileSelection(event)">
+            <input type="file" id="chat-image-input" class="hidden" accept="image/*" onchange="handleImageSelection(event)">
+
+            <!-- MESAJ YAZMA & EKLENTİ BARI -->
+            <form id="chat-form" onsubmit="handleSendMessage(event)" class="space-y-2">
+                <div class="flex items-center gap-2 p-1.5 rounded-2xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 focus-within:border-tsMavi transition-all shadow-inner">
+                    
+                    <!-- EKLENTİ BUTONLARI -->
+                    <div class="flex items-center gap-1 pl-1 shrink-0">
+                        <button type="button" onclick="document.getElementById('chat-file-input').click()" title="Dosya / Doküman Ekle (PDF, Code, Zip)" class="p-2 rounded-xl text-slate-500 hover:text-tsMavi dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            📎
+                        </button>
+                        <button type="button" onclick="document.getElementById('chat-image-input').click()" title="Görsel / Fotoğraf Ekle" class="p-2 rounded-xl text-slate-500 hover:text-tsMavi dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            🖼️
+                        </button>
+                        <button type="button" onclick="startVoiceRecording()" title="Ses Kaydı Gönder (Mikrofon)" class="p-2 rounded-xl text-slate-500 hover:text-rose-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            🎤
+                        </button>
+                    </div>
+
+                    <!-- METİN GİRDİ ALANI -->
+                    <input type="text" id="chat-input" placeholder="Takım arkadaşlarınıza mesaj yazın veya dosya/ses ekleyin..." class="flex-grow bg-transparent text-slate-900 dark:text-slate-100 text-xs focus:outline-none px-2 py-1.5">
+
+                    <!-- GÖNDER BUTONU -->
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-all shadow-md shrink-0 flex items-center gap-1">
+                        Gönder ➔
+                    </button>
+                </div>
             </form>
         </div>
     `;
@@ -1134,22 +1188,63 @@ function renderMessagesFeed(messages) {
     const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
 
     if (messages.length === 0) {
-        c.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs italic">Henüz sohbet mesajı gönderilmedi. İlk mesajı yazın!</div>`;
+        c.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs italic">Henüz sohbet mesajı gönderilmedi. İlk mesajı veya medya dosyasını gönderin!</div>`;
         return;
     }
 
     let html = "";
     messages.forEach(m => {
         const isMe = m.sender === currentName;
+
+        let attachmentHTML = "";
+        if (m.attachment) {
+            if (m.attachment.type === 'image') {
+                attachmentHTML = `
+                    <div class="my-1.5">
+                        <img src="${m.attachment.url}" alt="Görsel" onclick="window.open('${m.attachment.url}', '_blank')" class="max-w-xs max-h-60 rounded-xl shadow-md cursor-pointer hover:opacity-95 transition-opacity border border-slate-200 dark:border-slate-700">
+                    </div>
+                `;
+            } else if (m.attachment.type === 'file') {
+                attachmentHTML = `
+                    <div class="my-1.5 p-3 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 text-slate-900 dark:text-slate-100 max-w-sm">
+                        <div class="flex items-center gap-2 truncate">
+                            <span class="text-lg">📄</span>
+                            <div class="truncate">
+                                <p class="font-bold text-xs truncate">${m.attachment.name}</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400">${m.attachment.size || 'Doküman'}</p>
+                            </div>
+                        </div>
+                        <a href="${m.attachment.url}" download="${m.attachment.name}" target="_blank" class="px-2.5 py-1 rounded-lg bg-tsMavi text-white font-bold text-[10px] hover:bg-sky-500 transition-colors shrink-0">
+                            💾 İndir ↗
+                        </a>
+                    </div>
+                `;
+            } else if (m.attachment.type === 'voice') {
+                attachmentHTML = `
+                    <div class="my-1.5 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 space-y-1 max-w-xs">
+                        <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                            <span>🎙️ Ses Mesajı</span>
+                        </div>
+                        <audio controls src="${m.attachment.url}" class="w-full h-8 rounded-lg focus:outline-none"></audio>
+                    </div>
+                `;
+            }
+        }
+
         html += `
             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
                 <div class="flex items-center gap-1.5 mb-1 text-[10px] text-slate-600 dark:text-slate-400">
                     <span class="font-bold text-slate-800 dark:text-slate-200">${m.sender}</span>
                     <span>• ${m.time || '12:00'}</span>
                 </div>
-                <div class="max-w-md px-4 py-2.5 rounded-2xl text-xs ${isMe ? 'bg-tsMavi text-white rounded-tr-none shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700 shadow-sm'}">
-                    ${m.text}
-                </div>
+                
+                ${m.text ? `
+                    <div class="max-w-md px-4 py-2.5 rounded-2xl text-xs ${isMe ? 'bg-tsMavi text-white rounded-tr-none shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700 shadow-sm'}">
+                        ${m.text}
+                    </div>
+                ` : ''}
+
+                ${attachmentHTML}
             </div>
         `;
     });
@@ -1158,6 +1253,104 @@ function renderMessagesFeed(messages) {
     c.scrollTop = c.scrollHeight;
 }
 
+// DOSYA VE GÖRSEL SEÇİM HANDLERLARI
+function handleFileSelection(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    prepareAttachment(file, file.type.startsWith('image/') ? 'image' : 'file');
+}
+
+function handleImageSelection(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    prepareAttachment(file, 'image');
+}
+
+function prepareAttachment(file, type) {
+    pendingAttachment = { file, type, name: file.name, size: formatBytes(file.size) };
+    const container = document.getElementById('chat-preview-container');
+    const content = document.getElementById('chat-preview-content');
+    
+    if (type === 'image') {
+        content.innerHTML = `🖼️ <strong>Görsel Seçildi:</strong> ${file.name} (${formatBytes(file.size)})`;
+    } else {
+        content.innerHTML = `📄 <strong>Doküman Seçildi:</strong> ${file.name} (${formatBytes(file.size)})`;
+    }
+    
+    if (container) container.classList.remove('hidden');
+}
+
+function cancelPendingAttachment() {
+    pendingAttachment = null;
+    const container = document.getElementById('chat-preview-container');
+    if (container) container.classList.add('hidden');
+    const fileInp = document.getElementById('chat-file-input');
+    const imgInp = document.getElementById('chat-image-input');
+    if (fileInp) fileInp.value = '';
+    if (imgInp) imgInp.value = '';
+}
+
+// SES KAYDI (VOICE NOTE) MANTIĞI
+function startVoiceRecording() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Tarayıcınız mikrofon kaydını desteklemiyor!");
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) audioChunks.push(event.data);
+        };
+
+        mediaRecorder.start();
+        voiceRecordSeconds = 0;
+
+        const panel = document.getElementById('voice-recording-panel');
+        if (panel) panel.classList.remove('hidden');
+        
+        voiceTimerInterval = setInterval(() => {
+            voiceRecordSeconds++;
+            const mins = String(Math.floor(voiceRecordSeconds / 60)).padStart(2, '0');
+            const secs = String(voiceRecordSeconds % 60).padStart(2, '0');
+            const timerEl = document.getElementById('voice-recording-timer');
+            if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+        }, 1000);
+
+    }).catch(err => {
+        console.error("Mikrofon hatası:", err);
+        alert("Mikrofon erişim izni alınamadı!");
+    });
+}
+
+function stopAndSendVoiceNote() {
+    if (!mediaRecorder) return;
+    
+    clearInterval(voiceTimerInterval);
+    const panel = document.getElementById('voice-recording-panel');
+    if (panel) panel.classList.add('hidden');
+
+    mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        uploadAndSendAttachment(audioBlob, 'voice', `ses-kaydi-${Date.now()}.webm`);
+    };
+
+    mediaRecorder.stop();
+}
+
+function cancelVoiceRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+    clearInterval(voiceTimerInterval);
+    audioChunks = [];
+    const panel = document.getElementById('voice-recording-panel');
+    if (panel) panel.classList.add('hidden');
+}
+
+// MESAJ GÖNDERME SÜRECİ
 function handleSendMessage(e) {
     if (e && e.preventDefault) e.preventDefault();
 
@@ -1165,32 +1358,87 @@ function handleSendMessage(e) {
     const input = document.getElementById('chat-input');
     const text = input ? input.value.trim() : '';
 
-    if (!text) return;
+    if (!text && !pendingAttachment) return;
 
+    const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
+
+    if (pendingAttachment) {
+        uploadAndSendAttachment(pendingAttachment.file, pendingAttachment.type, pendingAttachment.name, text);
+    } else {
+        sendChatMessage(currentName, text, null);
+        if (input) input.value = '';
+    }
+}
+
+function uploadAndSendAttachment(fileOrBlob, type, fileName, messageText = '') {
+    const user = getCurrentUser();
+    const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
+
+    if (typeof firebase !== 'undefined' && firebase.storage) {
+        try {
+            const storageRef = firebase.storage().ref();
+            const filePath = `groups/${groupId}/chat/${Date.now()}_${fileName}`;
+            const fileRef = storageRef.child(filePath);
+
+            fileRef.put(fileOrBlob).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
+                sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0) });
+                cancelPendingAttachment();
+                const input = document.getElementById('chat-input');
+                if (input) input.value = '';
+            }).catch(err => {
+                console.warn("Storage hatası, DataURL kullanılıyor:", err);
+                fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
+            });
+        } catch (err) {
+            fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
+        }
+    } else {
+        fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
+    }
+}
+
+function fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const url = e.target.result;
+        sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0) });
+        cancelPendingAttachment();
+        const input = document.getElementById('chat-input');
+        if (input) input.value = '';
+    };
+    reader.readAsDataURL(fileOrBlob);
+}
+
+function sendChatMessage(sender, text, attachment) {
     const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
         ? firebase.firestore.FieldValue.serverTimestamp() 
         : new Date().toISOString();
 
     const newMsg = {
-        sender: user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin",
-        text: text,
+        sender: sender,
+        text: text || '',
+        attachment: attachment || null,
         time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
         createdAt: timestamp
     };
 
     if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).collection("messages").add(newMsg).then(() => {
-            if (input) input.value = '';
-        }).catch(() => {
+        db.collection("groups").doc(groupId).collection("messages").add(newMsg).catch(() => {
             DEMO_MESSAGES.push(newMsg);
             renderMessagesFeed(DEMO_MESSAGES);
-            if (input) input.value = '';
         });
     } else {
         DEMO_MESSAGES.push(newMsg);
         renderMessagesFeed(DEMO_MESSAGES);
-        if (input) input.value = '';
     }
+}
+
+function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 // YARDIMCI DOLDURUCULAR (ÜYE SEÇİM KUTUSU)

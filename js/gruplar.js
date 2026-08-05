@@ -107,27 +107,18 @@ function loadGroupsList() {
     }
 }
 
-// İstatistik Barını Güncelleme
+// İstatistik Barını Güncelleme (Yalnızca Genel Metrikler)
 function updateStatsBar(groups) {
     const groupCountEl = document.getElementById('stat-group-count');
     const memberCountEl = document.getElementById('stat-member-count');
-    const budgetTotalEl = document.getElementById('stat-budget-total');
-    const tasksDoneEl = document.getElementById('stat-tasks-done');
 
     let totalMembers = 0;
-    let totalSpent = 0;
-    let totalTasksDone = 0;
-
     groups.forEach(g => {
         totalMembers += (g.membersCount || 1);
-        totalSpent += (g.spentBudget || 0);
-        totalTasksDone += (g.tasksDone || 0);
     });
 
     if (groupCountEl) groupCountEl.innerText = groups.length;
     if (memberCountEl) memberCountEl.innerText = totalMembers;
-    if (budgetTotalEl) budgetTotalEl.innerText = `₺${totalSpent.toLocaleString('tr-TR')}`;
-    if (tasksDoneEl) tasksDoneEl.innerText = totalTasksDone;
 }
 
 // Grupları Ekrana Çizme

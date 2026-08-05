@@ -533,22 +533,31 @@ function renderMessagesFeed(messages) {
 }
 
 function handleSendMessage(e) {
-    e.preventDefault();
-    const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+    if (e && e.preventDefault) e.preventDefault();
+
+    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
     const input = document.getElementById('chat-input');
     const text = input ? input.value.trim() : '';
 
     if (!text) return;
 
+    const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : new Date().toISOString();
+
     const newMsg = {
         sender: user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin",
         text: text,
         time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: timestamp
     };
 
-    if (typeof db !== 'undefined') {
+    if (typeof db !== 'undefined' && db && db.collection) {
         db.collection("groups").doc(groupId).collection("messages").add(newMsg).then(() => {
+            if (input) input.value = '';
+        }).catch(() => {
+            DEMO_MESSAGES.push(newMsg);
+            renderMessagesFeed(DEMO_MESSAGES);
             if (input) input.value = '';
         });
     } else {
@@ -560,19 +569,39 @@ function handleSendMessage(e) {
 
 // YARDIMCI MODAL DÜZENLEYİCİLERİ
 function openAddTaskModal() { document.getElementById('add-task-modal').classList.remove('hidden'); }
-function closeAddTaskModal() { document.getElementById('add-task-modal').classList.add('hidden'); }
+function closeAddTaskModal() { 
+    const modal = document.getElementById('add-task-modal');
+    const form = document.getElementById('add-task-form');
+    if (modal) modal.classList.add('hidden');
+    if (form) form.reset();
+}
 
 function openAddExpenseModal() { document.getElementById('add-expense-modal').classList.remove('hidden'); }
-function closeAddExpenseModal() { document.getElementById('add-expense-modal').classList.add('hidden'); }
+function closeAddExpenseModal() { 
+    const modal = document.getElementById('add-expense-modal');
+    const form = document.getElementById('add-expense-form');
+    if (modal) modal.classList.add('hidden');
+    if (form) form.reset();
+}
 
 function handleSaveTask(e) {
-    e.preventDefault();
-    const title = document.getElementById('task-title-input').value.trim();
-    const priority = document.getElementById('task-priority-input').value;
-    const assignee = document.getElementById('task-assignee-input').value.trim() || 'Mehmet Ali';
-    const desc = document.getElementById('task-desc-input').value.trim();
+    if (e && e.preventDefault) e.preventDefault();
+
+    const titleInput = document.getElementById('task-title-input');
+    const priorityInput = document.getElementById('task-priority-input');
+    const assigneeInput = document.getElementById('task-assignee-input');
+    const descInput = document.getElementById('task-desc-input');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    const priority = priorityInput ? priorityInput.value : 'Orta';
+    const assignee = assigneeInput ? (assigneeInput.value.trim() || 'Mehmet Ali') : 'Mehmet Ali';
+    const desc = descInput ? descInput.value.trim() : '';
 
     if (!title) return;
+
+    const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : new Date().toISOString();
 
     const newTask = {
         title,
@@ -580,12 +609,22 @@ function handleSaveTask(e) {
         assignee,
         description: desc,
         status: "todo",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: timestamp
     };
 
-    if (typeof db !== 'undefined') {
+    if (typeof db !== 'undefined' && db && db.collection) {
         db.collection("groups").doc(groupId).collection("tasks").add(newTask).then(() => {
             closeAddTaskModal();
+            // Gruba özel görev sayılarını güncelle
+            if (firebase && firebase.firestore && firebase.firestore.FieldValue) {
+                db.collection("groups").doc(groupId).update({
+                    tasksTotal: firebase.firestore.FieldValue.increment(1)
+                }).catch(() => {});
+            }
+        }).catch(() => {
+            DEMO_TASKS.push({ id: 't' + Date.now(), ...newTask });
+            closeAddTaskModal();
+            renderKanbanColumns(DEMO_TASKS);
         });
     } else {
         DEMO_TASKS.push({ id: 't' + Date.now(), ...newTask });
@@ -595,24 +634,43 @@ function handleSaveTask(e) {
 }
 
 function handleSaveExpense(e) {
-    e.preventDefault();
-    const title = document.getElementById('expense-title-input').value.trim();
-    const amount = parseFloat(document.getElementById('expense-amount-input').value) || 0;
-    const payer = document.getElementById('expense-payer-input').value.trim() || 'Mehmet Ali';
+    if (e && e.preventDefault) e.preventDefault();
+
+    const titleInput = document.getElementById('expense-title-input');
+    const amountInput = document.getElementById('expense-amount-input');
+    const payerInput = document.getElementById('expense-payer-input');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    const amount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
+    const payer = payerInput ? (payerInput.value.trim() || 'Mehmet Ali') : 'Mehmet Ali';
 
     if (!title || amount <= 0) return;
+
+    const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : new Date().toISOString();
 
     const newExpense = {
         title,
         amount,
         payer,
         date: new Date().toLocaleDateString('tr-TR'),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: timestamp
     };
 
-    if (typeof db !== 'undefined') {
+    if (typeof db !== 'undefined' && db && db.collection) {
         db.collection("groups").doc(groupId).collection("expenses").add(newExpense).then(() => {
             closeAddExpenseModal();
+            // Gruba özel bütçe harcamasını güncelle
+            if (firebase && firebase.firestore && firebase.firestore.FieldValue) {
+                db.collection("groups").doc(groupId).update({
+                    spentBudget: firebase.firestore.FieldValue.increment(amount)
+                }).catch(() => {});
+            }
+        }).catch(() => {
+            DEMO_EXPENSES.push({ id: 'e' + Date.now(), ...newExpense });
+            closeAddExpenseModal();
+            renderExpensesTable(DEMO_EXPENSES);
         });
     } else {
         DEMO_EXPENSES.push({ id: 'e' + Date.now(), ...newExpense });

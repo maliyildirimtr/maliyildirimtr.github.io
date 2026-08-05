@@ -256,7 +256,7 @@
 
                             <div class="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
                                 <span class="text-xs text-tsMavi font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                    İçeriği İncele (15 Konu & Video) →
+                                    İçeriği İncele (<span id="topic-count-${courseId}">...</span>) →
                                 </span>
                             </div>
                         </div>
@@ -264,6 +264,34 @@
                 });
 
                 grid.innerHTML = html;
+
+                // Her ders için konu ve video sayısını Firestore'dan canlı takip et
+                coursesList.forEach((course) => {
+                    const courseId = course.id;
+                    const countEl = document.getElementById(`topic-count-${courseId}`);
+
+                    if (typeof db !== 'undefined') {
+                        db.collection("courses").doc(courseId).collection("topics").onSnapshot((topicsSnap) => {
+                            let count = topicsSnap.size;
+                            if (count === 0 && courseId === 'systemverilog-kursu' && typeof SYSTEMVERILOG_TOPICS !== 'undefined') {
+                                count = SYSTEMVERILOG_TOPICS.length;
+                            }
+                            if (countEl) {
+                                countEl.innerText = `${count} Konu & Video`;
+                            }
+                        }, (err) => {
+                            let fallbackCount = (courseId === 'systemverilog-kursu' && typeof SYSTEMVERILOG_TOPICS !== 'undefined') ? SYSTEMVERILOG_TOPICS.length : 0;
+                            if (countEl) {
+                                countEl.innerText = `${fallbackCount} Konu & Video`;
+                            }
+                        });
+                    } else {
+                        let fallbackCount = (courseId === 'systemverilog-kursu' && typeof SYSTEMVERILOG_TOPICS !== 'undefined') ? SYSTEMVERILOG_TOPICS.length : 0;
+                        if (countEl) {
+                            countEl.innerText = `${fallbackCount} Konu & Video`;
+                        }
+                    }
+                });
             };
 
             db.collection("courses").orderBy("createdAt", "desc").onSnapshot((snapshot) => {

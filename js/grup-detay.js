@@ -1211,55 +1211,56 @@ function renderChatTab(container) {
             <input type="file" id="chat-file-input" class="hidden" accept=".pdf,.doc,.docx,.txt,.zip,.rar,.v,.sv,.c,.cpp,.py,.json" onchange="handleFileSelection(event)">
             <input type="file" id="chat-image-input" class="hidden" accept="image/*" onchange="handleImageSelection(event)">
 
-            <!-- WHATSAPP (+) AÇILIR EKLENTİ MENÜSÜ -->
-            <div id="whatsapp-attach-menu" class="hidden absolute bottom-20 left-6 z-40 p-4 rounded-3xl bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700 shadow-2xl backdrop-blur-xl animate-fade-in space-y-4 max-w-xs w-full">
-                <div class="grid grid-cols-4 gap-3 text-center">
-                    <!-- File -->
-                    <button type="button" onclick="document.getElementById('chat-file-input').click(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
-                        <div class="w-12 h-12 rounded-full bg-blue-600/20 text-blue-500 border border-blue-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
-                            📁
-                        </div>
-                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">File</span>
-                    </button>
-
-                    <!-- Photos & Videos -->
-                    <button type="button" onclick="document.getElementById('chat-image-input').click(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
-                        <div class="w-12 h-12 rounded-full bg-sky-600/20 text-sky-500 border border-sky-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
-                            🖼️
-                        </div>
-                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Photos</span>
-                    </button>
-
-                    <!-- Poll -->
-                    <button type="button" onclick="insertQuickPoll(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
-                        <div class="w-12 h-12 rounded-full bg-amber-600/20 text-amber-500 border border-amber-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
-                            📊
-                        </div>
-                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Poll</span>
-                    </button>
-
-                    <!-- Event -->
-                    <button type="button" onclick="openAddMilestoneModal(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
-                        <div class="w-12 h-12 rounded-full bg-rose-600/20 text-rose-500 border border-rose-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
-                            📅
-                        </div>
-                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Event</span>
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-4 gap-3 text-center border-t border-slate-200 dark:border-slate-800 pt-3">
-                    <!-- Contact -->
-                    <button type="button" onclick="shareLeaderContact(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
-                        <div class="w-12 h-12 rounded-full bg-orange-600/20 text-orange-500 border border-orange-500/30 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-md">
-                            👤
-                        </div>
-                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Contact</span>
-                    </button>
-                </div>
-            </div>
-
             <!-- WHATSAPP TARZI MESAJ YAZMA BARI -->
             <form id="chat-form" onsubmit="handleSendMessage(event)" class="relative space-y-2">
+
+                <!-- WHATSAPP (+) AÇILIR EKLENTİ MENÜSÜ (+ BUTONUNUN TAM ÜSTÜNDE HİZALI) -->
+                <div id="whatsapp-attach-menu" class="hidden absolute bottom-14 left-0 z-50 p-4 rounded-3xl bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700 shadow-2xl backdrop-blur-xl space-y-3 w-72">
+                    <div class="grid grid-cols-4 gap-2 text-center">
+                        <!-- File -->
+                        <button type="button" onclick="document.getElementById('chat-file-input').click(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                            <div class="w-11 h-11 rounded-full bg-blue-600/20 text-blue-500 border border-blue-500/30 flex items-center justify-center text-lg group-hover:scale-110 transition-transform shadow-md">
+                                📁
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">File</span>
+                        </button>
+
+                        <!-- Photos & Videos -->
+                        <button type="button" onclick="document.getElementById('chat-image-input').click(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                            <div class="w-11 h-11 rounded-full bg-sky-600/20 text-sky-500 border border-sky-500/30 flex items-center justify-center text-lg group-hover:scale-110 transition-transform shadow-md">
+                                🖼️
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Photos</span>
+                        </button>
+
+                        <!-- Poll -->
+                        <button type="button" onclick="insertQuickPoll(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                            <div class="w-11 h-11 rounded-full bg-amber-600/20 text-amber-500 border border-amber-500/30 flex items-center justify-center text-lg group-hover:scale-110 transition-transform shadow-md">
+                                📊
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Poll</span>
+                        </button>
+
+                        <!-- Event -->
+                        <button type="button" onclick="openAddMilestoneModal(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                            <div class="w-11 h-11 rounded-full bg-rose-600/20 text-rose-500 border border-rose-500/30 flex items-center justify-center text-lg group-hover:scale-110 transition-transform shadow-md">
+                                📅
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Event</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2 text-center border-t border-slate-200 dark:border-slate-800 pt-2.5">
+                        <!-- Contact -->
+                        <button type="button" onclick="shareLeaderContact(); toggleWhatsappAttachMenu();" class="flex flex-col items-center gap-1 group">
+                            <div class="w-11 h-11 rounded-full bg-orange-600/20 text-orange-500 border border-orange-500/30 flex items-center justify-center text-lg group-hover:scale-110 transition-transform shadow-md">
+                                👤
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300">Contact</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-2 px-3 py-2 rounded-full border border-slate-300 dark:border-slate-800 bg-white dark:bg-[#202c33] focus-within:border-tsMavi transition-all shadow-md">
                     
                     <!-- (+) ATTACHMENT MENU BUTTON -->
@@ -1290,6 +1291,22 @@ function renderChatTab(container) {
     `;
 
     loadMessages();
+}
+
+function loadMessages() {
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).collection("messages").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
+            let messages = [];
+            if (!snapshot.empty) {
+                snapshot.docs.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
+            } else {
+                messages = DEMO_MESSAGES;
+            }
+            renderMessagesFeed(messages);
+        }, () => renderMessagesFeed(DEMO_MESSAGES));
+    } else {
+        renderMessagesFeed(DEMO_MESSAGES);
+    }
 }
 
 function toggleWhatsappAttachMenu() {

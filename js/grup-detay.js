@@ -2249,7 +2249,7 @@ function renderMessagesFeed(messages) {
                                         <span>✅</span> Select messages (Mesajları Seç)
                                     </button>
                                     ${(isMe || isUserAuthorized()) ? `
-                                        <button type="button" onclick="openDeleteMsgModal('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 text-rose-500 hover:bg-rose-500/10 flex items-center gap-2.5 font-bold border-t border-slate-100 dark:border-slate-800">
+                                        <button type="button" onclick="openDeleteMsgModal('${msgId}')" class="w-full px-3.5 py-2 text-rose-500 hover:bg-rose-500/10 flex items-center gap-2.5 font-bold border-t border-slate-100 dark:border-slate-800">
                                             <span>🗑️</span> Delete (Sil)
                                         </button>
                                     ` : ''}
@@ -3084,19 +3084,25 @@ function deleteSelectedMessages() {
     cancelSelectMode();
 }
 
-// WHATSAPP MESAJ SİLME MODALI ("Herkes için sil" / "Benden sil")
+// WHATSAPP TARZI MESAJ SİLME MODALI ("Herkes için sil" / "Benden sil")
 let pendingDeleteMsgId = null;
 
 function openDeleteMsgModal(msgId) {
     pendingDeleteMsgId = msgId;
+    document.querySelectorAll('[id^="msg-actions-"]').forEach(m => m.classList.add('hidden'));
+
     const modal = document.getElementById('delete-msg-modal');
-    if (modal) modal.classList.remove('hidden');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
 }
 
 function closeDeleteMsgModal() {
     pendingDeleteMsgId = null;
     const modal = document.getElementById('delete-msg-modal');
-    if (modal) modal.classList.add('hidden');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
 }
 
 function confirmDeleteMessage(type) {
@@ -3109,36 +3115,62 @@ function confirmDeleteMessage(type) {
 
     if (type === 'everyone') {
         if (typeof db !== 'undefined' && db && db.collection) {
-            db.collection("groups").doc(groupId).collection("messages").doc(msgId).update({
+            const msgRef = db.collection("groups").doc(groupId).collection("messages").doc(msgId);
+            msgRef.update({
                 isDeleted: true,
-                text: "🚫 Bu mesaj silindi"
-            }).catch(err => console.error("Silme hatası:", err));
+                isDeletedForEveryone: true,
+                deletedContent: "🚫 Bu mesaj silindi",
+                text: "🚫 Bu mesaj silindi",
+                attachment: null,
+                poll: null,
+                eventData: null
+            }).then(() => {
+                updateLocalMessageDeleted(msgId, 'everyone', userKey);
+            }).catch(err => {
+                console.warn("Firestore güncelleme hatası, lokal durum güncelleniyor:", err);
+                updateLocalMessageDeleted(msgId, 'everyone', userKey);
+            });
         } else {
-            const msg = DEMO_MESSAGES.find(m => m.id === msgId);
-            if (msg) {
-                msg.isDeleted = true;
-                msg.text = "🚫 Bu mesaj silindi";
-                renderMessagesFeed(DEMO_MESSAGES);
-            }
+            updateLocalMessageDeleted(msgId, 'everyone', userKey);
         }
     } else if (type === 'me') {
         if (typeof db !== 'undefined' && db && db.collection) {
             const msgRef = db.collection("groups").doc(groupId).collection("messages").doc(msgId);
-            msgRef.get().then(doc => {
-                if (!doc.exists) return;
-                const data = doc.data();
-                const deletedForArr = data.deletedForArr || [];
-                if (!deletedForArr.includes(userKey)) deletedForArr.push(userKey);
-                msgRef.update({ deletedForArr: deletedForArr });
+            msgRef.update({
+                deletedForArr: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+                    ? firebase.firestore.FieldValue.arrayUnion(userKey)
+                    : [userKey]
+            }).then(() => {
+                updateLocalMessageDeleted(msgId, 'me', userKey);
+            }).catch(err => {
+                console.warn("Firestore benden sil hatası, lokal durum güncelleniyor:", err);
+                updateLocalMessageDeleted(msgId, 'me', userKey);
             });
         } else {
-            const msg = DEMO_MESSAGES.find(m => m.id === msgId);
-            if (msg) {
-                msg.deletedForArr = msg.deletedForArr || [];
-                if (!msg.deletedForArr.includes(userKey)) msg.deletedForArr.push(userKey);
-                renderMessagesFeed(DEMO_MESSAGES);
+            updateLocalMessageDeleted(msgId, 'me', userKey);
+        }
+    }
+}
+
+function updateLocalMessageDeleted(msgId, type, userKey) {
+    const messages = window.currentLoadedMessages || DEMO_MESSAGES || [];
+    const msg = messages.find((m, idx) => (m.id === msgId || ('m_' + idx) === msgId));
+    if (msg) {
+        if (type === 'everyone') {
+            msg.isDeleted = true;
+            msg.isDeletedForEveryone = true;
+            msg.deletedContent = "🚫 Bu mesaj silindi";
+            msg.text = "🚫 Bu mesaj silindi";
+            msg.attachment = null;
+            msg.poll = null;
+            msg.eventData = null;
+        } else if (type === 'me') {
+            msg.deletedForArr = msg.deletedForArr || [];
+            if (!msg.deletedForArr.includes(userKey)) {
+                msg.deletedForArr.push(userKey);
             }
         }
+        renderMessagesFeed(messages);
     }
 }
 

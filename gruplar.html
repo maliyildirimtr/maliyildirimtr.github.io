@@ -180,9 +180,54 @@
                     <textarea id="group-desc" rows="3" required placeholder="Projenin amacı, kullanılan teknolojiler ve hedefleri..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi resize-none"></textarea>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">🎯 Aranan Takım Arkadaşı / Rol İhtiyacı (Talent Match)</label>
+                    <input type="text" id="group-looking-roles" placeholder="Örn: Verilog / FPGA Uzmanı, PCB Tasarımcısı, Frontend Dev" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                </div>
+
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                     <button type="button" onclick="closeCreateGroupModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
                     <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold ts-gradient-btn text-white shadow-md">Grubu Kur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: GRUBA KATILMA BAŞVURUSU GÖNDER (TALENT MATCH) -->
+    <div id="apply-group-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100"><span>📩</span> Gruba Başvuru Yap</h3>
+                <button onclick="closeApplyGroupModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">✕</button>
+            </div>
+
+            <form id="apply-group-form" onsubmit="handleSendGroupApplication(event)" class="space-y-4">
+                <input type="hidden" id="apply-group-id">
+                <div id="apply-group-name-display" class="text-xs font-bold text-tsMavi p-2.5 rounded-xl bg-tsMavi/10 border border-tsMavi/20"></div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">Adınız Soyadınız *</label>
+                    <input type="text" id="applicant-name" required placeholder="Örn: Ali Yılmaz" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">E-Posta / İletişim *</label>
+                    <input type="email" id="applicant-email" required placeholder="Örn: ali@üniversite.edu.tr" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">Uzmanlık Alanınız / Başvurduğunuz Rol *</label>
+                    <input type="text" id="applicant-role" required placeholder="Örn: FPGA Uzmanı / Verilog Kodlayıcısı" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">Takım Liderine Notunuz</label>
+                    <textarea id="applicant-note" rows="3" placeholder="Yetenekleriniz, önceki projeleriniz ve katkı sağlayabileceğiniz alanlar..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeApplyGroupModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">İptal</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold ts-gradient-btn text-white shadow-md">Başvuruyu Gönder</button>
                 </div>
             </form>
         </div>

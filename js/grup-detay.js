@@ -11,11 +11,16 @@ let currentTab = 'overview';
 let groupTasks = [];
 let groupExpenses = [];
 let groupMessages = [];
+let groupDocuments = [];
+let groupApplications = [];
+let currentArchiveFilter = 'all';
 
-// ÇEVRİMDİŞİ / YEDEK DEMO TEMİZ VERİLER (Varsayılanlar tamamen boş başlar)
+// YEDEK DEMO TEMİZ VERİLER
 const DEMO_TASKS = [];
 const DEMO_EXPENSES = [];
 const DEMO_MESSAGES = [];
+const DEMO_DOCUMENTS = [];
+const DEMO_APPLICATIONS = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof renderNavbar === 'function') {
@@ -55,7 +60,6 @@ function getCurrentUserRole() {
         if (found) return found.role || 'Üye';
     }
 
-    // Admin oturumu açıksa varsayılan Yönetici
     if (typeof isAdmin === 'function' && isAdmin()) {
         return 'Yönetici';
     }
@@ -113,6 +117,9 @@ function fallbackLoadWorkspace() {
         inviteCode: "MP-8492",
         leader: adminName,
         description: "SystemVerilog ve Intel Quartus Prime kullanarak Evrişimli Sinir Ağları (CNN) matris çarpımlarını dikey boru hattı (pipelined) mimari ile FPGA üzerinde hızlandırma projesi.",
+        lookingRoles: "Verilog / FPGA Uzmanı, PCB Tasarımcısı",
+        githubRepoUrl: "https://github.com/maliyildirimtr/fpga-ai-accelerator",
+        gdriveUrl: "https://drive.google.com/drive/folders/mali-academy-fpga-demo",
         targetBudget: 5000,
         spentBudget: 0,
         membersCount: 1,
@@ -136,10 +143,17 @@ function renderWorkspaceUI() {
     const roleText = getCurrentUserRole();
     const targetBudget = currentGroup.targetBudget || 0;
 
+    const lookingRolesBadges = currentGroup.lookingRoles ? `
+        <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+            <span class="text-[10px] font-bold text-amber-500">🎯 Aranan Roller:</span>
+            ${currentGroup.lookingRoles.split(',').map(r => `<span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold border border-amber-500/20">${r.trim()}</span>`).join('')}
+        </div>
+    ` : '';
+
     container.innerHTML = `
         <!-- HEADER BÖLÜMÜ -->
         <div class="rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xl backdrop-blur-md space-y-4">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div>
                     <div class="flex flex-wrap items-center gap-2 mb-2">
                         <span class="px-3 py-1 rounded-full bg-tsMavi/10 text-tsMavi font-bold text-xs border border-tsMavi/20">
@@ -150,9 +164,13 @@ function renderWorkspaceUI() {
                         </button>
                     </div>
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">${currentGroup.name}</h1>
+                    ${lookingRolesBadges}
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <button onclick="openJitsiMeeting()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-1.5">
+                        📹 Görüntülü Toplantı Başlat (Virtual Lab)
+                    </button>
                     ${!isMember ? `
                         <button onclick="joinCurrentGroup()" class="px-4 py-2.5 rounded-xl ts-gradient-btn text-white text-xs font-bold shadow-md hover:opacity-90 transition-all flex items-center gap-1.5">
                             <span>➕</span> Gruba Üye Ol
@@ -175,16 +193,19 @@ function renderWorkspaceUI() {
 
             <!-- TAB MENÜSÜ -->
             <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
-                <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-tsMavi text-tsMavi transition-all">
+                <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-tsMavi text-tsMavi transition-all shrink-0">
                     📌 Genel Bakış & Üyeler
                 </button>
-                <button onclick="switchTab('kanban')" id="tab-btn-kanban" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all">
+                <button onclick="switchTab('archive')" id="tab-btn-archive" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
+                    📂 Arşiv & Dokümanlar (Resource Hub)
+                </button>
+                <button onclick="switchTab('kanban')" id="tab-btn-kanban" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
                     📋 Görev Panosu (Kanban)
                 </button>
-                <button onclick="switchTab('budget')" id="tab-btn-budget" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all">
+                <button onclick="switchTab('budget')" id="tab-btn-budget" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
                     💳 Ortak Kasa & Bütçe Takibi
                 </button>
-                <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all">
+                <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
                     💬 Grup İçi Sohbet
                 </button>
             </div>
@@ -194,7 +215,28 @@ function renderWorkspaceUI() {
         <div id="tab-content-area" class="space-y-6"></div>
     `;
 
-    switchTab('overview');
+    switchTab(currentTab);
+}
+
+// JITSI MEET VIRTUAL LAB TOPLANTI ODA KONTROLÜ
+function openJitsiMeeting() {
+    const roomName = `maliacademy-workspace-${groupId}`;
+    const url = `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false`;
+
+    const iframe = document.getElementById('jitsi-iframe');
+    const externalLink = document.getElementById('jitsi-external-link');
+    const modal = document.getElementById('jitsi-modal');
+
+    if (iframe) iframe.src = url;
+    if (externalLink) externalLink.href = url;
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeJitsiMeeting() {
+    const iframe = document.getElementById('jitsi-iframe');
+    const modal = document.getElementById('jitsi-modal');
+    if (iframe) iframe.src = '';
+    if (modal) modal.classList.add('hidden');
 }
 
 // GRUBA ÜYE OLMA
@@ -250,6 +292,8 @@ function switchTab(tabName) {
 
     if (tabName === 'overview') {
         renderOverviewTab(contentArea);
+    } else if (tabName === 'archive') {
+        renderArchiveTab(contentArea);
     } else if (tabName === 'kanban') {
         renderKanbanTab(contentArea);
     } else if (tabName === 'budget') {
@@ -360,6 +404,19 @@ function renderOverviewTab(container) {
                         ${milestonesHTML}
                     </div>
                 </div>
+
+                <!-- GELEN KATILMA BAŞVURULARI (TALENT MATCH APPLICATIONS) -->
+                ${isAuth ? `
+                    <div class="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">📩 Gelen Katılma Başvuruları (Talent Match)</h3>
+                            <span class="text-[10px] bg-amber-500/10 text-amber-500 font-bold px-2.5 py-0.5 rounded-full border border-amber-500/20">Yönetici Paneli</span>
+                        </div>
+                        <div id="applications-list-container" class="space-y-3">
+                            <div class="text-slate-500 text-xs py-4 text-center">Başvurular yükleniyor...</div>
+                        </div>
+                    </div>
+                ` : ''}
             </div>
 
             <!-- SAĞ ÜYE LİSTESİ -->
@@ -377,141 +434,392 @@ function renderOverviewTab(container) {
             </div>
         </div>
     `;
-}
 
-// ÜYE ROLÜ DEĞİŞTİRME & ÇIKARMA
-function changeMemberRole(uid, newRole) {
-    if (!isUserAdmin()) return;
-    const members = currentGroup.members || [];
-    const target = members.find(m => m.uid === uid);
-    if (target) {
-        target.role = newRole;
-        saveGroupMembers(members);
+    if (isAuth) {
+        loadApplications();
     }
 }
 
-function removeMember(uid, name) {
-    if (!isUserAdmin()) return;
-    if (!confirm(`"${name}" adlı üyeyi gruptan çıkarmak istediğinizden emin misiniz?`)) return;
+// TALENT MATCH BAŞVURULARI YÜKLEME VE İŞLEMLERİ
+function loadApplications() {
+    const container = document.getElementById('applications-list-container');
+    if (!container) return;
 
-    const members = (currentGroup.members || []).filter(m => m.uid !== uid);
-    saveGroupMembers(members);
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).collection("applications").onSnapshot((snapshot) => {
+            let apps = [];
+            if (!snapshot.empty) {
+                snapshot.docs.forEach(doc => {
+                    if (doc.data().status === 'pending') {
+                        apps.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+            }
+            renderApplicationsList(apps);
+        }, () => renderApplicationsList([]));
+    } else {
+        renderApplicationsList([]);
+    }
 }
 
-function saveGroupMembers(members) {
-    currentGroup.members = members;
-    currentGroup.membersCount = members.length;
+function renderApplicationsList(apps) {
+    const container = document.getElementById('applications-list-container');
+    if (!container) return;
+
+    if (apps.length === 0) {
+        container.innerHTML = `<div class="py-6 text-center text-slate-400 text-xs italic">Bekleyen başvuru bulunmuyor.</div>`;
+        return;
+    }
+
+    let html = "";
+    apps.forEach(a => {
+        html += `
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-900 dark:text-slate-100">${a.name}</h4>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">${a.email || 'İletişim yok'} • <strong class="text-amber-500">${a.requestedRole || 'Rol Belirtilmedi'}</strong></p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="acceptApplication('${a.id}', '${a.applicantUid}', '${(a.name||'').replace(/'/g, "\\'")}', '${a.email||''}', '${a.requestedRole||'Üye'}')" class="px-3 py-1 rounded-xl bg-emerald-500 text-white text-[10px] font-bold hover:bg-emerald-600 transition-colors shadow-sm">
+                            ✓ Kabul Et
+                        </button>
+                        <button onclick="rejectApplication('${a.id}')" class="px-3 py-1 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-semibold hover:bg-rose-500 hover:text-white transition-colors">
+                            ✕ Reddet
+                        </button>
+                    </div>
+                </div>
+                ${a.note ? `<p class="text-[11px] text-slate-600 dark:text-slate-300 italic bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">"${a.note}"</p>` : ''}
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function acceptApplication(appId, uid, name, email, role) {
+    if (!isUserAuthorized()) return;
+    const members = currentGroup.members || [];
+    if (!members.some(m => m.uid === uid || m.email === email)) {
+        members.push({ uid, name, email, role: 'Üye', joinedAt: new Date().toISOString() });
+    }
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).update({ members, membersCount: members.length }).then(() => {
+            db.collection("groups").doc(groupId).collection("applications").doc(appId).update({ status: 'accepted' });
+            alert(`✅ ${name} başvuru onaylanarak gruba üye eklendi!`);
+            renderWorkspaceUI();
+        });
+    }
+}
+
+function rejectApplication(appId) {
+    if (!isUserAuthorized()) return;
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).collection("applications").doc(appId).update({ status: 'rejected' });
+    }
+}
+
+// 2. 📂 AKILLI PROJE ARŞİVİ VE SÜRÜM KONTROLÜ (RESOURCE HUB) TABI
+function renderArchiveTab(container) {
+    const isAuth = isUserAuthorized();
+    const githubUrl = currentGroup.githubRepoUrl || '';
+    const gdriveUrl = currentGroup.gdriveUrl || '';
+
+    container.innerHTML = `
+        <div class="space-y-6">
+            <!-- HARCİ ALTYAPI LİNKLERİ (GITHUB & DRIVE) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-5 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">💻</span>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-900 dark:text-slate-100">GitHub Reposu & Kod Deposu</h4>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Versiyon kontrolü ve kod tabanı</p>
+                            </div>
+                        </div>
+                        ${isAuth ? `<button onclick="openEditExternalLinksModal()" class="text-[10px] text-tsMavi font-bold hover:underline">✏️ Düzenle</button>` : ''}
+                    </div>
+                    ${githubUrl ? `
+                        <a href="${githubUrl}" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-tsMavi font-mono text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors truncate max-w-full">
+                            🔗 Repoyu İncele (${githubUrl.replace('https://github.com/', '')}) ↗
+                        </a>
+                    ` : `<p class="text-xs text-slate-400 italic">Henüz GitHub reposu bağlanmadı.</p>`}
+                </div>
+
+                <div class="p-5 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">☁️</span>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-900 dark:text-slate-100">Google Drive Klasörü</h4>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Bulut depolama ve ham veriler</p>
+                            </div>
+                        </div>
+                        ${isAuth ? `<button onclick="openEditExternalLinksModal()" class="text-[10px] text-tsMavi font-bold hover:underline">✏️ Düzenle</button>` : ''}
+                    </div>
+                    ${gdriveUrl ? `
+                        <a href="${gdriveUrl}" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 font-mono text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors truncate max-w-full">
+                            📁 Drive Klasörünü Aç ↗
+                        </a>
+                    ` : `<p class="text-xs text-slate-400 italic">Henüz Google Drive klasörü bağlanmadı.</p>`}
+                </div>
+            </div>
+
+            <!-- DOKÜMAN KÜTÜPHANESİ VE KATEGORİ FİLTRELERİ -->
+            <div class="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">📂 Proje Arşivi ve Dokümanlar</h3>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button onclick="openAddDocModal()" class="px-4 py-2 rounded-xl ts-gradient-btn text-white text-xs font-bold shadow-md hover:opacity-90 transition-all flex items-center gap-1">
+                            ＋ Doküman / Çizim Ekle
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KATEGORİ FİLTRE BUTONLARI -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-2">
+                    <button onclick="filterArchiveDocs('all', this)" class="archive-filter-btn active px-3 py-1.5 rounded-xl text-xs font-bold bg-tsMavi text-white border border-tsMavi">
+                        Tümü
+                    </button>
+                    <button onclick="filterArchiveDocs('Teknik Dokümanlar', this)" class="archive-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                        📄 Teknik Dokümanlar
+                    </button>
+                    <button onclick="filterArchiveDocs('Devre / CAD Çizimleri', this)" class="archive-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                        📐 Devre / CAD Çizimleri
+                    </button>
+                    <button onclick="filterArchiveDocs('Sunumlar & Raporlar', this)" class="archive-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                        📊 Sunumlar & Raporlar
+                    </button>
+                </div>
+
+                <!-- DOKÜMAN LİSTESİ TABLOSU -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th class="p-3 font-semibold">Doküman Adı</th>
+                                <th class="p-3 font-semibold">Kategori</th>
+                                <th class="p-3 font-semibold">Ekleme Yapan</th>
+                                <th class="p-3 font-semibold">Tarih / Versiyon</th>
+                                <th class="p-3 font-semibold text-right">Erişim & İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documents-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                            <tr><td colspan="5" class="p-6 text-center text-slate-500">Dokümanlar yükleniyor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+
+    populateMemberSelect('doc-uploader-select');
+    loadDocuments();
+}
+
+function loadDocuments() {
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).collection("documents").onSnapshot((snapshot) => {
+            let docs = [];
+            if (!snapshot.empty) {
+                snapshot.docs.forEach(d => docs.push({ id: d.id, ...d.data() }));
+            } else {
+                docs = DEMO_DOCUMENTS;
+            }
+            groupDocuments = docs;
+            renderDocumentsTable(groupDocuments);
+        }, () => renderDocumentsTable(DEMO_DOCUMENTS));
+    } else {
+        renderDocumentsTable(DEMO_DOCUMENTS);
+    }
+}
+
+function filterArchiveDocs(cat, btn) {
+    currentArchiveFilter = cat;
+    document.querySelectorAll('.archive-filter-btn').forEach(b => {
+        b.classList.remove('bg-tsMavi', 'text-white', 'border-tsMavi');
+        b.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+    });
+    if (btn) {
+        btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+        btn.classList.add('bg-tsMavi', 'text-white', 'border-tsMavi');
+    }
+    renderDocumentsTable(groupDocuments);
+}
+
+function renderDocumentsTable(docs) {
+    const tbody = document.getElementById('documents-table-body');
+    if (!tbody) return;
+
+    let filtered = docs;
+    if (currentArchiveFilter !== 'all') {
+        filtered = docs.filter(d => d.category === currentArchiveFilter);
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 text-xs italic">Henüz bu kategoride doküman eklenmedi.</td></tr>`;
+        return;
+    }
+
+    const isAuth = isUserAuthorized();
+    let html = "";
+
+    filtered.forEach(d => {
+        const catBadgeClass = d.category === 'Devre / CAD Çizimleri' 
+            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' 
+            : d.category === 'Sunumlar & Raporlar' 
+            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' 
+            : 'bg-tsMavi/10 text-tsMavi border-tsMavi/20';
+
+        html += `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                <td class="p-3 font-semibold text-slate-900 dark:text-slate-100">
+                    <div>${d.title}</div>
+                    ${d.note ? `<div class="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-0.5">${d.note}</div>` : ''}
+                </td>
+                <td class="p-3">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${catBadgeClass}">
+                        ${d.category || 'Genel'}
+                    </span>
+                </td>
+                <td class="p-3 text-slate-700 dark:text-slate-300 font-medium">👤 ${d.uploader || 'Üye'}</td>
+                <td class="p-3 text-slate-500 dark:text-slate-400 font-mono text-[10px]">${d.date || 'Bugün'}</td>
+                <td class="p-3 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                        <a href="${d.url}" target="_blank" class="px-3 py-1 rounded-xl bg-tsMavi/10 text-tsMavi text-[11px] font-bold hover:bg-tsMavi hover:text-white transition-all">
+                            🔗 Aç ↗
+                        </a>
+                        ${isAuth ? `
+                            <button onclick="openEditDocModal('${d.id}', '${(d.title||'').replace(/'/g, "\\'")}', '${d.category||''}', '${(d.url||'').replace(/'/g, "\\'")}', '${(d.note||'').replace(/'/g, "\\'")}')" class="text-xs text-amber-500 hover:text-amber-600 px-1">✏️</button>
+                            <button onclick="deleteDocument('${d.id}')" class="text-xs text-rose-500 hover:text-rose-600 px-1">🗑️</button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+function openAddDocModal() {
+    document.getElementById('edit-doc-id').value = '';
+    document.getElementById('doc-title-input').value = '';
+    document.getElementById('doc-url-input').value = '';
+    document.getElementById('doc-desc-input').value = '';
+    document.getElementById('doc-modal-title').innerText = "📂 Doküman / Çizim Ekle";
+    document.getElementById('add-doc-modal').classList.remove('hidden');
+}
+
+function openEditDocModal(id, title, category, url, note) {
+    if (!isUserAuthorized()) return;
+    document.getElementById('edit-doc-id').value = id;
+    document.getElementById('doc-title-input').value = title;
+    document.getElementById('doc-category-select').value = category;
+    document.getElementById('doc-url-input').value = url;
+    document.getElementById('doc-desc-input').value = note;
+    document.getElementById('doc-modal-title').innerText = "✏️ Dokümanı Düzenle";
+    document.getElementById('add-doc-modal').classList.remove('hidden');
+}
+
+function closeAddDocModal() {
+    document.getElementById('add-doc-modal').classList.add('hidden');
+}
+
+function handleSaveDocument(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const editId = document.getElementById('edit-doc-id').value;
+    const title = document.getElementById('doc-title-input').value.trim();
+    const category = document.getElementById('doc-category-select').value;
+    const uploader = document.getElementById('doc-uploader-select').value;
+    const url = document.getElementById('doc-url-input').value.trim();
+    const note = document.getElementById('doc-desc-input').value.trim();
+
+    if (!title || !url) return;
+
+    const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : new Date().toISOString();
+
+    if (editId) {
+        if (!isUserAuthorized()) return;
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection("groups").doc(groupId).collection("documents").doc(editId).update({
+                title, category, uploader, url, note
+            }).then(() => closeAddDocModal());
+        }
+    } else {
+        const newDoc = {
+            title, category, uploader, url, note,
+            date: new Date().toLocaleDateString('tr-TR'),
+            createdAt: timestamp
+        };
+
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection("groups").doc(groupId).collection("documents").add(newDoc).then(() => {
+                closeAddDocModal();
+            });
+        } else {
+            groupDocuments.push({ id: 'd' + Date.now(), ...newDoc });
+            closeAddDocModal();
+            renderDocumentsTable(groupDocuments);
+        }
+    }
+}
+
+function deleteDocument(docId) {
+    if (!isUserAuthorized()) return;
+    if (!confirm("Bu dokümanı arşivden silmek istediğinizden emin misiniz?")) return;
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).collection("documents").doc(docId).delete();
+    } else {
+        groupDocuments = groupDocuments.filter(d => d.id !== docId);
+        renderDocumentsTable(groupDocuments);
+    }
+}
+
+// EXTERNAL REPO & DRIVE MODAL HANDLERS
+function openEditExternalLinksModal() {
+    if (!isUserAuthorized()) return;
+    document.getElementById('github-repo-input').value = currentGroup.githubRepoUrl || '';
+    document.getElementById('gdrive-folder-input').value = currentGroup.gdriveUrl || '';
+    document.getElementById('edit-external-links-modal').classList.remove('hidden');
+}
+
+function closeEditExternalLinksModal() {
+    document.getElementById('edit-external-links-modal').classList.add('hidden');
+}
+
+function handleSaveExternalLinks(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!isUserAuthorized()) return;
+
+    const githubRepoUrl = document.getElementById('github-repo-input').value.trim();
+    const gdriveUrl = document.getElementById('gdrive-folder-input').value.trim();
+
+    currentGroup.githubRepoUrl = githubRepoUrl;
+    currentGroup.gdriveUrl = gdriveUrl;
 
     if (typeof db !== 'undefined' && db && db.collection) {
         db.collection("groups").doc(groupId).update({
-            members: members,
-            membersCount: members.length
+            githubRepoUrl, gdriveUrl
         }).then(() => {
+            closeEditExternalLinksModal();
             renderWorkspaceUI();
         });
     } else {
+        closeEditExternalLinksModal();
         renderWorkspaceUI();
     }
 }
 
-// PROJE HAKKINDA DÜZENLEME
-function openEditDescModal() {
-    if (!isUserAuthorized()) return;
-    const input = document.getElementById('edit-desc-text');
-    if (input) input.value = currentGroup.description || '';
-    document.getElementById('edit-desc-modal').classList.remove('hidden');
-}
-function closeEditDescModal() {
-    document.getElementById('edit-desc-modal').classList.add('hidden');
-}
-function handleSaveDescription(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!isUserAuthorized()) return;
-
-    const text = document.getElementById('edit-desc-text').value.trim();
-    if (!text) return;
-
-    currentGroup.description = text;
-
-    if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).update({ description: text }).then(() => {
-            closeEditDescModal();
-            renderWorkspaceUI();
-        });
-    } else {
-        closeEditDescModal();
-        renderWorkspaceUI();
-    }
-}
-
-// DÖNÜM NOKTASI (MILESTONE) YÖNETİMİ
-function openAddMilestoneModal() {
-    if (!isUserAuthorized()) return;
-    document.getElementById('edit-milestone-id').value = '';
-    document.getElementById('milestone-text-input').value = '';
-    document.getElementById('milestone-modal-title').innerText = "🎯 Proje Hedefi / Dönüm Noktası Ekle";
-    document.getElementById('add-milestone-modal').classList.remove('hidden');
-}
-function openEditMilestoneModal(id, text, status) {
-    if (!isUserAuthorized()) return;
-    document.getElementById('edit-milestone-id').value = id;
-    document.getElementById('milestone-text-input').value = text;
-    document.getElementById('milestone-status-select').value = status;
-    document.getElementById('milestone-modal-title').innerText = "✏️ Dönüm Noktasını Düzenle";
-    document.getElementById('add-milestone-modal').classList.remove('hidden');
-}
-function closeMilestoneModal() {
-    document.getElementById('add-milestone-modal').classList.add('hidden');
-}
-function handleSaveMilestone(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!isUserAuthorized()) return;
-
-    const editId = document.getElementById('edit-milestone-id').value;
-    const text = document.getElementById('milestone-text-input').value.trim();
-    const status = document.getElementById('milestone-status-select').value;
-
-    if (!text) return;
-
-    let milestones = currentGroup.milestones || [];
-    if (editId) {
-        const item = milestones.find(m => m.id === editId);
-        if (item) {
-            item.text = text;
-            item.status = status;
-        }
-    } else {
-        milestones.push({ id: 'ms-' + Date.now(), text, status });
-    }
-
-    currentGroup.milestones = milestones;
-
-    if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).update({ milestones }).then(() => {
-            closeMilestoneModal();
-            renderWorkspaceUI();
-        });
-    } else {
-        closeMilestoneModal();
-        renderWorkspaceUI();
-    }
-}
-
-function deleteMilestone(id) {
-    if (!isUserAuthorized()) return;
-    let milestones = (currentGroup.milestones || []).filter(m => m.id !== id);
-    currentGroup.milestones = milestones;
-
-    if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).update({ milestones }).then(() => {
-            renderWorkspaceUI();
-        });
-    } else {
-        renderWorkspaceUI();
-    }
-}
-
-// 2. KANBAN GÖREV PANOSU TABI
+// 3. KANBAN GÖREV PANOSU TABI
 function renderKanbanTab(container) {
     container.innerHTML = `
         <div class="flex items-center justify-between">
@@ -551,7 +859,6 @@ function renderKanbanTab(container) {
         </div>
     `;
 
-    // Görev ekleme modalındaki atanan üye menüsünü doldur
     populateMemberSelect('task-assignee-select');
     loadTasks();
 }
@@ -641,7 +948,7 @@ function deleteTask(taskId) {
     }
 }
 
-// 3. ORTAK KASA & BÜTÇE TAKİBİ TABI
+// 4. ORTAK KASA & BÜTÇE TAKİBİ TABI
 function renderBudgetTab(container) {
     const targetBudget = currentGroup.targetBudget || 0;
 
@@ -778,7 +1085,7 @@ function deleteExpense(expenseId, amount) {
     }
 }
 
-// 4. GRUP İÇİ SOHBET (TEAM CHAT) TABI
+// 5. GRUP İÇİ SOHBET (TEAM CHAT) TABI
 function renderChatTab(container) {
     container.innerHTML = `
         <div class="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4 max-w-3xl mx-auto shadow-xl">
@@ -996,7 +1303,6 @@ function handleSaveExpense(e) {
         : new Date().toISOString();
 
     if (editId) {
-        // Harcama düzenleme
         if (typeof db !== 'undefined' && db && db.collection) {
             db.collection("groups").doc(groupId).collection("expenses").doc(editId).update({
                 title, amount, payer
@@ -1012,7 +1318,6 @@ function handleSaveExpense(e) {
             renderExpensesTable(groupExpenses);
         }
     } else {
-        // Yeni harcama ekleme
         const newExpense = {
             title,
             amount,

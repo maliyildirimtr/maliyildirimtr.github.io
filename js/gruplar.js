@@ -153,6 +153,20 @@ function renderGroupsUI(groups) {
         const isCreator = user && (g.leaderUid === user.uid || (g.leader && user.displayName && g.leader === user.displayName));
         const canDelete = isPlatformAdmin || isCreator;
 
+        const lookingRolesHTML = g.lookingRoles ? `
+            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60 space-y-1.5">
+                <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-bold text-amber-500 flex items-center gap-1">🎯 Aranan Yetenekler:</span>
+                    <button onclick="event.stopPropagation(); openApplyGroupModal('${g.id}', '${(g.name||'').replace(/'/g, "\\'")}')" class="text-[10px] font-bold text-tsMavi hover:underline flex items-center gap-0.5">
+                        📩 Başvur ↗
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                    ${g.lookingRoles.split(',').map(r => `<span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold border border-amber-500/20">${r.trim()}</span>`).join('')}
+                </div>
+            </div>
+        ` : '';
+
         html += `
             <div onclick="window.location.href='grup-detay.html?id=${g.id}'" class="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer overflow-hidden backdrop-blur-md">
                 
@@ -177,6 +191,8 @@ function renderGroupsUI(groups) {
 
                     <h3 class="font-bold text-base group-hover:text-tsMavi transition-colors leading-snug text-slate-900 dark:text-slate-100">${g.name}</h3>
                     <p class="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-2 leading-relaxed">${g.description}</p>
+
+                    ${lookingRolesHTML}
 
                     <!-- LİDER & ÜYELER -->
                     <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
@@ -321,6 +337,7 @@ function handleCreateGroup(e) {
         const customCategoryEl = document.getElementById('custom-category-input');
         const budgetEl = document.getElementById('group-target-budget');
         const descEl = document.getElementById('group-desc');
+        const rolesEl = document.getElementById('group-looking-roles');
 
         const name = nameEl ? nameEl.value.trim() : '';
         let category = categoryEl ? categoryEl.value : 'FPGA / Donanım';
@@ -333,6 +350,7 @@ function handleCreateGroup(e) {
 
         const targetBudget = budgetEl ? (parseFloat(budgetEl.value) || 0) : 0;
         const desc = descEl ? descEl.value.trim() : '';
+        const lookingRoles = rolesEl ? rolesEl.value.trim() : '';
 
         if (!name || !desc) {
             alert("Lütfen tüm zorunlu alanları (Grup Adı ve Proje Açıklaması) doldurun!");
@@ -355,6 +373,7 @@ function handleCreateGroup(e) {
             leader: creatorName,
             leaderUid: creatorUid,
             description: desc,
+            lookingRoles: lookingRoles,
             targetBudget: targetBudget,
             spentBudget: 0,
             membersCount: 1,
@@ -399,26 +418,61 @@ function handleCreateGroup(e) {
     }
 }
 
-// DAVET KODU İLE KATILMA
-function handleJoinGroup(e) {
+// TALENT MATCH BAŞVURU SÜRECİ
+function openApplyGroupModal(groupId, groupName) {
+    document.getElementById('apply-group-id').value = groupId;
+    const nameEl = document.getElementById('apply-group-name-display');
+    if (nameEl) nameEl.innerText = `📌 Başvurulacak Proje: ${groupName}`;
+
+    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
+    if (user) {
+        document.getElementById('applicant-name').value = user.displayName || '';
+        document.getElementById('applicant-email').value = user.email || '';
+    }
+
+    document.getElementById('apply-group-modal').classList.remove('hidden');
+}
+
+function closeApplyGroupModal() {
+    document.getElementById('apply-group-modal').classList.add('hidden');
+    document.getElementById('apply-group-form').reset();
+}
+
+function handleSendGroupApplication(e) {
     if (e && e.preventDefault) e.preventDefault();
 
-    try {
-        const inputEl = document.getElementById('invite-code-input');
-        const code = inputEl ? inputEl.value.trim().toUpperCase() : '';
+    const groupId = document.getElementById('apply-group-id').value;
+    const name = document.getElementById('applicant-name').value.trim();
+    const email = document.getElementById('applicant-email').value.trim();
+    const role = document.getElementById('applicant-role').value.trim();
+    const note = document.getElementById('applicant-note').value.trim();
 
-        if (!code) return;
+    if (!groupId || !name || !email || !role) return;
 
-        const matched = allGroups.find(g => (g.inviteCode || '').toUpperCase() === code);
+    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
+    const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+        ? firebase.firestore.FieldValue.serverTimestamp() 
+        : new Date().toISOString();
 
-        if (matched) {
-            alert(`✅ "${matched.name}" grubuna başarıyla katıldınız!`);
-            closeJoinModal();
-            window.location.href = `grup-detay.html?id=${matched.id}`;
-        } else {
-            alert("⚠️ Geçersiz veya bulunamayan davet kodu! Lütfen doğru kodu girdiğinizden emin olun.");
-        }
-    } catch (err) {
-        console.error("Davet kodu hatası:", err);
+    const applicationData = {
+        applicantUid: user ? user.uid : 'uid-' + Date.now(),
+        name,
+        email,
+        requestedRole: role,
+        note,
+        status: 'pending',
+        createdAt: timestamp
+    };
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection("groups").doc(groupId).collection("applications").add(applicationData).then(() => {
+            alert(`✅ Katılma başvurunuz proje liderine başarıyla iletildi!`);
+            closeApplyGroupModal();
+        }).catch(err => {
+            alert("Başvuru gönderilirken bir hata oluştu: " + err.message);
+        });
+    } else {
+        alert(`✅ Katılma başvurunuz proje liderine başarıyla iletildi!`);
+        closeApplyGroupModal();
     }
 }

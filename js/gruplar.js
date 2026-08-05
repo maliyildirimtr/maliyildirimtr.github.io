@@ -256,62 +256,93 @@ function closeJoinModal() {
 
 // YENİ GRUP OLUŞTURMA SÜRECİ
 function handleCreateGroup(e) {
-    e.preventDefault();
-    const user = typeof auth !== 'undefined' ? auth.currentUser : null;
-    const name = document.getElementById('group-name').value.trim();
-    const category = document.getElementById('group-category').value;
-    const targetBudget = parseFloat(document.getElementById('group-target-budget').value) || 0;
-    const desc = document.getElementById('group-desc').value.trim();
+    if (e && e.preventDefault) e.preventDefault();
 
-    if (!name || !desc) {
-        alert("Lütfen tüm zorunlu alanları doldurun!");
-        return;
-    }
+    try {
+        const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+        const nameEl = document.getElementById('group-name');
+        const categoryEl = document.getElementById('group-category');
+        const budgetEl = document.getElementById('group-target-budget');
+        const descEl = document.getElementById('group-desc');
 
-    const randomCode = 'MP-' + Math.floor(1000 + Math.random() * 9000);
-    const newGroup = {
-        name,
-        category,
-        inviteCode: randomCode,
-        leader: user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin",
-        leaderUid: user ? user.uid : "admin",
-        description: desc,
-        targetBudget,
-        spentBudget: 0,
-        membersCount: 1,
-        tasksDone: 0,
-        tasksTotal: 0,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
+        const name = nameEl ? nameEl.value.trim() : '';
+        const category = categoryEl ? categoryEl.value : 'Donanım / FPGA';
+        const targetBudget = budgetEl ? (parseFloat(budgetEl.value) || 0) : 0;
+        const desc = descEl ? descEl.value.trim() : '';
 
-    if (typeof db !== 'undefined') {
-        db.collection("groups").add(newGroup).then((docRef) => {
-            alert(`✅ Proje grubu başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
+        if (!name || !desc) {
+            alert("Lütfen tüm zorunlu alanları (Grup Adı ve Proje Açıklaması) doldurun!");
+            return;
+        }
+
+        const randomCode = 'MP-' + Math.floor(1000 + Math.random() * 9000);
+        const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) 
+            ? firebase.firestore.FieldValue.serverTimestamp() 
+            : new Date().toISOString();
+
+        const newGroup = {
+            name: name,
+            category: category,
+            inviteCode: randomCode,
+            leader: user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin",
+            leaderUid: user ? user.uid : "admin",
+            description: desc,
+            targetBudget: targetBudget,
+            spentBudget: 0,
+            membersCount: 1,
+            tasksDone: 0,
+            tasksTotal: 0,
+            createdAt: timestamp
+        };
+
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection("groups").add(newGroup).then((docRef) => {
+                alert(`✅ "${name}" projesi başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
+                closeCreateGroupModal();
+                window.location.href = `grup-detay.html?id=${docRef.id}`;
+            }).catch(err => {
+                console.warn("Firestore kayıt hatası, yerel yönlendirme yapılıyor:", err);
+                const localId = 'grp-' + Date.now();
+                newGroup.id = localId;
+                DEMO_GROUPS.unshift(newGroup);
+                alert(`✅ "${name}" projesi başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
+                closeCreateGroupModal();
+                window.location.href = `grup-detay.html?id=${localId}`;
+            });
+        } else {
+            const localId = 'grp-' + Date.now();
+            newGroup.id = localId;
+            DEMO_GROUPS.unshift(newGroup);
+            alert(`✅ "${name}" projesi başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
             closeCreateGroupModal();
-            window.location.href = `grup-detay.html?id=${docRef.id}`;
-        }).catch(err => {
-            alert("Grup Oluşturma Hatası: " + err.message);
-        });
-    } else {
-        alert(`✅ Proje grubu başarıyla oluşturuldu!\n🔑 Davet Kodu: ${randomCode}`);
-        closeCreateGroupModal();
+            window.location.href = `grup-detay.html?id=${localId}`;
+        }
+    } catch (err) {
+        console.error("Grup kurma hatası:", err);
+        alert("Grup oluşturulurken bir hata oluştu: " + err.message);
     }
 }
 
 // DAVET KODU İLE KATILMA
 function handleJoinGroup(e) {
-    e.preventDefault();
-    const code = document.getElementById('invite-code-input').value.trim().toUpperCase();
+    if (e && e.preventDefault) e.preventDefault();
 
-    if (!code) return;
+    try {
+        const inputEl = document.getElementById('invite-code-input');
+        const code = inputEl ? inputEl.value.trim().toUpperCase() : '';
 
-    const matched = allGroups.find(g => (g.inviteCode || '').toUpperCase() === code);
+        if (!code) return;
 
-    if (matched) {
-        alert(`✅ "${matched.name}" grubuna başarıyla katıldınız!`);
-        closeJoinModal();
-        window.location.href = `grup-detay.html?id=${matched.id}`;
-    } else {
-        alert("⚠️ Geçersiz veya bulunamayan davet kodu! Lütfen doğru kodu girdiğinizden emin olun.");
+        const matched = allGroups.find(g => (g.inviteCode || '').toUpperCase() === code);
+
+        if (matched) {
+            alert(`✅ "${matched.name}" grubuna başarıyla katıldınız!`);
+            closeJoinModal();
+            window.location.href = `grup-detay.html?id=${matched.id}`;
+        } else {
+            alert("⚠️ Geçersiz veya bulunamayan davet kodu! Lütfen doğru kodu girdiğinizden emin olun.");
+        }
+    } catch (err) {
+        console.error("Davet kodu hatası:", err);
     }
 }

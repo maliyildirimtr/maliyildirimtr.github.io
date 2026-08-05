@@ -207,23 +207,25 @@ function renderWorkspaceUI() {
         }
 
         container.innerHTML = `
-            <!-- HEADER BÖLÜMÜ -->
-            <div class="rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xl backdrop-blur-md space-y-4">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
-                    <div>
-                        <div class="flex flex-wrap items-center gap-2 mb-2">
+            <!-- HEADER BÖLÜMÜ (UÇTAN UCA GENİŞLETİLMİŞ DÜZEN) -->
+            <div class="w-full rounded-3xl p-5 md:p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111b21] shadow-xl backdrop-blur-md">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full">
+                    <!-- SOL ALAN: Kategori + Davet Kodu + Proje Adı -->
+                    <div class="space-y-1.5 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
                             <span class="px-3 py-1 rounded-full bg-tsMavi/10 text-tsMavi font-bold text-xs border border-tsMavi/20">
                                 ${currentGroup.category || 'Genel'}
                             </span>
-                            <button onclick="copyInviteCode('${currentGroup.inviteCode || 'MP-8492'}')" title="Kodu Kopyala" class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-xl text-slate-700 dark:text-slate-300 hover:text-tsMavi border border-slate-300 dark:border-slate-700 transition-colors">
+                            <button onclick="copyInviteCode('${currentGroup.inviteCode || 'MP-8492'}')" title="Kodu Kopyala" class="text-xs font-mono bg-slate-100 dark:bg-[#1c2830] px-3 py-1 rounded-xl text-slate-700 dark:text-slate-300 hover:text-tsMavi border border-slate-300 dark:border-slate-700 transition-colors">
                                 🔑 Davet Kodu: <strong class="text-slate-900 dark:text-slate-100">${currentGroup.inviteCode || 'MP-8492'}</strong> 📋
                             </button>
                         </div>
-                        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">${currentGroup.name || 'Proje Çalışma Alanı'}</h1>
+                        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 truncate">${currentGroup.name || 'Proje Çalışma Alanı'}</h1>
                         ${lookingRolesBadges}
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <!-- SAĞ ALAN: Yönetim Butonları (En Sağ Köşeye Yaslanmış) -->
+                    <div class="flex flex-wrap items-center justify-start lg:justify-end gap-2.5 shrink-0">
                         <button onclick="openJitsiMeeting()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-1.5">
                             📹 Görüntülü Toplantı Başlat (Virtual Lab)
                         </button>
@@ -236,37 +238,73 @@ function renderWorkspaceUI() {
                                 ✓ Grubun Üyesisiniz (${roleText})
                             </span>
                         `}
-                        <button type="button" onclick="deleteCurrentWorkspaceGroup()" title="Grubu tamamen sil" class="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
+                        <button type="button" onclick="deleteCurrentWorkspaceGroup(event)" title="Grubu tamamen sil" class="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
                             🗑️ Grubu Sil
                         </button>
-                        <a href="gruplar.html" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-300 dark:border-slate-700">
+                        <a href="gruplar.html" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-[#1c2830] text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-300 dark:border-slate-700">
                             ← Gruplara Dön
                         </a>
                     </div>
                 </div>
-
-                <!-- TAB MENÜSÜ -->
-                <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
-                    <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-tsMavi text-tsMavi transition-all shrink-0">
-                        📌 Genel Bakış & Üyeler
-                    </button>
-                    <button onclick="switchTab('archive')" id="tab-btn-archive" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
-                        📂 Arşiv & Dokümanlar (Resource Hub)
-                    </button>
-                    <button onclick="switchTab('kanban')" id="tab-btn-kanban" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
-                        📋 Görev Panosu (Kanban)
-                    </button>
-                    <button onclick="switchTab('budget')" id="tab-btn-budget" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
-                        💳 Ortak Kasa & Bütçe Takibi
-                    </button>
-                    <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all shrink-0">
-                        💬 Grup İçi Sohbet
-                    </button>
-                </div>
             </div>
 
-            <!-- TAB İÇERİK ALANI -->
-            <div id="tab-content-area" class="space-y-6"></div>
+            <!-- DİKEY MİMARİ: SOL SIDEBAR VE SAĞ İÇERİK ALANI -->
+            <div class="flex flex-col lg:flex-row gap-6 w-full items-start">
+                <!-- DİKEY SOL MENÜ (YOUTUBE USULÜ COLLAPSIBLE SIDEBAR TABS) -->
+                <aside id="workspace-sidebar" class="w-full lg:w-64 xl:w-72 shrink-0 bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-800 rounded-3xl p-3 shadow-xl space-y-1 backdrop-blur-md sticky top-6 transition-all duration-300">
+                    
+                    <!-- SIDEBAR HEADER (3 ÇİZGİ HAMBURGER TUŞU & BAŞLIK) -->
+                    <div class="flex items-center justify-between px-2 py-1.5 mb-1 border-b border-slate-100 dark:border-slate-800/80">
+                        <button type="button" onclick="toggleSidebarCollapse()" title="Menüyü Daralt/Genişlet (YouTube Modu)" class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center text-lg font-bold transition-all shrink-0">
+                            ☰
+                        </button>
+                        <span class="sidebar-text px-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
+                            Çalışma Alanı
+                        </span>
+                    </div>
+
+                    <nav class="space-y-1.5" id="workspace-sidebar-nav">
+                        <button onclick="switchTab('overview')" id="tab-btn-overview" title="Genel Bakış & Üyeler" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="text-base shrink-0 w-6 text-center">📌</span>
+                                <span class="sidebar-text truncate">Genel Bakış & Üyeler</span>
+                            </div>
+                        </button>
+
+                        <button onclick="switchTab('archive')" id="tab-btn-archive" title="Arşiv & Dokümanlar" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="text-base shrink-0 w-6 text-center">📂</span>
+                                <span class="sidebar-text truncate">Arşiv & Dokümanlar</span>
+                            </div>
+                        </button>
+
+                        <button onclick="switchTab('kanban')" id="tab-btn-kanban" title="Görev Panosu (Kanban)" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="text-base shrink-0 w-6 text-center">📋</span>
+                                <span class="sidebar-text truncate">Görev Panosu (Kanban)</span>
+                            </div>
+                        </button>
+
+                        <button onclick="switchTab('budget')" id="tab-btn-budget" title="Ortak Kasa & Bütçe" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="text-base shrink-0 w-6 text-center">💳</span>
+                                <span class="sidebar-text truncate">Ortak Kasa & Bütçe</span>
+                            </div>
+                        </button>
+
+                        <button onclick="switchTab('chat')" id="tab-btn-chat" title="Grup İçi Sohbet" class="tab-btn w-full px-3 py-2.5 rounded-2xl text-xs font-bold text-left transition-all flex items-center justify-between gap-3 border border-transparent">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="text-base shrink-0 w-6 text-center">💬</span>
+                                <span class="sidebar-text truncate">Grup İçi Sohbet</span>
+                            </div>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                        </button>
+                    </nav>
+                </aside>
+
+                <!-- SAĞ İÇERİK ALANI -->
+                <main id="tab-content-area" class="flex-grow w-full min-w-0 space-y-6"></main>
+            </div>
         `;
 
         switchTab(currentTab);
@@ -346,18 +384,53 @@ function joinCurrentGroup() {
     }
 }
 
+// YOUTUBE USULÜ 3 ÇİZGİ HAMBURGER MENÜ VE SIDEBAR DARALTMA MANTIĞI
+let isSidebarCollapsed = false;
+
+function toggleSidebarCollapse() {
+    isSidebarCollapsed = !isSidebarCollapsed;
+    applySidebarState();
+}
+
+function applySidebarState() {
+    const sidebar = document.getElementById('workspace-sidebar');
+    if (!sidebar) return;
+
+    const texts = sidebar.querySelectorAll('.sidebar-text');
+
+    if (isSidebarCollapsed) {
+        // YOUTUBE DARALTILMIŞ MİNİ MODU (w-20)
+        sidebar.classList.remove('lg:w-64', 'xl:w-72');
+        sidebar.classList.add('lg:w-20');
+        texts.forEach(t => t.classList.add('hidden'));
+    } else {
+        // GENİŞLETİLMİŞ DÜZEN (lg:w-64 xl:w-72)
+        sidebar.classList.remove('lg:w-20');
+        sidebar.classList.add('lg:w-64', 'xl:w-72');
+        texts.forEach(t => t.classList.remove('hidden'));
+    }
+}
+
+// Ekran genişliği küçüldüğünde otomatik mini moda geçme
+window.addEventListener('resize', () => {
+    if (window.innerWidth < 1024 && !isSidebarCollapsed) {
+        isSidebarCollapsed = true;
+        applySidebarState();
+    }
+});
+
 // TAB DEĞİŞTİRME MANTIĞI
 function switchTab(tabName) {
     currentTab = tabName;
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('border-tsMavi', 'text-tsMavi');
-        btn.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+        btn.classList.remove('bg-tsMavi/10', 'text-tsMavi', 'border-tsMavi/30', 'dark:bg-tsMavi/15', 'shadow-sm', 'font-extrabold');
+        btn.classList.add('bg-transparent', 'text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800/60', 'border-transparent', 'font-semibold');
     });
 
     const activeBtn = document.getElementById(`tab-btn-${tabName}`);
     if (activeBtn) {
-        activeBtn.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
-        activeBtn.classList.add('border-tsMavi', 'text-tsMavi');
+        activeBtn.classList.remove('bg-transparent', 'text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800/60', 'border-transparent', 'font-semibold');
+        activeBtn.classList.add('bg-tsMavi/10', 'text-tsMavi', 'border-tsMavi/30', 'dark:bg-tsMavi/15', 'shadow-sm', 'font-extrabold');
     }
 
     const contentArea = document.getElementById('tab-content-area');
@@ -1902,9 +1975,18 @@ function addChatMessageToArchive(sender, text, attachmentJsonStr) {
         if (attachmentJsonStr) attachment = JSON.parse(decodeURIComponent(attachmentJsonStr));
     } catch(e) {}
 
-    const title = attachment ? attachment.name : (text ? (text.substring(0, 35) + '...') : 'Sohbet Dokümanı');
-    const url = attachment ? attachment.url : '#';
-    const note = `Sohbet alanından (${sender} tarafından) arşivlendi.`;
+    // Doküman / Çizim Ekle modalını aç ve mesaj bilgileriyle doldur
+    openAddDocModal();
+
+    const titleInput = document.getElementById('doc-title-input');
+    const categorySelect = document.getElementById('doc-category-select');
+    const uploaderSelect = document.getElementById('doc-uploader-select');
+    const urlInput = document.getElementById('doc-url-input');
+    const descInput = document.getElementById('doc-desc-input');
+
+    const title = attachment ? attachment.name : (text ? (text.length > 40 ? text.substring(0, 40) + '...' : text) : 'Sohbet Dokümanı');
+    const url = attachment ? attachment.url : '';
+    const note = text ? `[Sohbet Arşivi - ${sender}]: ${text}` : `Sohbet alanından (${sender} tarafından) arşivlendi.`;
 
     let category = "Teknik Dokümanlar";
     if (attachment && attachment.name) {
@@ -1916,28 +1998,27 @@ function addChatMessageToArchive(sender, text, attachmentJsonStr) {
         }
     }
 
-    const newDoc = {
-        title,
-        category,
-        uploader: sender || "Üye",
-        url,
-        note,
-        date: new Date().toLocaleDateString('tr-TR'),
-        createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
-            ? firebase.firestore.FieldValue.serverTimestamp()
-            : new Date().toISOString()
-    };
+    if (titleInput) titleInput.value = title;
+    if (categorySelect) categorySelect.value = category;
+    if (urlInput) urlInput.value = url;
+    if (descInput) descInput.value = note;
 
-    if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("groups").doc(groupId).collection("documents").add(newDoc).then(() => {
-            alert("Doküman başarıyla Proje Arşivine eklendi! 📂");
-        }).catch(err => {
-            console.error("Arşive ekleme hatası:", err);
-            alert("Doküman Proje Arşivine eklendi! 📂");
-        });
-    } else {
-        groupDocuments.push({ id: 'd' + Date.now(), ...newDoc });
-        alert("Doküman başarıyla Proje Arşivine eklendi! 📂");
+    if (uploaderSelect && sender) {
+        let foundOption = false;
+        for (let i = 0; i < uploaderSelect.options.length; i++) {
+            if (uploaderSelect.options[i].text.includes(sender) || uploaderSelect.options[i].value === sender) {
+                uploaderSelect.selectedIndex = i;
+                foundOption = true;
+                break;
+            }
+        }
+        if (!foundOption) {
+            const opt = document.createElement('option');
+            opt.value = sender;
+            opt.text = sender;
+            uploaderSelect.appendChild(opt);
+            uploaderSelect.value = sender;
+        }
     }
 }
 

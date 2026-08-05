@@ -1411,42 +1411,71 @@ function hideUploadProgress() {
     }
 }
 
+// GÖRSEL SIKIŞTIRMA MANTIĞI (9.5MB ve büyük görselleri 150KB'a düşürerek CORS/Ağ hatalarını engeller)
+function compressImage(file, maxWidth = 1200, maxHeight = 1200, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+            };
+            img.onerror = (err) => reject(err);
+            img.src = e.target.result;
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+    });
+}
+
 function uploadAndSendAttachment(fileOrBlob, type, fileName, messageText = '') {
     const user = getCurrentUser();
     const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
 
-    showUploadProgress(fileName, 5);
+    showUploadProgress(fileName, 20);
 
-    if (typeof firebase !== 'undefined' && firebase.storage) {
-        try {
-            const storageRef = firebase.storage().ref();
-            const filePath = `groups/${groupId}/chat/${Date.now()}_${fileName}`;
-            const fileRef = storageRef.child(filePath);
-            const uploadTask = fileRef.put(fileOrBlob);
-
-            uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                    showUploadProgress(fileName, progress);
-                }, 
-                (err) => {
-                    console.warn("Storage yükleme hatası, DataURL kullanılıyor:", err);
-                    fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
-                }, 
-                () => {
-                    uploadTask.snapshot.ref.getDownloadURL().then(url => {
-                        hideUploadProgress();
-                        sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0) });
-                        cancelPendingAttachment();
-                        const input = document.getElementById('chat-input');
-                        if (input) input.value = '';
-                    });
-                }
-            );
-        } catch (err) {
+    // Eğer yüklenen bir görsel ise client-side anında sıkıştırıp DataURL ile gönder (CORS hatasını engeller)
+    if (type === 'image' && fileOrBlob instanceof File) {
+        showUploadProgress(fileName, 50);
+        compressImage(fileOrBlob).then(compressedUrl => {
+            showUploadProgress(fileName, 95);
+            setTimeout(() => {
+                hideUploadProgress();
+                sendChatMessage(currentName, messageText, {
+                    type: 'image',
+                    url: compressedUrl,
+                    name: fileName,
+                    size: formatBytes(fileOrBlob.size || 0)
+                });
+                cancelPendingAttachment();
+                const input = document.getElementById('chat-input');
+                if (input) input.value = '';
+            }, 150);
+        }).catch(err => {
+            console.warn("Görsel sıkıştırma hatası, standart FileReader kullanılıyor:", err);
             fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
-        }
+        });
     } else {
+        // Dokümanlar ve Ses Kayıtları için DataURL fallback
         fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText);
     }
 }
@@ -1457,17 +1486,20 @@ function fallbackDataURL(fileOrBlob, type, fileName, currentName, messageText) {
     reader.onprogress = function(e) {
         if (e.lengthComputable) {
             const progress = Math.round((e.loaded / e.total) * 100);
-            showUploadProgress(fileName, progress);
+            showUploadProgress(fileName, Math.max(20, progress));
         }
     };
 
     reader.onload = function(e) {
-        hideUploadProgress();
-        const url = e.target.result;
-        sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0) });
-        cancelPendingAttachment();
-        const input = document.getElementById('chat-input');
-        if (input) input.value = '';
+        showUploadProgress(fileName, 100);
+        setTimeout(() => {
+            hideUploadProgress();
+            const url = e.target.result;
+            sendChatMessage(currentName, messageText, { type, url, name: fileName, size: formatBytes(fileOrBlob.size || 0) });
+            cancelPendingAttachment();
+            const input = document.getElementById('chat-input');
+            if (input) input.value = '';
+        }, 150);
     };
 
     reader.readAsDataURL(fileOrBlob);

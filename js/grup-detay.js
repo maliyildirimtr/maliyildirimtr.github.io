@@ -2248,11 +2248,9 @@ function renderMessagesFeed(messages) {
                                     <button type="button" onclick="toggleSelectMode('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 border-t border-slate-100 dark:border-slate-800">
                                         <span>✅</span> Select messages (Mesajları Seç)
                                     </button>
-                                    ${(isMe || isUserAuthorized()) ? `
-                                        <button type="button" onclick="openDeleteMsgModal('${msgId}')" class="w-full px-3.5 py-2 text-rose-500 hover:bg-rose-500/10 flex items-center gap-2.5 font-bold border-t border-slate-100 dark:border-slate-800">
+                                        <button type="button" onclick="event.stopPropagation(); openDeleteMsgModal('${msgId}', event);" class="w-full px-3.5 py-2 text-rose-500 hover:bg-rose-500/10 flex items-center gap-2.5 font-bold border-t border-slate-100 dark:border-slate-800">
                                             <span>🗑️</span> Delete (Sil)
                                         </button>
-                                    ` : ''}
                                 </div>
                             </div>
 
@@ -3087,13 +3085,20 @@ function deleteSelectedMessages() {
 // WHATSAPP TARZI MESAJ SİLME MODALI ("Herkes için sil" / "Benden sil")
 let pendingDeleteMsgId = null;
 
-function openDeleteMsgModal(msgId) {
+function openDeleteMsgModal(msgId, e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (e && e.preventDefault) e.preventDefault();
+
     pendingDeleteMsgId = msgId;
+
+    // Tüm açılır üç nokta menülerini kapat
     document.querySelectorAll('[id^="msg-actions-"]').forEach(m => m.classList.add('hidden'));
+    document.querySelectorAll('.group\\/msg').forEach(r => r.style.zIndex = '');
 
     const modal = document.getElementById('delete-msg-modal');
     if (modal) {
         modal.classList.remove('hidden');
+        modal.style.zIndex = '99999';
     }
 }
 

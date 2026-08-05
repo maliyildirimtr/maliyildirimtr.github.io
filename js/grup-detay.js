@@ -1913,12 +1913,16 @@ function addChatMessageToArchive(sender, text, attachmentJsonStr) {
     }
 }
 
+let selectedMsgIds = new Set();
+let isSelectModeActive = false;
+
 function renderMessagesFeed(messages) {
     window.currentLoadedMessages = messages || [];
     const c = document.getElementById('chat-messages-container');
     if (!c) return;
 
     const user = getCurrentUser();
+    const userKey = user ? (user.uid || user.email) : "demo_user";
     const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
 
     if (messages.length === 0) {
@@ -1928,13 +1932,19 @@ function renderMessagesFeed(messages) {
 
     let html = "";
     messages.forEach((m, idx) => {
+        // "Benden sil" kontrolü: kullanıcı bu mesajı kendisinden sildiyse gösterme
+        if (m.deletedForArr && Array.isArray(m.deletedForArr) && m.deletedForArr.includes(userKey)) {
+            return;
+        }
+
         const isMe = m.sender === currentName;
         const timeStr = m.time || '17:09';
         const msgId = m.id || ('m_' + idx);
+        const isDeleted = m.isDeleted || false;
         const attachmentJsonStr = encodeURIComponent(JSON.stringify(m.attachment || null));
 
         let attachmentHTML = "";
-        if (m.attachment) {
+        if (m.attachment && !isDeleted) {
             if (m.attachment.type === 'image') {
                 attachmentHTML = `
                     <div class="my-1.5 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/60 shadow-md max-w-xs">
@@ -1942,7 +1952,6 @@ function renderMessagesFeed(messages) {
                     </div>
                 `;
             } else if (m.attachment.type === 'file') {
-                // WHATSAPP PDF VE DOKÜMAN KARTI
                 attachmentHTML = `
                     <div onclick="openChatAttachment('${msgId}')" class="my-1.5 rounded-2xl bg-slate-900 text-white overflow-hidden border border-slate-700/80 shadow-lg max-w-xs cursor-pointer hover:border-tsMavi transition-all">
                         <div class="p-3.5 flex items-center gap-3 bg-gradient-to-r from-rose-950/60 to-slate-900">
@@ -1964,21 +1973,38 @@ function renderMessagesFeed(messages) {
                 `;
             } else if (m.attachment.type === 'voice') {
                 attachmentHTML = `
-                    <div class="my-1.5 p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 space-y-1 max-w-xs shadow-inner">
-                        <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300">
-                            <span>🎙️ Ses Mesajı</span>
+                    <div class="my-1.5 p-3 rounded-2xl bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-md space-y-2 max-w-xs text-slate-900 dark:text-slate-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="relative shrink-0">
+                                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-tsBordo to-tsMavi text-white font-bold text-xs flex items-center justify-center shadow-md">
+                                    ${(m.sender || 'U').substring(0, 2).toUpperCase()}
+                                </div>
+                                <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] flex items-center justify-center font-bold shadow">🎙️</span>
+                            </div>
+
+                            <button type="button" onclick="toggleVoicePlayback('${msgId}')" id="voice-play-btn-${msgId}" class="w-8 h-8 rounded-full bg-tsMavi hover:bg-sky-500 text-white flex items-center justify-center text-xs font-bold shadow-md transition-transform active:scale-95 shrink-0">
+                                ▶
+                            </button>
+
+                            <div class="flex-grow space-y-1">
+                                <input type="range" id="voice-seek-${msgId}" min="0" max="100" value="0" oninput="seekVoiceAudio('${msgId}', this.value)" class="w-full h-1.5 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-tsMavi">
+                                <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                    <span id="voice-time-${msgId}">0:00 / 0:15</span>
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="cycleVoiceSpeed('${msgId}')" id="voice-speed-btn-${msgId}" title="Oynatma Hızı (1x, 1.5x, 2x)" class="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-[10px] font-extrabold border border-slate-300 dark:border-slate-600 shrink-0">
+                                1x
+                            </button>
                         </div>
-                        <audio controls src="${m.attachment.url}" class="w-full h-8 rounded-lg focus:outline-none"></audio>
+                        <audio id="voice-audio-${msgId}" src="${m.attachment.url}" preload="metadata" class="hidden" onended="onVoiceEnded('${msgId}')" ontimeupdate="onVoiceTimeUpdate('${msgId}')"></audio>
                     </div>
                 `;
             }
         }
 
         let pollHTML = "";
-        if (m.poll) {
-            const user = getCurrentUser();
-            const userKey = user ? (user.uid || user.email) : "demo_user";
-
+        if (m.poll && !isDeleted) {
             let totalVotes = 0;
             if (m.poll.options) {
                 m.poll.options.forEach(o => {
@@ -2037,9 +2063,7 @@ function renderMessagesFeed(messages) {
         }
 
         let eventHTML = "";
-        if (m.eventData) {
-            const user = getCurrentUser();
-            const userKey = user ? (user.uid || user.email) : "demo_user";
+        if (m.eventData && !isDeleted) {
             const ev = m.eventData;
             const isAttending = ev.attendees && ev.attendees.includes(userKey);
             const attendeesCount = ev.attendees ? ev.attendees.length : 0;
@@ -2094,7 +2118,7 @@ function renderMessagesFeed(messages) {
 
         // REACTION PILLS RENDERING
         let reactionsHTML = "";
-        if (m.reactions && Object.keys(m.reactions).length > 0) {
+        if (m.reactions && Object.keys(m.reactions).length > 0 && !isDeleted) {
             let pills = "";
             Object.entries(m.reactions).forEach(([emoji, users]) => {
                 if (users && users.length > 0) {
@@ -2115,97 +2139,131 @@ function renderMessagesFeed(messages) {
             ? 'bg-[#005c4b] text-white rounded-2xl rounded-tr-none shadow-md' 
             : 'bg-white dark:bg-[#202c33] text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/60 shadow-md';
 
+        const isSelected = selectedMsgIds.has(msgId);
+
         html += `
-            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} group/msg relative">
-                ${!isMe ? `<span class="text-[10px] font-bold text-tsMavi dark:text-tsMavi mb-0.5 ml-1">${m.sender}</span>` : ''}
-                
-                <div class="relative max-w-md p-3 ${bubbleBg}">
-                    <!-- EMOJI REACTION HOVER BUTTON (Sadece hover durumunda belirir) -->
-                    <div class="absolute ${isMe ? '-left-8' : '-right-8'} top-2 opacity-0 group-hover/msg:opacity-100 transition-opacity z-20">
-                        <button type="button" onclick="toggleReactionPicker('${msgId}')" title="Tepki Ver" class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 flex items-center justify-center text-xs shadow-md transition-all">
-                            😊
-                        </button>
+            <div class="flex items-center ${isMe ? 'justify-end' : 'justify-start'} gap-2 group/msg relative w-full">
+                <!-- TOPLU SEÇİM MODUNDA CHECKBOX -->
+                ${isSelectModeActive ? `
+                    <div class="shrink-0">
+                        <input type="checkbox" onchange="toggleMsgSelection('${msgId}', this.checked)" ${isSelected ? 'checked' : ''} class="w-4 h-4 accent-tsMavi rounded cursor-pointer">
                     </div>
+                ` : ''}
 
-                    <!-- REACTION PICKER POPUP PANEL -->
-                    <div id="reaction-picker-${msgId}" class="hidden absolute -top-10 ${isMe ? 'right-0' : 'left-0'} z-50 px-3 py-1.5 rounded-full bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700 shadow-2xl flex items-center gap-2 text-sm backdrop-blur-md">
-                        <button type="button" onclick="addReactionToMessage('${msgId}', '👍')" class="hover:scale-125 transition-transform">👍</button>
-                        <button type="button" onclick="addReactionToMessage('${msgId}', '❤️')" class="hover:scale-125 transition-transform">❤️</button>
-                        <button type="button" onclick="addReactionToMessage('${msgId}', '😂')" class="hover:scale-125 transition-transform">😂</button>
-                        <button type="button" onclick="addReactionToMessage('${msgId}', '😮')" class="hover:scale-125 transition-transform">😮</button>
-                        <button type="button" onclick="addReactionToMessage('${msgId}', '😢')" class="hover:scale-125 transition-transform">😢</button>
-                        <button type="button" onclick="addReactionToMessage('${msgId}', '🙏')" class="hover:scale-125 transition-transform">🙏</button>
-                    </div>
-
-                    <!-- ÜÇ NOKTA İŞLEM MENÜSÜ BUTONU -->
-                    <div class="absolute top-1.5 right-1.5 opacity-80 md:opacity-0 group-hover/msg:opacity-100 transition-opacity z-20">
-                        <button type="button" onclick="toggleMsgActionsMenu('${msgId}')" title="İşlemler" class="w-5 h-5 rounded-full bg-slate-900/40 hover:bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold transition-all shadow">
-                            ⋮
-                        </button>
-                        
-                        <!-- AÇILIR İŞLEM MENÜSÜ (BİREBİR 9 WHATSAPP WEB SEÇENEĞİ) -->
-                        <div id="msg-actions-${msgId}" class="hidden absolute ${isMe ? 'right-0' : 'left-0'} top-6 z-40 w-52 py-2 rounded-2xl bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700 shadow-2xl space-y-0.5 text-left text-xs font-semibold text-slate-800 dark:text-slate-200">
-                            <button type="button" onclick="replyToMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
-                                <span>↩️</span> Reply (Yanıtla)
-                            </button>
-                            <button type="button" onclick="toggleReactionPicker('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
-                                <span>😊</span> React (Tepki Ver)
-                            </button>
-                            <button type="button" onclick="starMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
-                                <span>⭐</span> ${m.starred ? 'Unstar (Yıldızı Kaldır)' : 'Star (Yıldızla)'}
-                            </button>
-                            <button type="button" onclick="pinMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
-                                <span>📌</span> ${m.pinned ? 'Unpin (Sabitlemeyi Kaldır)' : 'Pin (Sabitle)'}
-                            </button>
-                            <button type="button" onclick="forwardMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
-                                <span>➡️</span> Forward (İlet)
-                            </button>
-                            <button type="button" onclick="copyMessageText('${(m.text || '').replace(/'/g, "\\'")}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
-                                <span>📋</span> Copy (Kopyala)
-                            </button>
-                            <button type="button" onclick="addChatMessageToArchive('${m.sender}', '${(m.text || '').replace(/'/g, "\\'")}', '${attachmentJsonStr}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 font-bold text-emerald-600 dark:text-emerald-400">
-                                <span>📂</span> Proje Arşivine Ekle
-                            </button>
-                            <button type="button" onclick="reportMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 text-amber-600 dark:text-amber-400">
-                                <span>⚠️</span> Report (Şikayet Et)
-                            </button>
-                            <button type="button" onclick="toggleSelectMode(); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 border-t border-slate-100 dark:border-slate-800">
-                                <span>✅</span> Select messages (Mesajları Seç)
-                            </button>
-                            ${(isMe || isUserAuthorized()) ? `
-                                <button type="button" onclick="deleteChatMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 text-rose-500 hover:bg-rose-500/10 flex items-center gap-2.5 font-bold border-t border-slate-100 dark:border-slate-800">
-                                    <span>🗑️</span> Delete (Sil)
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    <!-- ALINTILANAN MESAJ (REPLY BUBBLE) -->
-                    ${m.replyTo ? `
-                        <div class="mb-2 p-2 rounded-xl bg-black/20 border-l-4 border-tsMavi text-[11px] space-y-0.5">
-                            <span class="font-bold text-tsMavi block">${m.replyTo.sender}</span>
-                            <p class="opacity-90 truncate">${m.replyTo.text}</p>
-                        </div>
-                    ` : ''}
-
-                    ${m.text ? `<p class="text-xs leading-relaxed whitespace-pre-wrap pr-4">${m.text}</p>` : ''}
-                    ${attachmentHTML}
-                    ${pollHTML}
-                    ${eventHTML}
-                    ${reactionsHTML}
+                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} relative max-w-md">
+                    ${!isMe ? `<span class="text-[10px] font-bold text-tsMavi dark:text-tsMavi mb-0.5 ml-1">${m.sender}</span>` : ''}
                     
-                    <div class="flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-slate-300' : 'text-slate-400 dark:text-slate-400'} mt-1">
-                        ${m.starred ? `<span title="Yıldızlandı">⭐</span>` : ''}
-                        ${m.pinned ? `<span title="Sabitlendi">📌</span>` : ''}
-                        <span>${timeStr}</span>
-                        ${isMe ? `<span class="text-sky-300 font-bold ml-1 text-[11px]" title="Okundu">✓✓</span>` : ''}
+                    <div id="msg-bubble-${msgId}" class="relative p-3 ${bubbleBg} msg-bubble-card transition-all">
+                        
+                        ${!isDeleted ? `
+                            <!-- EMOJI REACTION HOVER BUTTON -->
+                            <div class="absolute ${isMe ? '-left-8' : '-right-8'} top-2 opacity-0 group-hover/msg:opacity-100 transition-opacity z-20">
+                                <button type="button" onclick="toggleReactionPicker('${msgId}')" title="Tepki Ver" class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 flex items-center justify-center text-xs shadow-md transition-all">
+                                    😊
+                                </button>
+                            </div>
+
+                            <!-- REACTION PICKER POPUP PANEL -->
+                            <div id="reaction-picker-${msgId}" class="hidden absolute -top-10 ${isMe ? 'right-0' : 'left-0'} z-50 px-3 py-1.5 rounded-full bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700 shadow-2xl flex items-center gap-2 text-sm backdrop-blur-md">
+                                <button type="button" onclick="addReactionToMessage('${msgId}', '👍')" class="hover:scale-125 transition-transform">👍</button>
+                                <button type="button" onclick="addReactionToMessage('${msgId}', '❤️')" class="hover:scale-125 transition-transform">❤️</button>
+                                <button type="button" onclick="addReactionToMessage('${msgId}', '😂')" class="hover:scale-125 transition-transform">😂</button>
+                                <button type="button" onclick="addReactionToMessage('${msgId}', '😮')" class="hover:scale-125 transition-transform">😮</button>
+                                <button type="button" onclick="addReactionToMessage('${msgId}', '😢')" class="hover:scale-125 transition-transform">😢</button>
+                                <button type="button" onclick="addReactionToMessage('${msgId}', '🙏')" class="hover:scale-125 transition-transform">🙏</button>
+                            </div>
+
+                            <!-- ÜÇ NOKTA İŞLEM MENÜSÜ BUTONU -->
+                            <div class="absolute top-1.5 right-1.5 opacity-80 md:opacity-0 group-hover/msg:opacity-100 transition-opacity z-20">
+                                <button type="button" onclick="toggleMsgActionsMenu('${msgId}')" title="İşlemler" class="w-5 h-5 rounded-full bg-slate-900/40 hover:bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold transition-all shadow">
+                                    ⋮
+                                </button>
+                                
+                                <!-- AÇILIR İŞLEM MENÜSÜ (EKRANA SIĞAN MAX-HEIGHT + OVERFLOW YAPI) -->
+                                <div id="msg-actions-${msgId}" class="hidden absolute ${isMe ? 'right-0' : 'left-0'} top-7 z-50 w-52 max-h-56 overflow-y-auto py-1.5 rounded-2xl bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700 shadow-2xl space-y-0.5 text-left text-xs font-semibold text-slate-800 dark:text-slate-200 backdrop-blur-xl">
+                                    <button type="button" onclick="replyToMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
+                                        <span>↩️</span> Reply (Yanıtla)
+                                    </button>
+                                    <button type="button" onclick="toggleReactionPicker('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
+                                        <span>😊</span> React (Tepki Ver)
+                                    </button>
+                                    <button type="button" onclick="starMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
+                                        <span>⭐</span> ${m.starred ? 'Unstar (Yıldızı Kaldır)' : 'Star (Yıldızla)'}
+                                    </button>
+                                    <button type="button" onclick="pinMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
+                                        <span>📌</span> ${m.pinned ? 'Unpin (Sabitlemeyi Kaldır)' : 'Pin (Sabitle)'}
+                                    </button>
+                                    <button type="button" onclick="forwardMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
+                                        <span>➡️</span> Forward (İlet)
+                                    </button>
+                                    <button type="button" onclick="copyMessageText('${(m.text || '').replace(/'/g, "\\'")}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5">
+                                        <span>📋</span> Copy (Kopyala)
+                                    </button>
+                                    <button type="button" onclick="addChatMessageToArchive('${m.sender}', '${(m.text || '').replace(/'/g, "\\'")}', '${attachmentJsonStr}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 font-bold text-emerald-600 dark:text-emerald-400">
+                                        <span>📂</span> Proje Arşivine Ekle
+                                    </button>
+                                    <button type="button" onclick="reportMessage('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 text-amber-600 dark:text-amber-400">
+                                        <span>⚠️</span> Report (Şikayet Et)
+                                    </button>
+                                    <button type="button" onclick="toggleSelectMode('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 border-t border-slate-100 dark:border-slate-800">
+                                        <span>✅</span> Select messages (Mesajları Seç)
+                                    </button>
+                                    ${(isMe || isUserAuthorized()) ? `
+                                        <button type="button" onclick="openDeleteMsgModal('${msgId}'); toggleMsgActionsMenu('${msgId}');" class="w-full px-3.5 py-2 text-rose-500 hover:bg-rose-500/10 flex items-center gap-2.5 font-bold border-t border-slate-100 dark:border-slate-800">
+                                            <span>🗑️</span> Delete (Sil)
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <!-- ALINTILANAN MESAJ (REPLY BUBBLE) -->
+                            ${m.replyTo ? `
+                                <div class="mb-2 p-2 rounded-xl bg-black/20 border-l-4 border-tsMavi text-[11px] space-y-0.5">
+                                    <span class="font-bold text-tsMavi block">${m.replyTo.sender}</span>
+                                    <p class="opacity-90 truncate">${m.replyTo.text}</p>
+                                </div>
+                            ` : ''}
+
+                            ${m.text ? `<p class="text-xs leading-relaxed whitespace-pre-wrap pr-4">${m.text}</p>` : ''}
+                            ${attachmentHTML}
+                            ${pollHTML}
+                            ${eventHTML}
+                            ${reactionsHTML}
+                        ` : `
+                            <!-- SİLİNMİŞ MESAJ GÖRÜNÜMÜ ("Bu mesaj silindi") -->
+                            <p class="text-xs italic text-slate-300 dark:text-slate-400 flex items-center gap-1.5 pr-2 py-0.5">
+                                <span>🚫</span> <span>Bu mesaj silindi</span>
+                            </p>
+                        `}
+                        
+                        <div class="flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-slate-300' : 'text-slate-400 dark:text-slate-400'} mt-1">
+                            ${m.starred ? `<span title="Yıldızlandı">⭐</span>` : ''}
+                            ${m.pinned ? `<span title="Sabitlendi">📌</span>` : ''}
+                            <span>${timeStr}</span>
+                            ${(isMe && !isDeleted) ? `<span class="text-sky-300 font-bold ml-1 text-[11px]" title="Okundu">✓✓</span>` : ''}
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     });
 
-    c.innerHTML = html;
+    // TOPLU MESAJ SEÇİM BARI
+    let multiSelectBarHTML = "";
+    if (isSelectModeActive) {
+        multiSelectBarHTML = `
+            <div id="multi-select-bar" class="sticky bottom-2 z-40 my-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 text-white backdrop-blur-xl border border-slate-700 shadow-2xl flex items-center justify-between gap-3 text-xs">
+                <span id="multi-select-count" class="font-bold text-tsMavi">${selectedMsgIds.size} mesaj seçildi</span>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="forwardSelectedMessages()" class="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold text-slate-200">➡️ İlet</button>
+                    <button type="button" onclick="deleteSelectedMessages()" class="px-3 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 font-bold text-white shadow-sm">🗑️ Sil</button>
+                    <button type="button" onclick="cancelSelectMode()" class="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold text-slate-300">✕ İptal</button>
+                </div>
+            </div>
+        `;
+    }
+
+    c.innerHTML = html + multiSelectBarHTML;
     c.scrollTop = c.scrollHeight;
 }
 
@@ -2621,6 +2679,17 @@ function replyToMessage(msgId) {
     if (!msg) return;
 
     pendingReplyMsg = msg;
+
+    // Vurguları temizle ve seçili mesajı belirginleştir
+    document.querySelectorAll('.msg-bubble-card').forEach(el => {
+        el.classList.remove('ring-2', 'ring-tsMavi', 'scale-[1.01]', 'bg-tsMavi/10');
+    });
+
+    const targetBubble = document.getElementById('msg-bubble-' + msgId);
+    if (targetBubble) {
+        targetBubble.classList.add('ring-2', 'ring-tsMavi', 'scale-[1.01]');
+    }
+
     const container = document.getElementById('chat-reply-container');
     const senderEl = document.getElementById('chat-reply-sender');
     const textEl = document.getElementById('chat-reply-text');
@@ -2630,13 +2699,98 @@ function replyToMessage(msgId) {
     if (container) container.classList.remove('hidden');
 
     const input = document.getElementById('chat-input');
-    if (input) input.focus();
+    if (input) {
+        input.focus();
+        handleChatInputTyping(input);
+    }
 }
 
 function cancelReplyMessage() {
     pendingReplyMsg = null;
+    document.querySelectorAll('.msg-bubble-card').forEach(el => {
+        el.classList.remove('ring-2', 'ring-tsMavi', 'scale-[1.01]', 'bg-tsMavi/10');
+    });
     const container = document.getElementById('chat-reply-container');
     if (container) container.classList.add('hidden');
+}
+
+// SESLİ MESAJ (VOICE NOTE) PLAYBACK VE HIZ KONTROL MOTORU (1x -> 1.5x -> 2x)
+const voiceSpeeds = [1, 1.5, 2];
+const voiceSpeedIndices = {};
+
+function cycleVoiceSpeed(msgId) {
+    const audio = document.getElementById('voice-audio-' + msgId);
+    const speedBtn = document.getElementById('voice-speed-btn-' + msgId);
+    if (!speedBtn) return;
+
+    let idx = voiceSpeedIndices[msgId] || 0;
+    idx = (idx + 1) % voiceSpeeds.length;
+    voiceSpeedIndices[msgId] = idx;
+
+    const newSpeed = voiceSpeeds[idx];
+    speedBtn.innerText = `${newSpeed}x`;
+    if (audio) {
+        audio.playbackRate = newSpeed;
+    }
+}
+
+function toggleVoicePlayback(msgId) {
+    const audio = document.getElementById('voice-audio-' + msgId);
+    const btn = document.getElementById('voice-play-btn-' + msgId);
+    if (!audio) return;
+
+    if (currentActiveAudio && currentActiveAudio !== audio) {
+        currentActiveAudio.pause();
+        if (currentActiveAudioId) {
+            const prevBtn = document.getElementById('voice-play-btn-' + currentActiveAudioId);
+            if (prevBtn) prevBtn.innerText = '▶';
+        }
+    }
+
+    if (audio.paused) {
+        const speedIdx = voiceSpeedIndices[msgId] || 0;
+        audio.playbackRate = voiceSpeeds[speedIdx];
+        audio.play().then(() => {
+            if (btn) btn.innerText = '⏸';
+            currentActiveAudio = audio;
+            currentActiveAudioId = msgId;
+        }).catch(err => console.error("Oynatma hatası:", err));
+    } else {
+        audio.pause();
+        if (btn) btn.innerText = '▶';
+    }
+}
+
+function seekVoiceAudio(msgId, value) {
+    const audio = document.getElementById('voice-audio-' + msgId);
+    if (audio && audio.duration) {
+        audio.currentTime = (value / 100) * audio.duration;
+    }
+}
+
+function onVoiceTimeUpdate(msgId) {
+    const audio = document.getElementById('voice-audio-' + msgId);
+    const seek = document.getElementById('voice-seek-' + msgId);
+    const timeEl = document.getElementById('voice-time-' + msgId);
+    if (!audio) return;
+
+    if (audio.duration && seek) {
+        seek.value = (audio.currentTime / audio.duration) * 100;
+    }
+    if (timeEl) {
+        const curMins = Math.floor(audio.currentTime / 60);
+        const curSecs = Math.floor(audio.currentTime % 60).toString().padStart(2, '0');
+        const durMins = isNaN(audio.duration) ? 0 : Math.floor(audio.duration / 60);
+        const durSecs = isNaN(audio.duration) ? '00' : Math.floor(audio.duration % 60).toString().padStart(2, '0');
+        timeEl.innerText = `${curMins}:${curSecs} / ${durMins}:${durSecs}`;
+    }
+}
+
+function onVoiceEnded(msgId) {
+    const btn = document.getElementById('voice-play-btn-' + msgId);
+    const seek = document.getElementById('voice-seek-' + msgId);
+    if (btn) btn.innerText = '▶';
+    if (seek) seek.value = 0;
 }
 
 function addReactionToMessage(msgId, emoji) {
@@ -2742,10 +2896,127 @@ function reportMessage(msgId) {
     }
 }
 
-let isSelectModeActive = false;
-function toggleSelectMode() {
+// WHATSAPP TOPLU MESAJ SEÇİMİ (ALERT YOK - CANLI CHECKBOX VE ALT BAR)
+function toggleSelectMode(initialMsgId = null) {
     isSelectModeActive = !isSelectModeActive;
-    alert(isSelectModeActive ? "Toplu Mesaj Seçim Modu Aktif! (Mesajları seçebilirsiniz) ✅" : "Toplu Mesaj Seçim Modu Kapatıldı.");
+    if (!isSelectModeActive) {
+        selectedMsgIds.clear();
+    } else if (initialMsgId) {
+        selectedMsgIds.add(initialMsgId);
+    }
+    renderMessagesFeed(window.currentLoadedMessages || DEMO_MESSAGES);
+}
+
+function toggleMsgSelection(msgId, isChecked) {
+    if (isChecked) {
+        selectedMsgIds.add(msgId);
+    } else {
+        selectedMsgIds.delete(msgId);
+    }
+    const countEl = document.getElementById('multi-select-count');
+    if (countEl) {
+        countEl.innerText = `${selectedMsgIds.size} mesaj seçildi`;
+    }
+}
+
+function cancelSelectMode() {
+    isSelectModeActive = false;
+    selectedMsgIds.clear();
+    renderMessagesFeed(window.currentLoadedMessages || DEMO_MESSAGES);
+}
+
+function forwardSelectedMessages() {
+    if (selectedMsgIds.size === 0) {
+        alert("Lütfen önce iletmek istediğiniz mesajları seçin!");
+        return;
+    }
+    const forwardGroup = prompt(`${selectedMsgIds.size} mesajı iletmek istediğiniz grup adını girin:`, "Mali Academy Yazılım Grubu");
+    if (forwardGroup) {
+        alert(`Seçilen ${selectedMsgIds.size} mesaj başarıyla "${forwardGroup}" grubuna iletildi! ➡️`);
+        cancelSelectMode();
+    }
+}
+
+function deleteSelectedMessages() {
+    if (selectedMsgIds.size === 0) {
+        alert("Lütfen silmek istediğiniz mesajları seçin!");
+        return;
+    }
+    if (!confirm(`Seçilen ${selectedMsgIds.size} mesajı silmek istediğinizden emin misiniz?`)) return;
+
+    selectedMsgIds.forEach(id => {
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection("groups").doc(groupId).collection("messages").doc(id).update({
+                isDeleted: true,
+                text: "🚫 Bu mesaj silindi"
+            }).catch(err => console.error("Silme hatası:", err));
+        } else {
+            const msg = DEMO_MESSAGES.find(m => m.id === id);
+            if (msg) {
+                msg.isDeleted = true;
+                msg.text = "🚫 Bu mesaj silindi";
+            }
+        }
+    });
+    cancelSelectMode();
+}
+
+// WHATSAPP MESAJ SİLME MODALI ("Herkes için sil" / "Benden sil")
+let pendingDeleteMsgId = null;
+
+function openDeleteMsgModal(msgId) {
+    pendingDeleteMsgId = msgId;
+    const modal = document.getElementById('delete-msg-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeDeleteMsgModal() {
+    pendingDeleteMsgId = null;
+    const modal = document.getElementById('delete-msg-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function confirmDeleteMessage(type) {
+    if (!pendingDeleteMsgId) return;
+    const msgId = pendingDeleteMsgId;
+    closeDeleteMsgModal();
+
+    const user = getCurrentUser();
+    const userKey = user ? (user.uid || user.email) : "demo_user";
+
+    if (type === 'everyone') {
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection("groups").doc(groupId).collection("messages").doc(msgId).update({
+                isDeleted: true,
+                text: "🚫 Bu mesaj silindi"
+            }).catch(err => console.error("Silme hatası:", err));
+        } else {
+            const msg = DEMO_MESSAGES.find(m => m.id === msgId);
+            if (msg) {
+                msg.isDeleted = true;
+                msg.text = "🚫 Bu mesaj silindi";
+                renderMessagesFeed(DEMO_MESSAGES);
+            }
+        }
+    } else if (type === 'me') {
+        if (typeof db !== 'undefined' && db && db.collection) {
+            const msgRef = db.collection("groups").doc(groupId).collection("messages").doc(msgId);
+            msgRef.get().then(doc => {
+                if (!doc.exists) return;
+                const data = doc.data();
+                const deletedForArr = data.deletedForArr || [];
+                if (!deletedForArr.includes(userKey)) deletedForArr.push(userKey);
+                msgRef.update({ deletedForArr: deletedForArr });
+            });
+        } else {
+            const msg = DEMO_MESSAGES.find(m => m.id === msgId);
+            if (msg) {
+                msg.deletedForArr = msg.deletedForArr || [];
+                if (!msg.deletedForArr.includes(userKey)) msg.deletedForArr.push(userKey);
+                renderMessagesFeed(DEMO_MESSAGES);
+            }
+        }
+    }
 }
 
 function sendChatMessage(sender, text, attachment, poll = null, eventData = null, replyTo = null) {

@@ -651,6 +651,110 @@ function filterArchiveDocs(cat, btn) {
     renderDocumentsTable(groupDocuments);
 }
 
+// SAFE FILE DOWNLOAD & IMAGE VIEWING HELPERS (Boş sayfa about:blank ve CORS engellerini tamamen çözer)
+function downloadChatAttachment(encodedUrl, fileName) {
+    if (!encodedUrl || encodedUrl === '#' || encodedUrl === 'null' || encodedUrl === 'undefined') {
+        alert("Üzgünüz, dosya bağlantısı geçerli değil veya bulunamadı!");
+        return;
+    }
+
+    const url = decodeURIComponent(encodedUrl);
+    const safeFileName = fileName || 'dokuman';
+
+    if (url.startsWith('data:')) {
+        try {
+            const parts = url.split(';base64,');
+            const contentType = parts[0].split(':')[1] || 'application/octet-stream';
+            const raw = window.atob(parts[1]);
+            const rawLength = raw.length;
+            const uInt8Array = new Uint8Array(rawLength);
+            for (let i = 0; i < rawLength; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+            const blob = new Blob([uInt8Array], { type: contentType });
+            const blobUrl = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = safeFileName;
+            document.body.appendChild(a);
+            a.click();
+
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            }, 2000);
+        } catch (e) {
+            console.error("DataURL Blob dönüşüm hatası:", e);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = safeFileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => document.body.removeChild(a), 1000);
+        }
+    } else {
+        // Firebase Storage veya HTTPS URL'si
+        fetch(url).then(res => res.blob()).then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = safeFileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            }, 2000);
+        }).catch(() => {
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => document.body.removeChild(a), 1000);
+        });
+    }
+}
+
+function viewChatImage(encodedUrl, fileName) {
+    if (!encodedUrl || encodedUrl === '#' || encodedUrl === 'null' || encodedUrl === 'undefined') {
+        alert("Görsel bağlantısı bulunamadı!");
+        return;
+    }
+
+    const url = decodeURIComponent(encodedUrl);
+
+    if (url.startsWith('data:')) {
+        try {
+            const parts = url.split(';base64,');
+            const contentType = parts[0].split(':')[1] || 'image/png';
+            const raw = window.atob(parts[1]);
+            const rawLength = raw.length;
+            const uInt8Array = new Uint8Array(rawLength);
+            for (let i = 0; i < rawLength; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+            const blob = new Blob([uInt8Array], { type: contentType });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const win = window.open(blobUrl, '_blank');
+            if (!win) {
+                downloadChatAttachment(encodedUrl, fileName);
+            }
+        } catch(e) {
+            downloadChatAttachment(encodedUrl, fileName);
+        }
+    } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+}
+
 function renderDocumentsTable(docs) {
     const tbody = document.getElementById('documents-table-body');
     if (!tbody) return;
@@ -675,6 +779,9 @@ function renderDocumentsTable(docs) {
             ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' 
             : 'bg-tsMavi/10 text-tsMavi border-tsMavi/20';
 
+        const encUrl = encodeURIComponent(d.url || '');
+        const encTitle = (d.title || 'dokuman').replace(/'/g, "\\'");
+
         html += `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                 <td class="p-3 font-semibold text-slate-900 dark:text-slate-100">
@@ -690,9 +797,9 @@ function renderDocumentsTable(docs) {
                 <td class="p-3 text-slate-500 dark:text-slate-400 font-mono text-[10px]">${d.date || 'Bugün'}</td>
                 <td class="p-3 text-right">
                     <div class="flex items-center justify-end gap-2">
-                        <a href="${d.url}" target="_blank" class="px-3 py-1 rounded-xl bg-tsMavi/10 text-tsMavi text-[11px] font-bold hover:bg-tsMavi hover:text-white transition-all">
-                            🔗 Aç ↗
-                        </a>
+                        <button type="button" onclick="downloadChatAttachment('${encUrl}', '${encTitle}')" class="px-3 py-1 rounded-xl bg-tsMavi/10 text-tsMavi text-[11px] font-bold hover:bg-tsMavi hover:text-white transition-all shadow-sm">
+                            🔗 Aç / İndir ↗
+                        </button>
                         ${isAuth ? `
                             <button onclick="openEditDocModal('${d.id}', '${(d.title||'').replace(/'/g, "\\'")}', '${d.category||''}', '${(d.url||'').replace(/'/g, "\\'")}', '${(d.note||'').replace(/'/g, "\\'")}')" class="text-xs text-amber-500 hover:text-amber-600 px-1">✏️</button>
                             <button onclick="deleteDocument('${d.id}')" class="text-xs text-rose-500 hover:text-rose-600 px-1">🗑️</button>
@@ -1434,10 +1541,13 @@ function renderMessagesFeed(messages) {
 
         let attachmentHTML = "";
         if (m.attachment) {
+            const encAttUrl = encodeURIComponent(m.attachment.url || '');
+            const encAttName = (m.attachment.name || 'dokuman').replace(/'/g, "\\'");
+
             if (m.attachment.type === 'image') {
                 attachmentHTML = `
                     <div class="my-1.5 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/60 shadow-md max-w-xs">
-                        <img src="${m.attachment.url}" alt="Görsel" onclick="window.open('${m.attachment.url}', '_blank')" class="w-full max-h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity">
+                        <img src="${m.attachment.url}" alt="Görsel" onclick="viewChatImage('${encAttUrl}', '${encAttName}')" class="w-full max-h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity">
                     </div>
                 `;
             } else if (m.attachment.type === 'file') {
@@ -1455,9 +1565,9 @@ function renderMessagesFeed(messages) {
                         </div>
                         <div class="px-3.5 py-2 bg-slate-950/60 flex items-center justify-between border-t border-slate-800">
                             <span class="text-[10px] text-slate-400">İndirmek için tıklayın</span>
-                            <a href="${m.attachment.url}" download="${m.attachment.name}" target="_blank" class="px-3 py-1 rounded-xl bg-tsMavi text-white font-bold text-[10px] hover:bg-sky-500 transition-colors">
+                            <button type="button" onclick="downloadChatAttachment('${encAttUrl}', '${encAttName}')" class="px-3 py-1 rounded-xl bg-tsMavi text-white font-bold text-[10px] hover:bg-sky-500 transition-colors shadow-sm">
                                 💾 İndir ↗
-                            </a>
+                            </button>
                         </div>
                     </div>
                 `;

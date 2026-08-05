@@ -1302,21 +1302,44 @@ function cancelPendingAttachment() {
 }
 
 // SES KAYDI (VOICE NOTE) MANTIĞI
+let recordedAudioStream = null;
+
+function getCurrentUserName() {
+    const user = getCurrentUser();
+    return user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
+}
+
 function startVoiceRecording() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("Tarayıcınız mikrofon kaydını desteklemiyor!");
         return;
     }
 
+    let mimeType = 'audio/webm';
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
+        if (MediaRecorder.isTypeSupported('audio/webm')) mimeType = 'audio/webm';
+        else if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+        else if (MediaRecorder.isTypeSupported('audio/ogg')) mimeType = 'audio/ogg';
+        else mimeType = '';
+    }
+
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        recordedAudioStream = stream;
         audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
+        try {
+            mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        } catch (e) {
+            mediaRecorder = new MediaRecorder(stream);
+        }
 
         mediaRecorder.ondataavailable = event => {
-            if (event.data.size > 0) audioChunks.push(event.data);
+            if (event.data && event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
         };
 
-        mediaRecorder.start();
+        // 100ms aralıklarla veri dilimlerini sürekli topla
+        mediaRecorder.start(100);
         voiceRecordSeconds = 0;
 
         const panel = document.getElementById('voice-recording-panel');
@@ -1344,18 +1367,42 @@ function stopAndSendVoiceNote() {
     if (panel) panel.classList.add('hidden');
 
     mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        uploadAndSendAttachment(audioBlob, 'voice', `ses-kaydi-${Date.now()}.webm`);
+        if (recordedAudioStream) {
+            recordedAudioStream.getTracks().forEach(track => track.stop());
+            recordedAudioStream = null;
+        }
+
+        const type = (mediaRecorder && mediaRecorder.mimeType) ? mediaRecorder.mimeType : 'audio/webm';
+        const audioBlob = new Blob(audioChunks, { type });
+        const fileName = `ses-kaydi-${Date.now()}.webm`;
+        
+        showUploadProgress(fileName, 30);
+        fallbackDataURL(audioBlob, 'voice', fileName, getCurrentUserName(), '');
     };
 
-    mediaRecorder.stop();
+    if (mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    } else {
+        const type = (mediaRecorder && mediaRecorder.mimeType) ? mediaRecorder.mimeType : 'audio/webm';
+        const audioBlob = new Blob(audioChunks, { type });
+        const fileName = `ses-kaydi-${Date.now()}.webm`;
+        showUploadProgress(fileName, 30);
+        fallbackDataURL(audioBlob, 'voice', fileName, getCurrentUserName(), '');
+    }
 }
 
 function cancelVoiceRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-    }
     clearInterval(voiceTimerInterval);
+    if (mediaRecorder) {
+        mediaRecorder.onstop = null;
+        if (mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+    }
+    if (recordedAudioStream) {
+        recordedAudioStream.getTracks().forEach(track => track.stop());
+        recordedAudioStream = null;
+    }
     audioChunks = [];
     const panel = document.getElementById('voice-recording-panel');
     if (panel) panel.classList.add('hidden');

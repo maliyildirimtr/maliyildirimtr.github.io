@@ -1479,14 +1479,151 @@ function shareLeaderContact() {
     sendChatMessage(currentName, `👤 Contact Card: ${leaderName} (${leaderEmail})`, null);
 }
 
-function insertQuickPoll() {
-    const question = prompt("Anket Sorusu Girin:", "Bu haftaki toplantı günü hangi gün olsun?");
-    if (!question) return;
+// WHATSAPP TARZI ANKET (CREATE POLL) MANTIĞI & VOTE ENGINE
+let pollOptionsList = ["", ""];
 
+function insertQuickPoll() {
+    openCreatePollModal();
+}
+
+function openCreatePollModal() {
+    pollOptionsList = ["", ""];
+    const qInp = document.getElementById('poll-question-input');
+    const mChk = document.getElementById('poll-multiple-allow');
+    if (qInp) qInp.value = '';
+    if (mChk) mChk.checked = false;
+    renderPollOptionsInputs();
+    const modal = document.getElementById('create-poll-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeCreatePollModal() {
+    const modal = document.getElementById('create-poll-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function renderPollOptionsInputs() {
+    const container = document.getElementById('poll-options-container');
+    if (!container) return;
+
+    let html = "";
+    pollOptionsList.forEach((optVal, idx) => {
+        html += `
+            <div class="flex items-center gap-2">
+                <span class="text-slate-400 font-bold text-xs shrink-0 cursor-grab">≡</span>
+                <input type="text" value="${optVal.replace(/"/g, '&quot;')}" oninput="updatePollOptionValue(${idx}, this.value)" placeholder="Option ${idx + 1}" class="flex-grow px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi transition-colors">
+                ${pollOptionsList.length > 2 ? `
+                    <button type="button" onclick="removePollOptionInput(${idx})" title="Sil" class="text-xs text-rose-500 hover:text-rose-600 p-1 shrink-0 font-bold">✕</button>
+                ` : ''}
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function updatePollOptionValue(idx, val) {
+    pollOptionsList[idx] = val;
+    if (idx === pollOptionsList.length - 1 && val.trim() !== '') {
+        pollOptionsList.push("");
+        renderPollOptionsInputs();
+    }
+}
+
+function addPollOptionInput() {
+    pollOptionsList.push("");
+    renderPollOptionsInputs();
+}
+
+function removePollOptionInput(idx) {
+    if (pollOptionsList.length <= 2) return;
+    pollOptionsList.splice(idx, 1);
+    renderPollOptionsInputs();
+}
+
+function handleSendPollForm(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const qInp = document.getElementById('poll-question-input');
+    const question = qInp ? qInp.value.trim() : '';
+
+    if (!question) {
+        alert("Lütfen bir anket sorusu yazın!");
+        return;
+    }
+
+    const validOptions = pollOptionsList.map(o => o.trim()).filter(o => o.length > 0);
+    if (validOptions.length < 2) {
+        alert("Anket için en az 2 geçerli seçenek yazmalısınız!");
+        return;
+    }
+
+    const allowMultiple = document.getElementById('poll-multiple-allow') ? document.getElementById('poll-multiple-allow').checked : false;
     const user = getCurrentUser();
     const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
 
-    sendChatMessage(currentName, `📊 Anket: ${question}\n• Seçenek 1: Salı 20:00\n• Seçenek 2: Perşembe 20:00`, null);
+    const pollData = {
+        question: question,
+        allowMultiple: allowMultiple,
+        options: validOptions.map((optText, index) => ({
+            id: index,
+            text: optText,
+            votes: []
+        }))
+    };
+
+    sendChatMessage(currentName, '', null, pollData);
+    closeCreatePollModal();
+}
+
+function votePollOption(msgId, optionIndex) {
+    const user = getCurrentUser();
+    const userKey = user ? (user.uid || user.email) : "demo_user";
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        const msgRef = db.collection("groups").doc(groupId).collection("messages").doc(msgId);
+        msgRef.get().then(doc => {
+            if (!doc.exists) return;
+            const msgData = doc.data();
+            if (!msgData || !msgData.poll) return;
+
+            const poll = msgData.poll;
+            const allowMultiple = poll.allowMultiple || false;
+
+            poll.options.forEach((opt, idx) => {
+                if (!opt.votes) opt.votes = [];
+                if (idx === optionIndex) {
+                    if (opt.votes.includes(userKey)) {
+                        opt.votes = opt.votes.filter(u => u !== userKey);
+                    } else {
+                        opt.votes.push(userKey);
+                    }
+                } else if (!allowMultiple) {
+                    opt.votes = opt.votes.filter(u => u !== userKey);
+                }
+            });
+
+            msgRef.update({ poll: poll });
+        }).catch(err => console.error("Oy kullanma hatası:", err));
+    } else {
+        const msg = DEMO_MESSAGES.find(m => m.id === msgId);
+        if (msg && msg.poll) {
+            const allowMultiple = msg.poll.allowMultiple || false;
+            msg.poll.options.forEach((opt, idx) => {
+                if (!opt.votes) opt.votes = [];
+                if (idx === optionIndex) {
+                    if (opt.votes.includes(userKey)) {
+                        opt.votes = opt.votes.filter(u => u !== userKey);
+                    } else {
+                        opt.votes.push(userKey);
+                    }
+                } else if (!allowMultiple) {
+                    opt.votes = opt.votes.filter(u => u !== userKey);
+                }
+            });
+            renderMessagesFeed(DEMO_MESSAGES);
+        }
+    }
 }
 
 function toggleMsgActionsMenu(msgId) {
@@ -1609,6 +1746,68 @@ function renderMessagesFeed(messages) {
             }
         }
 
+        let pollHTML = "";
+        if (m.poll) {
+            const user = getCurrentUser();
+            const userKey = user ? (user.uid || user.email) : "demo_user";
+
+            let totalVotes = 0;
+            if (m.poll.options) {
+                m.poll.options.forEach(o => {
+                    totalVotes += (o.votes ? o.votes.length : 0);
+                });
+            }
+
+            let optionsHTML = "";
+            if (m.poll.options) {
+                m.poll.options.forEach((opt, oIdx) => {
+                    const votesCount = opt.votes ? opt.votes.length : 0;
+                    const hasVoted = opt.votes && opt.votes.includes(userKey);
+                    const percent = totalVotes > 0 ? Math.round((votesCount / totalVotes) * 100) : 0;
+
+                    optionsHTML += `
+                        <div onclick="votePollOption('${msgId}', ${oIdx})" class="p-2.5 rounded-xl border ${hasVoted ? 'border-tsMavi bg-tsMavi/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33]'} hover:border-tsMavi transition-all cursor-pointer space-y-1.5 shadow-sm">
+                            <div class="flex items-center justify-between text-xs font-semibold">
+                                <div class="flex items-center gap-2 truncate">
+                                    <span class="w-4 h-4 rounded-${m.poll.allowMultiple ? 'md' : 'full'} border flex items-center justify-center text-[10px] ${hasVoted ? 'bg-tsMavi text-white border-tsMavi' : 'border-slate-400'}">
+                                        ${hasVoted ? '✓' : ''}
+                                    </span>
+                                    <span class="truncate text-slate-900 dark:text-slate-100">${opt.text}</span>
+                                </div>
+                                <span class="font-mono text-[10px] font-bold shrink-0 ml-2 text-slate-600 dark:text-slate-300">${votesCount} oy (%${percent})</span>
+                            </div>
+                            <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                <div class="h-full bg-tsMavi rounded-full transition-all duration-300" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            pollHTML = `
+                <div class="my-2 p-3.5 rounded-2xl bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700/80 shadow-lg space-y-3 min-w-[270px] max-w-sm text-slate-900 dark:text-slate-100">
+                    <div class="space-y-1 border-b border-slate-200 dark:border-slate-800 pb-2">
+                        <div class="flex items-center gap-1.5 text-xs font-extrabold text-tsMavi">
+                            <span>📊 Anket</span>
+                        </div>
+                        <h4 class="font-bold text-xs leading-snug text-slate-900 dark:text-slate-100">${m.poll.question}</h4>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                            ${m.poll.allowMultiple ? '✓ Birden fazla şık seçilebilir' : '• Tek bir şık seçilebilir'}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        ${optionsHTML}
+                    </div>
+
+                    <div class="pt-1.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                        <span>Total: ${totalVotes} oy</span>
+                        <span>${timeStr} ✓✓</span>
+                    </div>
+                </div>
+            `;
+        }
+
         // WHATSAPP RENK PALETİ VE ÇİFT MAVİ TİK (READ RECEIPT)
         const bubbleBg = isMe 
             ? 'bg-[#005c4b] text-white rounded-2xl rounded-tr-none shadow-md' 
@@ -1644,6 +1843,7 @@ function renderMessagesFeed(messages) {
 
                     ${m.text ? `<p class="text-xs leading-relaxed whitespace-pre-wrap pr-4">${m.text}</p>` : ''}
                     ${attachmentHTML}
+                    ${pollHTML}
                     
                     <div class="flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-slate-300' : 'text-slate-400 dark:text-slate-400'} mt-1">
                         <span>${timeStr}</span>

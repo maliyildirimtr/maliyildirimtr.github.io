@@ -109,12 +109,16 @@
 
             <!-- FİLTRE VE ARAMA -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-                    <button onclick="filterGroups('all')" class="category-btn active px-4 py-2 rounded-xl text-xs font-semibold bg-tsMavi text-white shadow-md transition-all">Tüm Gruplar</button>
-                    <button onclick="filterGroups('Donanım / FPGA')" class="category-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">FPGA / Donanım</button>
-                    <button onclick="filterGroups('Gömülü Sistemler')" class="category-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Gömülü Sistemler</button>
-                    <button onclick="filterGroups('Yapay Zeka')" class="category-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Yapay Zeka</button>
-                    <button onclick="filterGroups('Yazılım')" class="category-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Yazılım</button>
+                <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar" id="category-filters-container">
+                    <button onclick="filterGroups('all')" class="category-btn active shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-tsMavi text-white shadow-md transition-all">Tüm Gruplar</button>
+                    <button onclick="filterGroups('FPGA / Donanım')" class="category-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">FPGA / Donanım</button>
+                    <button onclick="filterGroups('Gömülü Sistemler')" class="category-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Gömülü Sistemler</button>
+                    <button onclick="filterGroups('Yapay Zeka / Otonom')" class="category-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Yapay Zeka / Otonom</button>
+                    <button onclick="filterGroups('Web / Mobil Yazılım')" class="category-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Web / Mobil Yazılım</button>
+                    <button onclick="filterGroups('Robotik & Otomasyon')" class="category-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Robotik & Otomasyon</button>
+                    <button onclick="filterGroups('Siber Güvenlik')" class="category-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Siber Güvenlik</button>
+                    <button onclick="filterGroups('Veri Bilimi')" class="category-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Veri Bilimi</button>
+                    <button onclick="filterGroups('IoT (Nesnelerin İnterneti)')" class="category-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">IoT</button>
                 </div>
 
                 <div class="relative min-w-[260px]">
@@ -146,21 +150,31 @@
                     <input type="text" id="group-name" required placeholder="Örn: FPGA Tabanlı Derin Öğrenme Hızlandırıcı" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold mb-1 text-slate-400">Kategori *</label>
-                        <select id="group-category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
-                            <option value="Donanım / FPGA">Donanım / FPGA</option>
+                        <select id="group-category" onchange="handleCategorySelectChange(this)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                            <option value="FPGA / Donanım">FPGA / Donanım</option>
                             <option value="Gömülü Sistemler">Gömülü Sistemler</option>
-                            <option value="Yapay Zeka">Yapay Zeka / Otonom</option>
-                            <option value="IoT / Mekatronik">IoT / Mekatronik</option>
-                            <option value="Yazılım">Yazılım & Web</option>
+                            <option value="Yapay Zeka / Otonom">Yapay Zeka / Otonom</option>
+                            <option value="Web / Mobil Yazılım">Web / Mobil Yazılım</option>
+                            <option value="Robotik & Otomasyon">Robotik & Otomasyon</option>
+                            <option value="Siber Güvenlik">Siber Güvenlik</option>
+                            <option value="Veri Bilimi">Veri Bilimi</option>
+                            <option value="IoT (Nesnelerin İnterneti)">IoT (Nesnelerin İnterneti)</option>
+                            <option value="other">✨ Diğer (Özel Kategori)</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold mb-1 text-slate-400">Hedef Bütçe (TL)</label>
                         <input type="number" id="group-target-budget" placeholder="Örn: 5000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
                     </div>
+                </div>
+
+                <!-- DİNAMİK "DİĞER" ÖZEL KATEGORİ ALANI (CONDITIONAL INPUT) -->
+                <div id="custom-category-container" class="hidden transition-all duration-300 transform scale-95 opacity-0">
+                    <label class="block text-xs font-semibold mb-1 text-amber-400">✨ Özel Kategori Adını Yazın *</label>
+                    <input type="text" id="custom-category-input" placeholder="Örn: Biyomedikal / Genetik Teknolojileri" class="w-full px-3.5 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs focus:outline-none focus:border-amber-400">
                 </div>
 
                 <div>

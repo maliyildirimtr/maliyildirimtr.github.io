@@ -6,7 +6,7 @@ const DEMO_GROUPS = [
     {
         id: "fpga-ai-accel",
         name: "FPGA Tabanlı YZ Hızlandırıcı Tasarımı",
-        category: "Donanım / FPGA",
+        category: "FPGA / Donanım",
         inviteCode: "MP-8492",
         leader: "Mehmet Ali Yıldırım",
         description: "SystemVerilog ve Intel Quartus Prime kullanarak Evrişimli Sinir Ağları (CNN) matris çarpımlarını dikey boru hattı (pipelined) mimari ile FPGA üzerinde hızlandırma projesi.",
@@ -34,7 +34,7 @@ const DEMO_GROUPS = [
     {
         id: "edge-ai-camera",
         name: "Edge AI Akıllı Güvenlik Kamerası",
-        category: "Yapay Zeka",
+        category: "Yapay Zeka / Otonom",
         inviteCode: "AI-3341",
         leader: "Zeynep Kaya",
         description: "Raspberry Pi ve Coral NPU modülü ile nesne tespiti yapan, nesneleri yerel olarak işleyerek Firebase veritabanına anlık alarm gönderen akıllı kamera sistemi.",
@@ -237,13 +237,47 @@ function searchGroups() {
     renderGroupsUI(allGroups);
 }
 
+// Dinamik "Diğer" Kategori Alanı Göster/Gizle Mantığı
+function handleCategorySelectChange(selectEl) {
+    const customContainer = document.getElementById('custom-category-container');
+    const customInput = document.getElementById('custom-category-input');
+
+    if (selectEl && selectEl.value === 'other') {
+        if (customContainer) {
+            customContainer.classList.remove('hidden');
+            setTimeout(() => {
+                customContainer.classList.remove('scale-95', 'opacity-0');
+                customContainer.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+        if (customInput) customInput.setAttribute('required', 'true');
+    } else {
+        if (customContainer) {
+            customContainer.classList.remove('scale-100', 'opacity-100');
+            customContainer.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                customContainer.classList.add('hidden');
+            }, 200);
+        }
+        if (customInput) {
+            customInput.removeAttribute('required');
+            customInput.value = '';
+        }
+    }
+}
+
 // MODAL AÇMA / KAPAMA
 function openCreateGroupModal() {
     document.getElementById('create-group-modal').classList.remove('hidden');
 }
 function closeCreateGroupModal() {
-    document.getElementById('create-group-modal').classList.add('hidden');
-    document.getElementById('create-group-form').reset();
+    const modal = document.getElementById('create-group-modal');
+    const form = document.getElementById('create-group-form');
+    const categorySelect = document.getElementById('group-category');
+    
+    if (modal) modal.classList.add('hidden');
+    if (form) form.reset();
+    if (categorySelect) handleCategorySelectChange(categorySelect);
 }
 
 function openJoinModal() {
@@ -262,11 +296,19 @@ function handleCreateGroup(e) {
         const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
         const nameEl = document.getElementById('group-name');
         const categoryEl = document.getElementById('group-category');
+        const customCategoryEl = document.getElementById('custom-category-input');
         const budgetEl = document.getElementById('group-target-budget');
         const descEl = document.getElementById('group-desc');
 
         const name = nameEl ? nameEl.value.trim() : '';
-        const category = categoryEl ? categoryEl.value : 'Donanım / FPGA';
+        let category = categoryEl ? categoryEl.value : 'FPGA / Donanım';
+        
+        // Eğer kullanıcı "Diğer (Özel Kategori)" seçtiyse, özel metin alanındaki yazıyı al
+        if (category === 'other') {
+            const customVal = customCategoryEl ? customCategoryEl.value.trim() : '';
+            category = customVal || 'Özel Kategori';
+        }
+
         const targetBudget = budgetEl ? (parseFloat(budgetEl.value) || 0) : 0;
         const desc = descEl ? descEl.value.trim() : '';
 

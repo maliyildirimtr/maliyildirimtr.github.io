@@ -1645,6 +1645,139 @@ function votePollOption(msgId, optionIndex) {
     }
 }
 
+// WHATSAPP TARZI ETKİNLİK (CREATE EVENT) MANTIĞI & RSVP ENGINE
+function openAddMilestoneModal() {
+    openCreateEventModal();
+}
+
+function openCreateEventModal() {
+    const today = new Date().toISOString().split('T')[0];
+    const nowTime = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    const nameInp = document.getElementById('event-name-input');
+    const descInp = document.getElementById('event-desc-input');
+    const locInp = document.getElementById('event-location-input');
+    const sDate = document.getElementById('event-start-date');
+    const sTime = document.getElementById('event-start-time');
+    const incEnd = document.getElementById('event-include-endtime');
+    const descCounter = document.getElementById('event-desc-counter');
+
+    if (nameInp) nameInp.value = '';
+    if (descInp) descInp.value = '';
+    if (locInp) locInp.value = '';
+    if (sDate) sDate.value = today;
+    if (sTime) sTime.value = nowTime;
+    if (incEnd) {
+        incEnd.checked = false;
+        toggleEndTimeFields(false);
+    }
+    if (descCounter) descCounter.innerText = '0/1000';
+
+    const modal = document.getElementById('create-event-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeCreateEventModal() {
+    const modal = document.getElementById('create-event-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function updateEventDescCounter(textarea) {
+    const len = textarea ? textarea.value.length : 0;
+    const counter = document.getElementById('event-desc-counter');
+    if (counter) counter.innerText = `${len}/1000`;
+}
+
+function toggleEndTimeFields(checked) {
+    const container = document.getElementById('event-endtime-container');
+    if (container) {
+        if (checked) container.classList.remove('hidden');
+        else container.classList.add('hidden');
+    }
+}
+
+function handleSendEventForm(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const nameInp = document.getElementById('event-name-input');
+    const descInp = document.getElementById('event-desc-input');
+    const locInp = document.getElementById('event-location-input');
+    const sDate = document.getElementById('event-start-date');
+    const sTime = document.getElementById('event-start-time');
+    const incEnd = document.getElementById('event-include-endtime');
+    const eDate = document.getElementById('event-end-date');
+    const eTime = document.getElementById('event-end-time');
+    const allowGuests = document.getElementById('event-allow-guests');
+
+    const title = nameInp ? nameInp.value.trim() : '';
+    if (!title) {
+        alert("Lütfen etkinlik adını girin!");
+        return;
+    }
+
+    const startDate = sDate ? sDate.value : '';
+    const startTime = sTime ? sTime.value : '';
+    if (!startDate || !startTime) {
+        alert("Lütfen başlangıç tarihi ve saatini seçin!");
+        return;
+    }
+
+    const user = getCurrentUser();
+    const userKey = user ? (user.uid || user.email) : "demo_user";
+    const currentName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
+
+    const eventData = {
+        title: title,
+        description: descInp ? descInp.value.trim() : '',
+        startDate: startDate,
+        startTime: startTime,
+        endDate: (incEnd && incEnd.checked && eDate) ? eDate.value : '',
+        endTime: (incEnd && incEnd.checked && eTime) ? eTime.value : '',
+        location: locInp ? locInp.value.trim() : '',
+        allowGuests: allowGuests ? allowGuests.checked : true,
+        attendees: [userKey]
+    };
+
+    sendChatMessage(currentName, '', null, null, eventData);
+    closeCreateEventModal();
+}
+
+function toggleEventAttendance(msgId) {
+    const user = getCurrentUser();
+    const userKey = user ? (user.uid || user.email) : "demo_user";
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        const msgRef = db.collection("groups").doc(groupId).collection("messages").doc(msgId);
+        msgRef.get().then(doc => {
+            if (!doc.exists) return;
+            const msgData = doc.data();
+            if (!msgData || !msgData.eventData) return;
+
+            const ev = msgData.eventData;
+            if (!ev.attendees) ev.attendees = [];
+
+            if (ev.attendees.includes(userKey)) {
+                ev.attendees = ev.attendees.filter(u => u !== userKey);
+            } else {
+                ev.attendees.push(userKey);
+            }
+
+            msgRef.update({ eventData: ev });
+        }).catch(err => console.error("Etkinlik katılım hatası:", err));
+    } else {
+        const msg = DEMO_MESSAGES.find(m => m.id === msgId);
+        if (msg && msg.eventData) {
+            if (!msg.eventData.attendees) msg.eventData.attendees = [];
+            if (msg.eventData.attendees.includes(userKey)) {
+                msg.eventData.attendees = msg.eventData.attendees.filter(u => u !== userKey);
+            } else {
+                msg.eventData.attendees.push(userKey);
+            }
+            renderMessagesFeed(DEMO_MESSAGES);
+        }
+    }
+}
+
 function toggleMsgActionsMenu(msgId) {
     const menu = document.getElementById('msg-actions-' + msgId);
     if (menu) menu.classList.toggle('hidden');
@@ -1822,6 +1955,59 @@ function renderMessagesFeed(messages) {
                         <span>${timeStr} ✓✓</span>
                     </div>
                 </div>
+        let eventHTML = "";
+        if (m.eventData) {
+            const user = getCurrentUser();
+            const userKey = user ? (user.uid || user.email) : "demo_user";
+            const ev = m.eventData;
+            const isAttending = ev.attendees && ev.attendees.includes(userKey);
+            const attendeesCount = ev.attendees ? ev.attendees.length : 0;
+
+            const dateObj = new Date(ev.startDate || Date.now());
+            const dayNum = isNaN(dateObj.getDate()) ? '12' : dateObj.getDate();
+            const monthStr = isNaN(dateObj.getDate()) ? 'AĞU' : dateObj.toLocaleString('tr-TR', { month: 'short' }).toUpperCase();
+
+            eventHTML = `
+                <div class="my-2 p-3.5 rounded-2xl bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-700/80 shadow-lg space-y-3 min-w-[270px] max-w-sm text-slate-900 dark:text-slate-100">
+                    <div class="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5 text-xs font-extrabold text-rose-500">
+                                <span>📅 Etkinlik</span>
+                            </div>
+                            <h4 class="font-extrabold text-sm leading-snug text-slate-900 dark:text-slate-100">${ev.title}</h4>
+                        </div>
+                        <div class="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex flex-col items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                            <span>${dayNum}</span>
+                            <span class="text-[9px] font-mono">${monthStr}</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                        <div class="flex items-center gap-2">
+                            <span>🕒</span>
+                            <span>${ev.startDate || ''} • ${ev.startTime || ''} ${ev.endTime ? (' - ' + ev.endTime) : ''}</span>
+                        </div>
+                        ${ev.location ? `
+                            <div class="flex items-center gap-2 text-tsMavi font-bold truncate">
+                                <span>📍</span>
+                                <span class="truncate">${ev.location}</span>
+                            </div>
+                        ` : ''}
+                        ${ev.description ? `
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#202c33] p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 leading-relaxed whitespace-pre-wrap">${ev.description}</p>
+                        ` : ''}
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="text-[10px] text-slate-500 font-bold flex items-center gap-1">
+                            <span>👥</span>
+                            <span>${attendeesCount} Katılımcı</span>
+                        </div>
+                        <button type="button" onclick="toggleEventAttendance('${msgId}')" class="px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm ${isAttending ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-tsMavi text-white hover:bg-sky-500'}">
+                            ${isAttending ? '✓ Katılıyorsunuz' : 'Katıl ➔'}
+                        </button>
+                    </div>
+                </div>
             `;
         }
 
@@ -1861,6 +2047,7 @@ function renderMessagesFeed(messages) {
                     ${m.text ? `<p class="text-xs leading-relaxed whitespace-pre-wrap pr-4">${m.text}</p>` : ''}
                     ${attachmentHTML}
                     ${pollHTML}
+                    ${eventHTML}
                     
                     <div class="flex items-center justify-end gap-1 text-[10px] ${isMe ? 'text-slate-300' : 'text-slate-400 dark:text-slate-400'} mt-1">
                         <span>${timeStr}</span>

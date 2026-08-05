@@ -377,6 +377,81 @@
         <div></div>
     </div>
 
+    <!-- MODAL: WHATSAPP TARZI ETKİNLİK OLUŞTURMA (CREATE EVENT) -->
+    <div id="create-event-modal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#111b21] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-5 shadow-2xl overflow-y-auto max-h-[90vh]">
+            
+            <!-- HEADER WITH CANCEL, TITLE, SEND -->
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <button type="button" onclick="closeCreateEventModal()" class="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    Cancel
+                </button>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                    <span>📅</span> Event
+                </h3>
+                <button type="button" onclick="handleSendEventForm(event)" class="px-4 py-1.5 rounded-full bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-all shadow-md">
+                    Send
+                </button>
+            </div>
+
+            <form id="create-event-form" onsubmit="handleSendEventForm(event)" class="space-y-4">
+                <!-- EVENT NAME -->
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">EVENT NAME</label>
+                    <input type="text" id="event-name-input" required placeholder="Add event name" class="w-full px-4 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi transition-colors">
+                </div>
+
+                <!-- DESCRIPTION (OPTIONAL) WITH LIVE CHARACTER COUNTER -->
+                <div class="space-y-1">
+                    <div class="flex items-center justify-between text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">
+                        <span>DESCRIPTION (OPTIONAL)</span>
+                        <span id="event-desc-counter" class="font-mono text-[10px]">0/1000</span>
+                    </div>
+                    <textarea id="event-desc-input" rows="3" maxlength="1000" oninput="updateEventDescCounter(this)" placeholder="Add description" class="w-full px-4 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi transition-colors resize-none"></textarea>
+                </div>
+
+                <!-- STARTS (DATE & TIME) -->
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">STARTS</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" id="event-start-date" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
+                        <input type="time" id="event-start-time" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
+                    </div>
+                </div>
+
+                <!-- INCLUDE END TIME CHECKBOX -->
+                <div class="pt-2 flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-900 dark:text-slate-100">Include end time</span>
+                    <input type="checkbox" id="event-include-endtime" onchange="toggleEndTimeFields(this.checked)" class="w-4 h-4 accent-tsMavi rounded cursor-pointer">
+                </div>
+
+                <!-- ENDS (DATE & TIME) - HIDDEN BY DEFAULT -->
+                <div id="event-endtime-container" class="hidden space-y-1 pt-1">
+                    <label class="block text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">ENDS</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" id="event-end-date" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
+                        <input type="time" id="event-end-time" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
+                    </div>
+                </div>
+
+                <!-- LOCATION OR CALL LINK (OPTIONAL) -->
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">LOCATION OR CALL LINK (OPTIONAL)</label>
+                    <input type="text" id="event-location-input" placeholder="Add location or call link (e.g. Jitsi / Meet)" class="w-full px-4 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#202c33] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi transition-colors">
+                </div>
+
+                <!-- ALLOW GUESTS CHECKBOX -->
+                <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div>
+                        <h5 class="text-xs font-bold text-slate-900 dark:text-slate-100">Allow guests</h5>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Grup dışındaki üyelerin katılmasına izin ver</p>
+                    </div>
+                    <input type="checkbox" id="event-allow-guests" checked class="w-4 h-4 accent-tsMavi rounded cursor-pointer">
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
     <script src="js/firebase.js"></script>
     <script src="js/main.js"></script>

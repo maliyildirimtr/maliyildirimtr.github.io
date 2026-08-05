@@ -313,16 +313,28 @@ function handleCreateGroup(e) {
             ? firebase.firestore.FieldValue.serverTimestamp() 
             : new Date().toISOString();
 
+        const creatorName = user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin";
+        const creatorEmail = user ? user.email : "admin@maliyildirimtr.com";
+        const creatorUid = user ? user.uid : "admin-uid";
+
         const newGroup = {
             name: name,
             category: category,
             inviteCode: randomCode,
-            leader: user ? (user.displayName || user.email.split('@')[0]) : "Yönetici Admin",
-            leaderUid: user ? user.uid : "admin",
+            leader: creatorName,
+            leaderUid: creatorUid,
             description: desc,
             targetBudget: targetBudget,
             spentBudget: 0,
             membersCount: 1,
+            members: [
+                { uid: creatorUid, name: creatorName, email: creatorEmail, role: "Yönetici", joinedAt: new Date().toISOString() }
+            ],
+            milestones: [
+                { id: "m1", text: "Proje Mimarisi ve Gereksinim Analizi", status: "completed" },
+                { id: "m2", text: "Donanım / Yazılım Geliştirme Fazı", status: "in_progress" },
+                { id: "m3", text: "Test, Doğrulama ve Canlıya Alma", status: "planned" }
+            ],
             tasksDone: 0,
             tasksTotal: 0,
             createdAt: timestamp

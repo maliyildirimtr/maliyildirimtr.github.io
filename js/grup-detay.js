@@ -210,21 +210,43 @@ function renderWorkspaceUI() {
             <!-- HEADER BÖLÜMÜ (UÇTAN UCA GENİŞLETİLMİŞ DÜZEN) -->
             <div class="w-full rounded-3xl p-5 md:p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111b21] shadow-xl backdrop-blur-md">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full">
-                    <!-- SOL ALAN: Kategori + Davet Kodu + Proje Adı -->
-                    <div class="space-y-1.5 min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-3 py-1 rounded-full bg-tsMavi/10 text-tsMavi font-bold text-xs border border-tsMavi/20">
-                                ${currentGroup.category || 'Genel'}
-                            </span>
-                            <button onclick="copyInviteCode('${currentGroup.inviteCode || 'MP-8492'}')" title="Kodu Kopyala" class="text-xs font-mono bg-slate-100 dark:bg-[#1c2830] px-3 py-1 rounded-xl text-slate-700 dark:text-slate-300 hover:text-tsMavi border border-slate-300 dark:border-slate-700 transition-colors">
-                                🔑 Davet Kodu: <strong class="text-slate-900 dark:text-slate-100">${currentGroup.inviteCode || 'MP-8492'}</strong> 📋
-                            </button>
+                    <!-- SOL ALAN: Grup PP + Kategori + Davet Kodu + Proje Adı -->
+                    <div class="flex items-center gap-4 min-w-0">
+
+                        <!-- YUVARLAK GRUP PP -->
+                        <div class="relative shrink-0 cursor-pointer group" onclick="openGroupSettingsModal()" title="Grup ayarlarını düzenle">
+                            <div id="group-pp-avatar"
+                                style="width:60px;height:60px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#6e0d25,#1e7fcb);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;border:3px solid rgba(255,255,255,0.12);box-shadow:0 4px 16px rgba(0,0,0,0.3);transition:opacity 0.2s;">
+                                ${currentGroup.photoURL
+                                    ? `<img src="${currentGroup.photoURL}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='${(currentGroup.name||'G').slice(0,2).toUpperCase()}'">`
+                                    : (currentGroup.name||'G').slice(0,2).toUpperCase()
+                                }
+                            </div>
+                            <!-- Kamera ikonu hover'da görünür -->
+                            <div class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg style="width:20px;height:20px;color:white;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
                         </div>
-                        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 truncate">${currentGroup.name || 'Proje Çalışma Alanı'}</h1>
-                        ${lookingRolesBadges}
+
+                        <!-- METİN ALANI -->
+                        <div class="space-y-1.5 min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-3 py-1 rounded-full bg-tsMavi/10 text-tsMavi font-bold text-xs border border-tsMavi/20">
+                                    ${currentGroup.category || 'Genel'}
+                                </span>
+                                <button onclick="copyInviteCode('${currentGroup.inviteCode || 'MP-8492'}')" title="Kodu Kopyala" class="text-xs font-mono bg-slate-100 dark:bg-[#1c2830] px-3 py-1 rounded-xl text-slate-700 dark:text-slate-300 hover:text-tsMavi border border-slate-300 dark:border-slate-700 transition-colors">
+                                    🔑 Davet Kodu: <strong class="text-slate-900 dark:text-slate-100">${currentGroup.inviteCode || 'MP-8492'}</strong> 📋
+                                </button>
+                            </div>
+                            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 truncate">${currentGroup.name || 'Proje Çalışma Alanı'}</h1>
+                            ${lookingRolesBadges}
+                        </div>
                     </div>
 
-                    <!-- SAĞ ALAN: Yönetim Butonları (En Sağ Köşeye Yaslanmış) -->
+                    <!-- SAĞ ALAN: Yönetim Butonları -->
                     <div class="flex flex-wrap items-center justify-start lg:justify-end gap-2.5 shrink-0">
                         <button onclick="openJitsiMeeting()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-1.5">
                             📹 Görüntülü Toplantı Başlat (Virtual Lab)
@@ -238,8 +260,11 @@ function renderWorkspaceUI() {
                                 ✓ Grubun Üyesisiniz (${roleText})
                             </span>
                         `}
-                        <button type="button" onclick="deleteCurrentWorkspaceGroup(event)" title="Grubu tamamen sil" class="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1">
-                            🗑️ Grubu Sil
+                        <!-- ⚙️ GRUP AYARLARI BUTONU (Grubu Sil'in yerini aldı) -->
+                        <button type="button" onclick="openGroupSettingsModal()" title="Grup ayarları ve yönetimi"
+                            class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-[#1c2830] text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-1.5 shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            Grup Ayarları
                         </button>
                         <a href="gruplar.html" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-[#1c2830] text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-300 dark:border-slate-700">
                             ← Gruplara Dön
@@ -1539,6 +1564,234 @@ let mediaRecorder = null;
 let audioChunks = [];
 let voiceTimerInterval = null;
 let voiceRecordSeconds = 0;
+
+// ====================================================
+// GRUP AYARLARI MODALI
+// ====================================================
+
+function openGroupSettingsModal() {
+    const existing = document.getElementById('group-settings-overlay');
+    if (existing) { existing.remove(); return; }
+
+    const grp = currentGroup || {};
+
+    const overlay = document.createElement('div');
+    overlay.id = 'group-settings-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);backdrop-filter:blur(8px);padding:16px;';
+
+    overlay.innerHTML = `
+        <div id="group-settings-modal"
+            style="width:min(520px,95vw);max-height:90vh;overflow-y:auto;
+                   background:#111b21;border:1px solid rgba(255,255,255,0.08);
+                   border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.6);
+                   display:flex;flex-direction:column;animation:gsModalIn .3s cubic-bezier(.4,0,.2,1);">
+
+            <!-- BAŞLIK -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,0.07);">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:rgba(30,127,203,0.15);display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:18px;height:18px;color:#1e7fcb;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size:16px;font-weight:800;color:#e2e8f0;">Grup Ayarları</div>
+                        <div style="font-size:11px;color:#64748b;">${grp.name || 'Grup'}</div>
+                    </div>
+                </div>
+                <button onclick="closeGroupSettingsModal()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.07);border:none;cursor:pointer;color:#94a3b8;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">✕</button>
+            </div>
+
+            <!-- İÇERİK -->
+            <div style="padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;">
+
+                <!-- 1. GRUP PP -->
+                <div>
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Grup Profil Fotoğrafı</div>
+                    <div style="display:flex;align-items:center;gap:16px;">
+                        <div id="gs-pp-preview"
+                            style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#6e0d25,#1e7fcb);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;border:3px solid rgba(255,255,255,0.12);flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+                            ${grp.photoURL
+                                ? `<img src="${grp.photoURL}" style="width:100%;height:100%;object-fit:cover;">`
+                                : (grp.name||'G').slice(0,2).toUpperCase()
+                            }
+                        </div>
+                        <div style="flex:1;">
+                            <input type="file" id="gs-pp-file-input" accept="image/*" style="display:none;" onchange="handleGroupPPUpload(this)">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button onclick="document.getElementById('gs-pp-file-input').click()"
+                                    style="padding:8px 16px;border-radius:12px;background:rgba(30,127,203,0.15);border:1px solid rgba(30,127,203,0.3);color:#1e7fcb;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;"
+                                    onmouseover="this.style.background='rgba(30,127,203,0.25)'" onmouseout="this.style.background='rgba(30,127,203,0.15)'">
+                                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    Fotoğraf Yükle
+                                </button>
+                                ${grp.photoURL ? `
+                                <button onclick="removeGroupPP()"
+                                    style="padding:8px 16px;border-radius:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;"
+                                    onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">
+                                    Kaldır
+                                </button>` : ''}
+                            </div>
+                            <div style="font-size:10px;color:#475569;margin-top:6px;">JPG, PNG veya GIF. Maks. 2 MB.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AYIRICI -->
+                <div style="border-top:1px solid rgba(255,255,255,0.06);"></div>
+
+                <!-- 2. GRUP ADI -->
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:8px;">Grup Adı</label>
+                    <input id="gs-name-input" type="text" value="${(grp.name||'').replace(/"/g, '&quot;')}" maxlength="60"
+                        style="width:100%;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;font-size:14px;font-weight:600;outline:none;box-sizing:border-box;transition:border-color 0.2s;"
+                        onfocus="this.style.borderColor='#1e7fcb'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"
+                        placeholder="Grup adını girin...">
+                    <div style="font-size:10px;color:#475569;margin-top:4px;">Bu ad grup listelerinde ve bildirimlerinde görünür.</div>
+                </div>
+
+                <!-- 3. PROJE AÇIKLAMASI -->
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:8px;">Proje Hakkında / Açıklama</label>
+                    <textarea id="gs-desc-input" rows="3" maxlength="300"
+                        style="width:100%;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;font-size:13px;outline:none;resize:vertical;min-height:80px;box-sizing:border-box;font-family:inherit;transition:border-color 0.2s;"
+                        onfocus="this.style.borderColor='#1e7fcb'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"
+                        placeholder="Proje hakkında kısa bir açıklama yazın...">${(grp.description||'').replace(/</g,'&lt;')}</textarea>
+                    <div style="font-size:10px;color:#475569;margin-top:4px;">Maks. 300 karakter.</div>
+                </div>
+
+                <!-- KAYDET BUTONU -->
+                <button onclick="saveGroupSettings()" id="gs-save-btn"
+                    style="width:100%;padding:12px;border-radius:14px;background:linear-gradient(135deg,#1e7fcb,#0ea5e9);border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(30,127,203,0.3);transition:all 0.2s;"
+                    onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
+                    ✓ Değişiklikleri Kaydet
+                </button>
+
+                <!-- AYIRICI + TEHLİKE ZONU -->
+                <div style="border-top:1px solid rgba(239,68,68,0.15);margin-top:4px;"></div>
+
+                <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:16px;padding:16px 20px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <svg style="width:16px;height:16px;color:#ef4444;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span style="font-size:12px;font-weight:800;color:#ef4444;">Tehlikeli Bölge</span>
+                    </div>
+                    <div style="font-size:12px;color:#94a3b8;margin-bottom:14px;line-height:1.6;">Bu işlem geri alınamaz. Grubun tüm verileri (sohbet, görevler, bütçe, arşiv) kalıcı olarak silinecektir.</div>
+                    <button onclick="closeGroupSettingsModal(); deleteCurrentWorkspaceGroup(event);"
+                        style="width:100%;padding:10px 16px;border-radius:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;"
+                        onmouseover="this.style.background='rgba(239,68,68,0.2)';this.style.borderColor='rgba(239,68,68,0.5)'" onmouseout="this.style.background='rgba(239,68,68,0.1)';this.style.borderColor='rgba(239,68,68,0.3)'">
+                        <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Grubu Kalıcı Olarak Sil ve Arşivle
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <style>
+            @keyframes gsModalIn {
+                from { opacity:0; transform:scale(0.96) translateY(12px); }
+                to   { opacity:1; transform:scale(1) translateY(0); }
+            }
+            #group-settings-modal::-webkit-scrollbar { width:4px; }
+            #group-settings-modal::-webkit-scrollbar-track { background:transparent; }
+            #group-settings-modal::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:4px; }
+        </style>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeGroupSettingsModal(); });
+}
+
+function closeGroupSettingsModal() {
+    const overlay = document.getElementById('group-settings-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.2s';
+        setTimeout(() => overlay.remove(), 200);
+    }
+}
+
+function handleGroupPPUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Dosya boyutu 2 MB\'ı aşamaz.');
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        const preview = document.getElementById('gs-pp-preview');
+        if (preview) {
+            preview.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+            preview.dataset.newPhoto = dataUrl;
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeGroupPP() {
+    const preview = document.getElementById('gs-pp-preview');
+    if (preview) {
+        const initials = ((currentGroup && currentGroup.name) || 'G').slice(0, 2).toUpperCase();
+        preview.innerHTML = initials;
+        preview.dataset.newPhoto = '__REMOVE__';
+    }
+}
+
+function saveGroupSettings() {
+    const nameInput = document.getElementById('gs-name-input');
+    const descInput = document.getElementById('gs-desc-input');
+    const ppPreview = document.getElementById('gs-pp-preview');
+    const saveBtn   = document.getElementById('gs-save-btn');
+
+    const newName = (nameInput ? nameInput.value.trim() : '') || (currentGroup && currentGroup.name) || '';
+    const newDesc = descInput ? descInput.value.trim() : '';
+    const newPhoto = ppPreview ? ppPreview.dataset.newPhoto : null;
+
+    if (!newName) { alert('Grup adı boş olamaz!'); return; }
+
+    if (saveBtn) {
+        saveBtn.textContent = 'Kaydediliyor...';
+        saveBtn.disabled = true;
+    }
+
+    const updates = { name: newName, description: newDesc };
+    if (newPhoto === '__REMOVE__') {
+        updates.photoURL = '';
+    } else if (newPhoto && newPhoto.startsWith('data:')) {
+        // Base64'ü doğrudan kaydet (küçük görseller için). Büyük projede Firebase Storage tercih edilir.
+        updates.photoURL = newPhoto;
+    }
+
+    const finish = () => {
+        // currentGroup'u güncelle
+        if (currentGroup) {
+            currentGroup.name        = newName;
+            currentGroup.description = newDesc;
+            if ('photoURL' in updates) currentGroup.photoURL = updates.photoURL;
+        }
+        closeGroupSettingsModal();
+        // Header'ı yenile
+        if (typeof renderWorkspaceUI === 'function') renderWorkspaceUI();
+        // Başarı bildirimi
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:10px 22px;border-radius:12px;font-size:13px;font-weight:700;z-index:999999;box-shadow:0 4px 16px rgba(16,185,129,0.4);';
+        toast.textContent = '✓ Grup ayarları güncellendi!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    };
+
+    if (typeof db !== 'undefined' && db && db.collection && groupId) {
+        db.collection('groups').doc(groupId).update(updates).then(finish).catch(err => {
+            console.error('Grup güncellenemedi:', err);
+            alert('Güncelleme başarısız: ' + (err.message || err));
+            if (saveBtn) { saveBtn.textContent = '✓ Değişiklikleri Kaydet'; saveBtn.disabled = false; }
+        });
+    } else {
+        // Firestore yoksa local güncelle
+        finish();
+    }
+}
 
 // ====================================================
 // GRUP BİLGİ PANELİ (WHATSAPP DESKTOP TARZI DRAWER)

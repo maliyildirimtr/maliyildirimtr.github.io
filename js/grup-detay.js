@@ -963,7 +963,7 @@ function openChatAttachment(msgId) {
     if (att.type === 'image') {
         openImagePreviewModal(att.url, att.name || 'Görsel', msgId);
     } else {
-        downloadBlobOrUrl(att.url, att.name || 'dokuman');
+        openPdfPreviewModal(att.url, att.name || 'dokuman');
     }
 }
 
@@ -1140,8 +1140,13 @@ function setupLightboxSwipeAndClickEvents(modal) {
     }, { passive: true });
 }
 
-// KLAVYE SOL / SAĞ OK TUŞLARI İLE GALERİ GEZİNİMİ
+// KLAVYE SOL / SAĞ OK TUŞLARI İLE GALERİ GEZİNİMİ & ESC İLE KAPATMA
 window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImagePreviewModal();
+        closePdfPreviewModal();
+    }
+
     const modal = document.getElementById('image-preview-modal');
     if (!modal || modal.classList.contains('hidden') || modal.style.display === 'none') return;
 
@@ -1149,8 +1154,6 @@ window.addEventListener('keydown', function(e) {
         navigatePreviewImage(-1);
     } else if (e.key === 'ArrowRight') {
         navigatePreviewImage(1);
-    } else if (e.key === 'Escape') {
-        closeImagePreviewModal();
     }
 });
 
@@ -1159,6 +1162,95 @@ function closeImagePreviewModal() {
     if (modal) {
         modal.classList.add('hidden');
         modal.style.display = 'none';
+    }
+}
+
+// PDF / DOKÜMAN ÖNİZLEME MODALI (DİREKT İNDİRMEK YERİNE ÖNCE ÖNİZLEME AÇAR)
+let activePdfBlobUrl = null;
+
+function openPdfPreviewModal(url, fileName) {
+    const safeFileName = fileName || 'Doküman.pdf';
+    
+    // Eski PDF modalını temizle
+    let modal = document.getElementById('pdf-preview-modal');
+    if (modal) modal.remove();
+
+    if (activePdfBlobUrl) {
+        try { URL.revokeObjectURL(activePdfBlobUrl); } catch(e) {}
+        activePdfBlobUrl = null;
+    }
+
+    let previewUrl = url;
+
+    // DataURL base64 ise Blob URL oluştur (İframe / Embed içerisinde sorunsuz görüntüleme için)
+    if (url && url.startsWith('data:')) {
+        try {
+            const parts = url.split(';base64,');
+            const contentType = parts[0].split(':')[1] || 'application/pdf';
+            const raw = window.atob(parts[1]);
+            const rawLength = raw.length;
+            const uInt8Array = new Uint8Array(rawLength);
+            for (let i = 0; i < rawLength; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+            const blob = new Blob([uInt8Array], { type: contentType });
+            activePdfBlobUrl = URL.createObjectURL(blob);
+            previewUrl = activePdfBlobUrl;
+        } catch (e) {
+            console.warn("PDF blob dönüştürme uyarısı:", e);
+        }
+    }
+
+    modal = document.createElement('div');
+    modal.id = 'pdf-preview-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-between;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);padding:16px;animation:gsModalIn .25s cubic-bezier(.4,0,.2,1);';
+
+    // Global nesneye aktar (güvenli indir butonu tıklaması için)
+    window._currentPdfPreviewData = { url, fileName: safeFileName };
+
+    modal.innerHTML = `
+        <!-- ÜST BAR: DOSYA ADI + İNDİR + KAPAT -->
+        <div style="width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:18px;color:#fff;margin-bottom:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.3);color:#ef4444;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;">📄</div>
+                <div style="min-width:0;">
+                    <div style="font-size:13px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeFileName}</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-top:1px;">PDF / Doküman Önizlemesi</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                <button onclick="downloadBlobOrUrl(window._currentPdfPreviewData.url, window._currentPdfPreviewData.fileName)"
+                    style="padding:8px 20px;border-radius:20px;background:linear-gradient(135deg,#1e7fcb,#0ea5e9);border:none;color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(30,127,203,0.4);transition:all 0.2s;"
+                    onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                    💾 İndir
+                </button>
+                <button onclick="closePdfPreviewModal()"
+                    style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">✕</button>
+            </div>
+        </div>
+
+        <!-- ORTA ALAN: PDF İFRAME / EMBED ÖNİZLEME -->
+        <div style="flex:1;width:100%;max-width:1100px;background:#1e293b;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 24px 64px rgba(0,0,0,0.6);position:relative;">
+            <iframe id="pdf-preview-iframe" src="${previewUrl}" style="width:100%;height:100%;border:none;background:#1e293b;" title="PDF Önizleme"></iframe>
+        </div>
+
+        <div style="height:12px;"></div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+function closePdfPreviewModal() {
+    const modal = document.getElementById('pdf-preview-modal');
+    if (modal) {
+        modal.style.opacity = '0';
+        modal.style.transition = 'opacity 0.2s';
+        setTimeout(() => modal.remove(), 200);
+    }
+    if (activePdfBlobUrl) {
+        try { URL.revokeObjectURL(activePdfBlobUrl); } catch(e) {}
+        activePdfBlobUrl = null;
     }
 }
 
@@ -3116,7 +3208,7 @@ function renderMessagesFeed(messages) {
                 `;
             } else if (m.attachment.type === 'file') {
                 attachmentHTML = `
-                    <div onclick="openChatAttachment('${msgId}')" class="my-1.5 rounded-2xl bg-slate-900 text-white overflow-hidden border border-slate-700/80 shadow-lg max-w-xs cursor-pointer hover:border-tsMavi transition-all">
+                    <div class="my-1.5 rounded-2xl bg-slate-900 text-white overflow-hidden border border-slate-700/80 shadow-lg max-w-xs cursor-pointer hover:border-tsMavi transition-all">
                         <div class="p-3.5 flex items-center gap-3 bg-gradient-to-r from-rose-950/60 to-slate-900">
                             <div class="w-10 h-10 rounded-xl bg-rose-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-md">
                                 PDF

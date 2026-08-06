@@ -1553,12 +1553,16 @@ function openGroupInfoDrawer() {
 
     const grp     = currentGroup || {};
     const members = grp.members  || [];
-    const msgs    = groupMessages || [];
 
-    // Medya mesajlarını filtrele
-    const mediaMsgs = msgs.filter(m => m.attachment && (m.attachment.type === 'image' || m.attachment.type === 'video'));
-    const linkMsgs  = msgs.filter(m => m.text && /https?:\/\//.test(m.text));
-    const docMsgs   = msgs.filter(m => m.attachment && m.attachment.type === 'file');
+    // Mesaj kaynağı: Firestore real-time snapshot'tan gelen veriler (renderMessagesFeed tarafından set edilir)
+    const msgs = (window.currentLoadedMessages && window.currentLoadedMessages.length > 0)
+        ? window.currentLoadedMessages
+        : [];
+
+    // Medya mesajlarını filtrele (gerçek veri yapısına göre)
+    const mediaMsgs   = msgs.filter(m => m.attachment && (m.attachment.type === 'image' || m.attachment.type === 'video'));
+    const linkMsgs    = msgs.filter(m => m.text && /https?:\/\//.test(m.text) && !m.attachment);
+    const docMsgs     = msgs.filter(m => m.attachment && m.attachment.type === 'file');
     const starredMsgs = msgs.filter(m => m.starred);
 
     const overlay = document.createElement('div');
@@ -1668,12 +1672,14 @@ function switchGroupInfoTab(tabId) {
         }
     });
 
-    const grp       = currentGroup || {};
-    const members   = grp.members  || [];
-    const msgs      = groupMessages || [];
-    const mediaMsgs = msgs.filter(m => m.attachment && (m.attachment.type === 'image' || m.attachment.type === 'video'));
-    const linkMsgs  = msgs.filter(m => m.text && /https?:\/\//.test(m.text));
-    const docMsgs   = msgs.filter(m => m.attachment && m.attachment.type === 'file');
+    const grp     = currentGroup || {};
+    const members = grp.members  || [];
+    const msgs    = (window.currentLoadedMessages && window.currentLoadedMessages.length > 0)
+        ? window.currentLoadedMessages
+        : [];
+    const mediaMsgs   = msgs.filter(m => m.attachment && (m.attachment.type === 'image' || m.attachment.type === 'video'));
+    const linkMsgs    = msgs.filter(m => m.text && /https?:\/\//.test(m.text) && !m.attachment);
+    const docMsgs     = msgs.filter(m => m.attachment && m.attachment.type === 'file');
     const starredMsgs = msgs.filter(m => m.starred);
 
     _renderGroupInfoContent(tabId, grp, members, msgs, mediaMsgs, linkMsgs, docMsgs, starredMsgs);
@@ -1753,34 +1759,104 @@ function _renderGroupInfoContent(tabId, grp, members, msgs, mediaMsgs, linkMsgs,
 
     } else if (tabId === 'media') {
         const allMedia = [...mediaMsgs, ...docMsgs, ...linkMsgs];
-        content.innerHTML = `
-            <!-- MEDYA SEKMELERİ -->
-            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-                <button onclick="_filterMediaDrawer('all',this)" style="padding:6px 14px;border-radius:20px;border:1px solid #1e7fcb44;background:#1e7fcb22;color:#1e7fcb;font-size:11px;font-weight:700;cursor:pointer;">Tümü (${allMedia.length})</button>
-                <button onclick="_filterMediaDrawer('image',this)" style="padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;">🖼️ Medya (${mediaMsgs.length})</button>
-                <button onclick="_filterMediaDrawer('file',this)" style="padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;">📎 Dosya (${docMsgs.length})</button>
-                <button onclick="_filterMediaDrawer('link',this)" style="padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;">🔗 Link (${linkMsgs.length})</button>
-            </div>
-            <div id="media-drawer-list">
-                ${allMedia.length === 0 ? `<div style="text-align:center;padding:48px 20px;color:#475569;">
-                    <div style="font-size:40px;margin-bottom:12px;">🖼️</div>
-                    <div style="font-size:13px;font-weight:600;">Henüz paylaşılan medya yok</div>
-                </div>` : allMedia.map(m => `
-                    <div style="${card}display:flex;align-items:center;gap:12px;">
-                        <div style="width:44px;height:44px;border-radius:12px;background:rgba(30,127,203,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
-                            ${m.attachment ? (m.attachment.type==='image'?'🖼️':'📎') : '🔗'}
-                        </div>
-                        <div style="flex:1;min-width:0;">
-                            <div style="font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                ${m.attachment ? m.attachment.name : (m.text||'').substring(0,40)}
-                            </div>
-                            <div style="font-size:10px;color:#64748b;margin-top:2px;">${m.sender || ''} · ${m.time || ''}</div>
-                        </div>
-                        ${m.attachment && m.attachment.url ? `<a href="${m.attachment.url}" target="_blank" style="padding:6px 10px;border-radius:10px;background:rgba(30,127,203,0.2);color:#1e7fcb;font-size:11px;font-weight:700;text-decoration:none;">↓</a>` : ''}
+
+        // Görsel ızgarası için HTML
+        const imageGridHTML = mediaMsgs.length === 0 ? '' : `
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:16px;">
+                ${mediaMsgs.map(m => `
+                    <div style="aspect-ratio:1;overflow:hidden;border-radius:6px;background:#1c2830;cursor:pointer;"
+                         onclick="window.open('${m.attachment.url}','_blank')"
+                         title="${m.sender || ''} · ${m.time || ''}">
+                        ${m.attachment.type === 'image'
+                            ? `<img src="${m.attachment.url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;\\'>🖼️</div>'">`
+                            : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:28px;">🎬</div>`
+                        }
                     </div>
                 `).join('')}
             </div>
         `;
+
+        // Dosyalar için HTML
+        const fileListHTML = docMsgs.length === 0 ? '' : docMsgs.map(m => `
+            <a href="${m.attachment.url || '#'}" target="_blank" style="${card}display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(220,38,38,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📎</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.attachment.name || 'Dosya'}</div>
+                    <div style="font-size:10px;color:#64748b;margin-top:2px;">${m.sender || ''} · ${m.time || ''}</div>
+                </div>
+                <span style="font-size:18px;color:#64748b;">↗</span>
+            </a>
+        `).join('');
+
+        // Linkler için HTML
+        const linkListHTML = linkMsgs.length === 0 ? '' : linkMsgs.map(m => {
+            const url = (m.text || '').match(/https?:\/\/[^\s]+/)?.[0] || '';
+            return `
+                <a href="${url}" target="_blank" style="${card}display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                    <div style="width:40px;height:40px;border-radius:10px;background:rgba(30,127,203,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🔗</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:11px;font-weight:700;color:#1e7fcb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${url.substring(0,45)}${url.length>45?'...':''}</div>
+                        <div style="font-size:10px;color:#64748b;margin-top:2px;">${m.sender || ''} · ${m.time || ''}</div>
+                    </div>
+                </a>
+            `;
+        }).join('');
+
+        content.innerHTML = `
+            <!-- FİLTRE BUTONLARI -->
+            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+                <button onclick="_switchMediaFilter('all',this,${mediaMsgs.length},${docMsgs.length},${linkMsgs.length})"
+                    style="padding:6px 14px;border-radius:20px;border:1px solid #1e7fcb44;background:#1e7fcb22;color:#1e7fcb;font-size:11px;font-weight:700;cursor:pointer;">
+                    Tümü (${allMedia.length})
+                </button>
+                <button onclick="_switchMediaFilter('image',this,${mediaMsgs.length},${docMsgs.length},${linkMsgs.length})"
+                    style="padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;">
+                    🖼️ Medya (${mediaMsgs.length})
+                </button>
+                <button onclick="_switchMediaFilter('file',this,${mediaMsgs.length},${docMsgs.length},${linkMsgs.length})"
+                    style="padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;">
+                    📎 Dosya (${docMsgs.length})
+                </button>
+                <button onclick="_switchMediaFilter('link',this,${mediaMsgs.length},${docMsgs.length},${linkMsgs.length})"
+                    style="padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;font-size:11px;font-weight:700;cursor:pointer;">
+                    🔗 Link (${linkMsgs.length})
+                </button>
+            </div>
+
+            <!-- GÖRSEL IZGARA ALANI -->
+            <div id="media-grid-section">
+                ${mediaMsgs.length > 0 ? `
+                    <div style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Görseller ve Videolar</div>
+                    ${imageGridHTML}
+                ` : ''}
+            </div>
+
+            <!-- DOSYA LİSTESİ -->
+            <div id="media-file-section">
+                ${docMsgs.length > 0 ? `
+                    <div style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;margin-top:4px;">Dosyalar</div>
+                    ${fileListHTML}
+                ` : ''}
+            </div>
+
+            <!-- LİNK LİSTESİ -->
+            <div id="media-link-section">
+                ${linkMsgs.length > 0 ? `
+                    <div style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;margin-top:4px;">Bağlantılar</div>
+                    ${linkListHTML}
+                ` : ''}
+            </div>
+
+            <!-- BOŞ DURUM -->
+            ${allMedia.length === 0 ? `
+                <div style="text-align:center;padding:48px 20px;color:#475569;">
+                    <div style="font-size:40px;margin-bottom:12px;">🖼️</div>
+                    <div style="font-size:13px;font-weight:600;">Henüz paylaşılan medya yok</div>
+                    <div style="font-size:11px;margin-top:6px;color:#334155;">Sohbette görsel, dosya veya link paylaştığınızda burada görünür</div>
+                </div>
+            ` : ''}
+        `;
+
 
     } else if (tabId === 'starred') {
         content.innerHTML = `
@@ -1883,9 +1959,9 @@ function _renderGroupInfoContent(tabId, grp, members, msgs, mediaMsgs, linkMsgs,
     }
 }
 
-// Medya drawer filtresi
-function _filterMediaDrawer(type, btn) {
-    // Buton aktif stilini güncelle
+// Medya drawer filtresi — bölümleri göster/gizle
+function _switchMediaFilter(type, btn, imgCount, fileCount, linkCount) {
+    // Tüm butonları sıfırla
     btn.closest('div').querySelectorAll('button').forEach(b => {
         b.style.background = 'transparent';
         b.style.color = '#94a3b8';
@@ -1894,6 +1970,28 @@ function _filterMediaDrawer(type, btn) {
     btn.style.background = '#1e7fcb22';
     btn.style.color = '#1e7fcb';
     btn.style.border = '1px solid #1e7fcb44';
+
+    const grid = document.getElementById('media-grid-section');
+    const files = document.getElementById('media-file-section');
+    const links = document.getElementById('media-link-section');
+
+    if (type === 'all') {
+        if (grid)  grid.style.display  = imgCount  > 0 ? '' : 'none';
+        if (files) files.style.display = fileCount > 0 ? '' : 'none';
+        if (links) links.style.display = linkCount > 0 ? '' : 'none';
+    } else if (type === 'image') {
+        if (grid)  grid.style.display  = '';
+        if (files) files.style.display = 'none';
+        if (links) links.style.display = 'none';
+    } else if (type === 'file') {
+        if (grid)  grid.style.display  = 'none';
+        if (files) files.style.display = '';
+        if (links) links.style.display = 'none';
+    } else if (type === 'link') {
+        if (grid)  grid.style.display  = 'none';
+        if (files) files.style.display = 'none';
+        if (links) links.style.display = '';
+    }
 }
 
 // 5. GRUP İÇİ SOHBET (WHATSAPP WEB TASARIMI & İŞLEMLERİ)

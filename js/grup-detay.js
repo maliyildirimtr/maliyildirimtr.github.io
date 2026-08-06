@@ -1018,11 +1018,12 @@ function renderPreviewModalState() {
     if (title) title.innerText = currentItem.name || 'Görsel Önizleme';
     if (counter) counter.innerText = `${previewImageIndex + 1} / ${previewImageList.length}`;
 
+    // Baştaysa sol ok gizlensin, sondaysa sağ ok gizlensin (döngü yapılmasın)
     if (prevBtn) {
-        prevBtn.style.display = previewImageList.length > 1 ? 'flex' : 'none';
+        prevBtn.style.display = (previewImageIndex > 0) ? 'flex' : 'none';
     }
     if (nextBtn) {
-        nextBtn.style.display = previewImageList.length > 1 ? 'flex' : 'none';
+        nextBtn.style.display = (previewImageIndex < previewImageList.length - 1) ? 'flex' : 'none';
     }
 }
 
@@ -1076,7 +1077,10 @@ function openImagePreviewModal(url, fileName, msgId) {
 
 function navigatePreviewImage(direction) {
     if (!previewImageList || previewImageList.length <= 1) return;
-    previewImageIndex = (previewImageIndex + direction + previewImageList.length) % previewImageList.length;
+    const targetIndex = previewImageIndex + direction;
+    // Sınır kontrolü: İlk görselde geriye, son görselde ileriye geçilmesin
+    if (targetIndex < 0 || targetIndex >= previewImageList.length) return;
+    previewImageIndex = targetIndex;
     renderPreviewModalState();
 }
 

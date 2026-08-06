@@ -969,18 +969,50 @@ function openChatAttachment(msgId) {
 function openImagePreviewModal(url, fileName) {
     activePreviewImageUrl = url;
     activePreviewImageName = fileName || 'Görsel';
-    const modal = document.getElementById('image-preview-modal');
+    let modal = document.getElementById('image-preview-modal');
+    
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'image-preview-modal';
+        modal.className = 'fixed inset-0 hidden bg-black/90 backdrop-blur-lg flex flex-col items-center justify-between p-4';
+        modal.style.zIndex = '999999';
+        modal.innerHTML = `
+            <div class="w-full max-w-4xl flex items-center justify-between py-2 px-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-white">
+                <span id="image-preview-title" class="text-xs font-bold truncate max-w-md">Görsel Önizleme</span>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="downloadActivePreviewImage()" class="px-4 py-1.5 rounded-full bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-colors shadow-md">
+                        💾 İndir
+                    </button>
+                    <button type="button" onclick="closeImagePreviewModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm flex items-center justify-center transition-colors">
+                        ✕
+                    </button>
+                </div>
+            </div>
+            <div class="flex-grow flex items-center justify-center w-full max-w-5xl p-2 overflow-hidden">
+                <img id="image-preview-img" src="" alt="Önizleme" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl">
+            </div>
+            <div></div>
+        `;
+        document.body.appendChild(modal);
+    } else {
+        modal.style.zIndex = '999999';
+    }
+
     const img = document.getElementById('image-preview-img');
     const title = document.getElementById('image-preview-title');
 
     if (img) img.src = url;
     if (title) title.innerText = fileName || 'Görsel Önizleme';
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
 }
 
 function closeImagePreviewModal() {
     const modal = document.getElementById('image-preview-modal');
-    if (modal) modal.classList.add('hidden');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
 }
 
 function downloadActivePreviewImage() {
@@ -2016,30 +2048,36 @@ function _renderGroupInfoContent(tabId, grp, members, msgs, mediaMsgs, linkMsgs,
         // Görsel ızgarası için HTML
         const imageGridHTML = mediaMsgs.length === 0 ? '' : `
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:16px;">
-                ${mediaMsgs.map(m => `
+                ${mediaMsgs.map((m, idx) => {
+                    const msgId = m.id || ('m_' + idx);
+                    return `
                     <div style="aspect-ratio:1;overflow:hidden;border-radius:6px;background:#1c2830;cursor:pointer;"
-                         onclick="window.open('${m.attachment.url}','_blank')"
+                         onclick="openChatAttachment('${msgId}')"
                          title="${m.sender || ''} · ${m.time || ''}">
                         ${m.attachment.type === 'image'
                             ? `<img src="${m.attachment.url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;\\'>🖼️</div>'">`
                             : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:28px;">🎬</div>`
                         }
                     </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
 
         // Dosyalar için HTML
-        const fileListHTML = docMsgs.length === 0 ? '' : docMsgs.map(m => `
-            <a href="${m.attachment.url || '#'}" target="_blank" style="${card}display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        const fileListHTML = docMsgs.length === 0 ? '' : docMsgs.map((m, idx) => {
+            const msgId = m.id || ('m_' + idx);
+            return `
+            <div onclick="openChatAttachment('${msgId}')" style="${card}display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                 <div style="width:40px;height:40px;border-radius:10px;background:rgba(220,38,38,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📎</div>
                 <div style="flex:1;min-width:0;">
                     <div style="font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.attachment.name || 'Dosya'}</div>
                     <div style="font-size:10px;color:#64748b;margin-top:2px;">${m.sender || ''} · ${m.time || ''}</div>
                 </div>
-                <span style="font-size:18px;color:#64748b;">↗</span>
-            </a>
-        `).join('');
+                <span style="font-size:18px;color:#64748b;">💾</span>
+            </div>
+            `;
+        }).join('');
 
         // Linkler için HTML
         const linkListHTML = linkMsgs.length === 0 ? '' : linkMsgs.map(m => {

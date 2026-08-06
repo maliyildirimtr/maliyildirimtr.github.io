@@ -1052,7 +1052,7 @@ function openImagePreviewModal(url, fileName, msgId) {
                     </button>
                 </div>
             </div>
-            <div class="relative flex-grow flex items-center justify-center w-full max-w-6xl p-2 overflow-hidden">
+            <div class="relative flex-grow flex items-center justify-center w-full max-w-6xl p-2 overflow-hidden cursor-pointer">
                 <button type="button" id="image-preview-prev-btn" onclick="navigatePreviewImage(-1)" title="Önceki Görsel (Sol Ok)"
                     class="absolute left-2 md:left-6 z-20 w-12 h-12 rounded-full bg-slate-900/80 hover:bg-tsMavi border border-slate-700/80 text-white text-2xl font-bold flex items-center justify-center transition-all active:scale-95 shadow-2xl backdrop-blur-md cursor-pointer">
                     ‹
@@ -1070,6 +1070,7 @@ function openImagePreviewModal(url, fileName, msgId) {
         modal.style.zIndex = '999999';
     }
 
+    setupLightboxSwipeAndClickEvents(modal);
     renderPreviewModalState();
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
@@ -1082,6 +1083,62 @@ function navigatePreviewImage(direction) {
     if (targetIndex < 0 || targetIndex >= previewImageList.length) return;
     previewImageIndex = targetIndex;
     renderPreviewModalState();
+}
+
+let lightboxTouchStartX = 0;
+let lightboxMouseDownX = 0;
+
+function setupLightboxSwipeAndClickEvents(modal) {
+    if (!modal || modal.dataset.swipeSetup === 'true') return;
+    modal.dataset.swipeSetup = 'true';
+
+    const container = modal.querySelector('.relative.flex-grow') || modal;
+
+    // Mouse ile tıklama veya sağa/sola sürükleme (Mouse drag & click navigation)
+    container.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button')) return;
+        lightboxMouseDownX = e.clientX;
+    });
+
+    container.addEventListener('mouseup', (e) => {
+        if (e.target.closest('button')) return;
+        const deltaX = e.clientX - lightboxMouseDownX;
+
+        if (deltaX < -30) {
+            // Sola sürükleme -> sonraki görsel
+            navigatePreviewImage(1);
+        } else if (deltaX > 30) {
+            // Sağa sürükleme -> önceki görsel
+            navigatePreviewImage(-1);
+        } else {
+            // Sadece mouse tıkı (sürüklemeden): Sol %45 tıklanırsa geri, Sağ %45 tıklanırsa ileri
+            const rect = container.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            if (clickX < rect.width * 0.45) {
+                navigatePreviewImage(-1);
+            } else if (clickX > rect.width * 0.55) {
+                navigatePreviewImage(1);
+            }
+        }
+    });
+
+    // Mobil dokunmatik sürükleme (Touch swipe)
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length > 0) {
+            lightboxTouchStartX = e.touches[0].clientX;
+        }
+    }, { passive: true });
+
+    container.addEventListener('touchend', (e) => {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            const deltaX = e.changedTouches[0].clientX - lightboxTouchStartX;
+            if (deltaX < -40) {
+                navigatePreviewImage(1);
+            } else if (deltaX > 40) {
+                navigatePreviewImage(-1);
+            }
+        }
+    }, { passive: true });
 }
 
 // KLAVYE SOL / SAĞ OK TUŞLARI İLE GALERİ GEZİNİMİ

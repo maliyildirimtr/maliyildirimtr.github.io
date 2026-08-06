@@ -354,11 +354,14 @@
         </div>
     </div>
 
-    <!-- MODAL: GÖRSEL BÜYÜTME / ÖNİZLEME (IMAGE LIGHTBOX) -->
-    <div id="image-preview-modal" style="z-index: 999999;" class="fixed inset-0 hidden bg-black/90 backdrop-blur-lg flex flex-col items-center justify-between p-4">
-        <!-- TOP BAR WITH FILENAME AND CLOSE / DOWNLOAD BUTTONS -->
-        <div class="w-full max-w-4xl flex items-center justify-between py-2 px-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-white">
-            <span id="image-preview-title" class="text-xs font-bold truncate max-w-md">Görsel Önizleme</span>
+    <!-- MODAL: GÖRSEL BÜYÜTME / ÖNİZLEME (IMAGE LIGHTBOX WITH GALLERY NAVIGATION) -->
+    <div id="image-preview-modal" style="z-index: 999999;" class="fixed inset-0 hidden bg-black/90 backdrop-blur-lg flex flex-col items-center justify-between p-4 select-none">
+        <!-- TOP BAR WITH FILENAME, COUNTER AND CLOSE / DOWNLOAD BUTTONS -->
+        <div class="w-full max-w-4xl flex items-center justify-between py-2 px-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-white z-10">
+            <div class="flex items-center gap-2 max-w-md truncate">
+                <span id="image-preview-title" class="text-xs font-bold truncate">Görsel Önizleme</span>
+                <span id="image-preview-counter" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">1 / 1</span>
+            </div>
             <div class="flex items-center gap-3">
                 <button type="button" onclick="downloadActivePreviewImage()" class="px-4 py-1.5 rounded-full bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-colors shadow-md">
                     💾 İndir
@@ -369,9 +372,22 @@
             </div>
         </div>
 
-        <!-- CENTERED IMAGE -->
-        <div class="flex-grow flex items-center justify-center w-full max-w-5xl p-2 overflow-hidden">
-            <img id="image-preview-img" src="" alt="Önizleme" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl">
+        <!-- CENTERED IMAGE WITH PREV / NEXT ARROWS -->
+        <div class="relative flex-grow flex items-center justify-center w-full max-w-6xl p-2 overflow-hidden">
+            <!-- SOL OK (ÖNCEKİ GÖRSEL) -->
+            <button type="button" id="image-preview-prev-btn" onclick="navigatePreviewImage(-1)" title="Önceki Görsel (Sol Ok Key)"
+                class="absolute left-2 md:left-6 z-20 w-12 h-12 rounded-full bg-slate-900/80 hover:bg-tsMavi border border-slate-700/80 text-white text-2xl font-bold flex items-center justify-center transition-all active:scale-95 shadow-2xl backdrop-blur-md cursor-pointer">
+                ‹
+            </button>
+
+            <!-- GÖRSEL -->
+            <img id="image-preview-img" src="" alt="Önizleme" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl transition-all duration-200">
+
+            <!-- SAĞ OK (SONRAKİ GÖRSEL) -->
+            <button type="button" id="image-preview-next-btn" onclick="navigatePreviewImage(1)" title="Sonraki Görsel (Sağ Ok Key)"
+                class="absolute right-2 md:right-6 z-20 w-12 h-12 rounded-full bg-slate-900/80 hover:bg-tsMavi border border-slate-700/80 text-white text-2xl font-bold flex items-center justify-center transition-all active:scale-95 shadow-2xl backdrop-blur-md cursor-pointer">
+                ›
+            </button>
         </div>
 
         <div></div>

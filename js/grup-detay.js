@@ -946,6 +946,8 @@ function filterArchiveDocs(cat, btn) {
 // SAFE FILE DOWNLOAD, LIGHTBOX & IMAGE VIEWING HELPERS
 let activePreviewImageUrl = "";
 let activePreviewImageName = "";
+let previewImageList = [];
+let previewImageIndex = -1;
 
 function openChatAttachment(msgId) {
     let msg = null;
@@ -960,25 +962,86 @@ function openChatAttachment(msgId) {
 
     const att = msg.attachment;
     if (att.type === 'image') {
-        openImagePreviewModal(att.url, att.name || 'Görsel');
+        openImagePreviewModal(att.url, att.name || 'Görsel', msgId);
     } else {
         downloadBlobOrUrl(att.url, att.name || 'dokuman');
     }
 }
 
-function openImagePreviewModal(url, fileName) {
-    activePreviewImageUrl = url;
-    activePreviewImageName = fileName || 'Görsel';
+function updatePreviewImageList(currentUrl, currentMsgId) {
+    previewImageList = [];
+    previewImageIndex = -1;
+
+    const msgs = (window.currentLoadedMessages && window.currentLoadedMessages.length > 0)
+        ? window.currentLoadedMessages
+        : [];
+
+    msgs.forEach((m, idx) => {
+        if (m.attachment && m.attachment.type === 'image' && m.attachment.url) {
+            previewImageList.push({
+                url: m.attachment.url,
+                name: m.attachment.name || 'Görsel',
+                id: m.id || ('m_' + idx)
+            });
+        }
+    });
+
+    if (previewImageList.length > 0) {
+        if (currentMsgId) {
+            previewImageIndex = previewImageList.findIndex(item => item.id === currentMsgId);
+        }
+        if (previewImageIndex === -1 && currentUrl) {
+            previewImageIndex = previewImageList.findIndex(item => item.url === currentUrl);
+        }
+    }
+
+    if (previewImageIndex === -1 && currentUrl) {
+        previewImageList = [{ url: currentUrl, name: 'Görsel', id: 'single' }];
+        previewImageIndex = 0;
+    }
+}
+
+function renderPreviewModalState() {
+    if (previewImageIndex < 0 || previewImageIndex >= previewImageList.length) return;
+
+    const currentItem = previewImageList[previewImageIndex];
+    activePreviewImageUrl = currentItem.url;
+    activePreviewImageName = currentItem.name;
+
+    const img = document.getElementById('image-preview-img');
+    const title = document.getElementById('image-preview-title');
+    const counter = document.getElementById('image-preview-counter');
+    const prevBtn = document.getElementById('image-preview-prev-btn');
+    const nextBtn = document.getElementById('image-preview-next-btn');
+
+    if (img) img.src = currentItem.url;
+    if (title) title.innerText = currentItem.name || 'Görsel Önizleme';
+    if (counter) counter.innerText = `${previewImageIndex + 1} / ${previewImageList.length}`;
+
+    if (prevBtn) {
+        prevBtn.style.display = previewImageList.length > 1 ? 'flex' : 'none';
+    }
+    if (nextBtn) {
+        nextBtn.style.display = previewImageList.length > 1 ? 'flex' : 'none';
+    }
+}
+
+function openImagePreviewModal(url, fileName, msgId) {
+    updatePreviewImageList(url, msgId);
+
     let modal = document.getElementById('image-preview-modal');
     
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'image-preview-modal';
-        modal.className = 'fixed inset-0 hidden bg-black/90 backdrop-blur-lg flex flex-col items-center justify-between p-4';
+        modal.className = 'fixed inset-0 hidden bg-black/90 backdrop-blur-lg flex flex-col items-center justify-between p-4 select-none';
         modal.style.zIndex = '999999';
         modal.innerHTML = `
-            <div class="w-full max-w-4xl flex items-center justify-between py-2 px-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-white">
-                <span id="image-preview-title" class="text-xs font-bold truncate max-w-md">Görsel Önizleme</span>
+            <div class="w-full max-w-4xl flex items-center justify-between py-2 px-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-white z-10">
+                <div class="flex items-center gap-2 max-w-md truncate">
+                    <span id="image-preview-title" class="text-xs font-bold truncate">Görsel Önizleme</span>
+                    <span id="image-preview-counter" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">1 / 1</span>
+                </div>
                 <div class="flex items-center gap-3">
                     <button type="button" onclick="downloadActivePreviewImage()" class="px-4 py-1.5 rounded-full bg-tsMavi text-white font-bold text-xs hover:bg-sky-500 transition-colors shadow-md">
                         💾 İndir
@@ -988,8 +1051,16 @@ function openImagePreviewModal(url, fileName) {
                     </button>
                 </div>
             </div>
-            <div class="flex-grow flex items-center justify-center w-full max-w-5xl p-2 overflow-hidden">
-                <img id="image-preview-img" src="" alt="Önizleme" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl">
+            <div class="relative flex-grow flex items-center justify-center w-full max-w-6xl p-2 overflow-hidden">
+                <button type="button" id="image-preview-prev-btn" onclick="navigatePreviewImage(-1)" title="Önceki Görsel (Sol Ok)"
+                    class="absolute left-2 md:left-6 z-20 w-12 h-12 rounded-full bg-slate-900/80 hover:bg-tsMavi border border-slate-700/80 text-white text-2xl font-bold flex items-center justify-center transition-all active:scale-95 shadow-2xl backdrop-blur-md cursor-pointer">
+                    ‹
+                </button>
+                <img id="image-preview-img" src="" alt="Önizleme" class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl transition-all duration-200">
+                <button type="button" id="image-preview-next-btn" onclick="navigatePreviewImage(1)" title="Sonraki Görsel (Sağ Ok)"
+                    class="absolute right-2 md:right-6 z-20 w-12 h-12 rounded-full bg-slate-900/80 hover:bg-tsMavi border border-slate-700/80 text-white text-2xl font-bold flex items-center justify-center transition-all active:scale-95 shadow-2xl backdrop-blur-md cursor-pointer">
+                    ›
+                </button>
             </div>
             <div></div>
         `;
@@ -998,14 +1069,30 @@ function openImagePreviewModal(url, fileName) {
         modal.style.zIndex = '999999';
     }
 
-    const img = document.getElementById('image-preview-img');
-    const title = document.getElementById('image-preview-title');
-
-    if (img) img.src = url;
-    if (title) title.innerText = fileName || 'Görsel Önizleme';
+    renderPreviewModalState();
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
 }
+
+function navigatePreviewImage(direction) {
+    if (!previewImageList || previewImageList.length <= 1) return;
+    previewImageIndex = (previewImageIndex + direction + previewImageList.length) % previewImageList.length;
+    renderPreviewModalState();
+}
+
+// KLAVYE SOL / SAĞ OK TUŞLARI İLE GALERİ GEZİNİMİ
+window.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('image-preview-modal');
+    if (!modal || modal.classList.contains('hidden') || modal.style.display === 'none') return;
+
+    if (e.key === 'ArrowLeft') {
+        navigatePreviewImage(-1);
+    } else if (e.key === 'ArrowRight') {
+        navigatePreviewImage(1);
+    } else if (e.key === 'Escape') {
+        closeImagePreviewModal();
+    }
+});
 
 function closeImagePreviewModal() {
     const modal = document.getElementById('image-preview-modal');

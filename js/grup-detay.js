@@ -2083,11 +2083,13 @@ function openGroupInfoDrawer() {
         ? window.currentLoadedMessages
         : [];
 
-    // Medya mesajlarını filtrele (gerçek veri yapısına göre)
-    const mediaMsgs   = msgs.filter(m => m.attachment && (m.attachment.type === 'image' || m.attachment.type === 'video'));
-    const linkMsgs    = msgs.filter(m => m.text && /https?:\/\//.test(m.text) && !m.attachment);
-    const docMsgs     = msgs.filter(m => m.attachment && m.attachment.type === 'file');
-    const starredMsgs = msgs.filter(m => m.starred);
+    // Medya ve Yıldızlı mesajları filtrele (silinmiş mesajlar hariç)
+    const isNotDeleted = m => !m.isDeleted && !m.isDeletedForEveryone && m.text !== '🚫 Bu mesaj silindi';
+
+    const mediaMsgs   = msgs.filter(m => isNotDeleted(m) && m.attachment && (m.attachment.type === 'image' || m.attachment.type === 'video'));
+    const linkMsgs    = msgs.filter(m => isNotDeleted(m) && m.text && /https?:\/\//.test(m.text) && !m.attachment);
+    const docMsgs     = msgs.filter(m => isNotDeleted(m) && m.attachment && m.attachment.type === 'file');
+    const starredMsgs = msgs.filter(m => isNotDeleted(m) && m.starred);
 
     const overlay = document.createElement('div');
     overlay.id = 'group-info-drawer-overlay';
@@ -2206,10 +2208,12 @@ function switchGroupInfoTab(tabId) {
     const msgs    = (window.currentLoadedMessages && window.currentLoadedMessages.length > 0)
         ? window.currentLoadedMessages
         : [];
-    const mediaMsgs   = msgs.filter(m => m.attachment && (m.attachment.type === 'image' || m.attachment.type === 'video'));
-    const linkMsgs    = msgs.filter(m => m.text && /https?:\/\//.test(m.text) && !m.attachment);
-    const docMsgs     = msgs.filter(m => m.attachment && m.attachment.type === 'file');
-    const starredMsgs = msgs.filter(m => m.starred);
+    const isNotDeleted = m => !m.isDeleted && !m.isDeletedForEveryone && m.text !== '🚫 Bu mesaj silindi';
+
+    const mediaMsgs   = msgs.filter(m => isNotDeleted(m) && m.attachment && (m.attachment.type === 'image' || m.attachment.type === 'video'));
+    const linkMsgs    = msgs.filter(m => isNotDeleted(m) && m.text && /https?:\/\//.test(m.text) && !m.attachment);
+    const docMsgs     = msgs.filter(m => isNotDeleted(m) && m.attachment && m.attachment.type === 'file');
+    const starredMsgs = msgs.filter(m => isNotDeleted(m) && m.starred);
 
     _renderGroupInfoContent(tabId, grp, members, msgs, mediaMsgs, linkMsgs, docMsgs, starredMsgs);
 }
@@ -4202,6 +4206,13 @@ function toggleReactionPicker(msgId) {
 }
 
 function starMessage(msgId) {
+    const messages = window.currentLoadedMessages || [];
+    const msg = messages.find((m, idx) => (m.id === msgId || ('m_' + idx) === msgId));
+    if (msg && (msg.isDeleted || msg.isDeletedForEveryone || msg.text === '🚫 Bu mesaj silindi')) {
+        alert("Silinmiş mesajlar yıldızlanamaz!");
+        return;
+    }
+
     if (typeof db !== 'undefined' && db && db.collection) {
         const msgRef = db.collection("groups").doc(groupId).collection("messages").doc(msgId);
         msgRef.get().then(doc => {
@@ -4366,6 +4377,7 @@ function confirmDeleteMessage(type) {
             msgRef.update({
                 isDeleted: true,
                 isDeletedForEveryone: true,
+                starred: false,
                 deletedContent: "🚫 Bu mesaj silindi",
                 text: "🚫 Bu mesaj silindi",
                 attachment: null,
@@ -4406,6 +4418,7 @@ function updateLocalMessageDeleted(msgId, type, userKey) {
         if (type === 'everyone') {
             msg.isDeleted = true;
             msg.isDeletedForEveryone = true;
+            msg.starred = false;
             msg.deletedContent = "🚫 Bu mesaj silindi";
             msg.text = "🚫 Bu mesaj silindi";
             msg.attachment = null;

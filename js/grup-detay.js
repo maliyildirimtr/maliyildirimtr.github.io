@@ -213,8 +213,8 @@ function renderWorkspaceUI() {
                     <!-- SOL ALAN: Grup PP + Kategori + Davet Kodu + Proje Adı -->
                     <div class="flex items-center gap-4 min-w-0">
 
-                        <!-- YUVARLAK GRUP PP -->
-                        <div class="relative shrink-0 cursor-pointer group" onclick="openGroupSettingsModal()" title="Grup ayarlarını düzenle">
+                        <!-- YUVARLAK GRUP PP (TIKLANINCA ONIZLEME AÇILIR) -->
+                        <div class="relative shrink-0 cursor-pointer group" onclick="openGroupPPPreview()" title="Grup profil fotoğrafını büyüt">
                             <div id="group-pp-avatar"
                                 style="width:60px;height:60px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#6e0d25,#1e7fcb);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;border:3px solid rgba(255,255,255,0.12);box-shadow:0 4px 16px rgba(0,0,0,0.3);transition:opacity 0.2s;">
                                 ${currentGroup.photoURL
@@ -222,11 +222,10 @@ function renderWorkspaceUI() {
                                     : (currentGroup.name||'G').slice(0,2).toUpperCase()
                                 }
                             </div>
-                            <!-- Kamera ikonu hover'da görünür -->
+                            <!-- Büyüteç ikonu hover'da görünür -->
                             <div class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg style="width:20px;height:20px;color:white;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <svg style="width:22px;height:22px;color:white;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"/>
                                 </svg>
                             </div>
                         </div>
@@ -2015,7 +2014,12 @@ function openGroupInfoDrawer() {
             <!-- TOP BAR -->
             <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);">
                 <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6e0d25,#1e7fcb);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">👥</div>
+                    <div onclick="openGroupPPPreview()" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6e0d25,#1e7fcb);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(0,0,0,0.4);overflow:hidden;cursor:pointer;" title="Grup Fotoğrafını Büyüt">
+                        ${grp.photoURL
+                            ? `<img src="${grp.photoURL}" style="width:100%;height:100%;object-fit:cover;">`
+                            : (grp.name || 'G').slice(0, 2).toUpperCase()
+                        }
+                    </div>
                     <div>
                         <div style="font-size:15px;font-weight:800;color:#e2e8f0;">${grp.name || 'Grup'}</div>
                         <div style="font-size:11px;color:#64748b;margin-top:2px;">${members.length} üye · ${grp.category || 'Proje Grubu'}</div>
@@ -2443,8 +2447,12 @@ function renderChatTab(container) {
                 <div class="flex items-center gap-3 cursor-pointer select-none hover:opacity-80 transition-opacity"
                      onclick="openGroupInfoDrawer()"
                      title="Grup bilgilerini göster">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-tsBordo to-tsMavi text-white font-bold flex items-center justify-center shadow-md">
-                        👥
+                    <div onclick="event.stopPropagation(); openGroupPPPreview();" title="Grup profil fotoğrafını büyüt"
+                         class="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-tr from-tsBordo to-tsMavi text-white font-bold flex items-center justify-center shadow-md shrink-0 border border-white/20 hover:scale-105 transition-transform cursor-pointer">
+                        ${currentGroup.photoURL
+                            ? `<img src="${currentGroup.photoURL}" class="w-full h-full object-cover">`
+                            : (currentGroup.name || 'G').slice(0, 2).toUpperCase()
+                        }
                     </div>
                     <div>
                         <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -4563,6 +4571,111 @@ async function fetchCollectionSafe(collectionPath) {
         console.warn('Firestore fetch failed for', collectionPath, e);
     }
     return [];
+}
+
+// GRUP PP BÜYÜTME / LIGHTBOX ÖNİZLEMESİ
+function openGroupPPPreview() {
+    const grp = currentGroup || {};
+    const photoURL = grp.photoURL;
+    const groupName = grp.name || 'Proje Grubu';
+
+    if (photoURL && photoURL.length > 5) {
+        openImagePreviewModal(photoURL, `${groupName} - Profil Fotoğrafı`);
+    } else {
+        let modal = document.getElementById('group-pp-preview-modal');
+        if (modal) modal.remove();
+
+        const initials = (groupName || 'G').slice(0, 2).toUpperCase();
+        modal = document.createElement('div');
+        modal.id = 'group-pp-preview-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);padding:20px;animation:gsModalIn .25s ease-out;';
+        
+        modal.innerHTML = `
+            <div style="position:relative;width:min(340px,88vw);background:#111b21;border:1px solid rgba(255,255,255,0.12);border-radius:28px;padding:32px 24px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.7);">
+                <button onclick="document.getElementById('group-pp-preview-modal').remove()"
+                    style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">✕</button>
+                
+                <div style="width:130px;height:130px;border-radius:50%;background:linear-gradient(135deg,#6e0d25,#1e7fcb);display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:800;color:#fff;margin:0 auto 20px;box-shadow:0 12px 36px rgba(30,127,203,0.3);border:3px solid rgba(255,255,255,0.2);">
+                    ${initials}
+                </div>
+
+                <div style="font-size:18px;font-weight:800;color:#f8fafc;margin-bottom:4px;">${groupName}</div>
+                <div style="font-size:12px;color:#64748b;margin-bottom:20px;">Grup Profil Fotoğrafı</div>
+
+                <button onclick="document.getElementById('group-pp-preview-modal').remove(); openGroupSettingsModal();"
+                    style="padding:10px 20px;border-radius:14px;background:rgba(30,127,203,0.15);border:1px solid rgba(30,127,203,0.3);color:#1e7fcb;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(30,127,203,0.25)'" onmouseout="this.style.background='rgba(30,127,203,0.15)'">
+                    ⚙️ Fotoğrafı Değiştir (Grup Ayarları)
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    }
+}
+
+// GÜVENLİ SİLME & YEDEK SEÇENEKLERİ MODALI
+function deleteCurrentWorkspaceGroup(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    openDeleteGroupConfirmModal();
+}
+
+function openDeleteGroupConfirmModal() {
+    const modal = document.getElementById('delete-group-confirm-modal');
+    const nameEl = document.getElementById('delete-group-modal-name');
+    if (nameEl && currentGroup) {
+        nameEl.innerText = currentGroup.name || 'Proje Grubu';
+    }
+    if (modal) {
+        modal.style.zIndex = '99999';
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeDeleteGroupConfirmModal() {
+    const modal = document.getElementById('delete-group-confirm-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+// 2. SEÇENEK: DOĞRUDAN KALICI OLARAK SİL (YEDEK ALMADAN)
+async function executeDirectGroupDeletion() {
+    const grp = currentGroup || { name: 'Proje Grubu' };
+    const gId = groupId || grp.id || 'bilinmiyor';
+
+    if (!confirm(`"${grp.name || 'Grup'}" yedeği alınmadan doğrudan ve kalıcı olarak silinecek. Emin misiniz?`)) {
+        return;
+    }
+
+    const btn = document.getElementById('direct-delete-group-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="inline-block animate-spin mr-1">⏳</span> Siliniyor...`;
+    }
+
+    try {
+        if (typeof db !== 'undefined' && db && db.collection) {
+            await db.collection('groups').doc(gId).delete().catch(e => console.warn('Firestore silme:', e));
+        }
+
+        try {
+            let saved = JSON.parse(localStorage.getItem('mali_created_groups') || '[]');
+            saved = saved.filter(g => g.id !== gId && g.inviteCode !== (grp.inviteCode || ''));
+            localStorage.setItem('mali_created_groups', JSON.stringify(saved));
+        } catch(e) {}
+
+        closeDeleteGroupConfirmModal();
+        alert(`✓ "${grp.name || 'Grup'}" başarıyla silindi.`);
+        window.location.href = 'gruplar.html';
+
+    } catch (err) {
+        console.error('executeDirectGroupDeletion hata:', err);
+        alert('Grup silinirken bir hata oluştu: ' + (err.message || err));
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<span>🗑️</span> Doğrudan Kalıcı Olarak Sil`;
+        }
+    }
 }
 
 async function executeSafeGroupDeletion() {

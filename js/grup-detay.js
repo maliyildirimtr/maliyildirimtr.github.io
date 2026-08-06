@@ -3451,10 +3451,10 @@ function copyInviteCode(code) {
 // GÜVENLİ GRUP SİLME — TAM VERSİYON (groupResources FIX + JSZip + EmailJS + TTL)
 // ===========================================================
 
-// EmailJS Yapılandırması (Kendi EmailJS Public Key ve Service/Template ID'lerinizi girin)
-const EMAILJS_PUBLIC_KEY    = 'YOUR_EMAILJS_PUBLIC_KEY';   // emailjs.com > Account > Public Key
-const EMAILJS_SERVICE_ID    = 'YOUR_EMAILJS_SERVICE_ID';   // Services > Service ID
-const EMAILJS_TEMPLATE_ID   = 'YOUR_EMAILJS_TEMPLATE_ID';  // Email Templates > Template ID
+// EmailJS Yapılandırması
+const EMAILJS_PUBLIC_KEY  = '6i470xFHwvElOV8XB';
+const EMAILJS_SERVICE_ID  = 'service_npedemi';
+const EMAILJS_TEMPLATE_ID = 'template_3tu7mkp';
 
 function formatBytes(bytes, decimals = 2) {
     if (!bytes || bytes === 0) return '0 Bytes';

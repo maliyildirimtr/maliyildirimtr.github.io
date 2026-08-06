@@ -3261,14 +3261,19 @@ function prepareAttachment(file, type) {
     pendingAttachment = { file, type, name: file.name, size: formatBytes(file.size) };
     const container = document.getElementById('chat-preview-container');
     const content = document.getElementById('chat-preview-content');
-    
+
     if (type === 'image') {
         content.innerHTML = `🖼️ <strong>Görsel Seçildi:</strong> ${file.name} (${formatBytes(file.size)})`;
     } else {
         content.innerHTML = `📄 <strong>Doküman Seçildi:</strong> ${file.name} (${formatBytes(file.size)})`;
     }
-    
+
     if (container) container.classList.remove('hidden');
+
+    // Dosya seçilince gönder butonunu aktifleştir (metin olmasa bile)
+    const input = document.getElementById('chat-input');
+    handleChatInputTyping(input);
+    if (input) input.focus();
 }
 
 function cancelPendingAttachment() {
@@ -3279,6 +3284,11 @@ function cancelPendingAttachment() {
     const imgInp = document.getElementById('chat-image-input');
     if (fileInp) fileInp.value = '';
     if (imgInp) imgInp.value = '';
+
+    // Attachment kaldırılınca / gönderim sonrası:
+    // eğer input boşsa mikrofon düz dönsün, send butonu kaybolsun
+    const input = document.getElementById('chat-input');
+    handleChatInputTyping(input);
 }
 
 // SES KAYDI (VOICE NOTE) MANTIĞI & PLAYBACK ENGINE
@@ -3519,12 +3529,19 @@ function handleSendMessage(e) {
 
     if (pendingAttachment) {
         uploadAndSendAttachment(pendingAttachment.file, pendingAttachment.type, pendingAttachment.name, text);
+        // input'u hemen temizle (yükleme arka planda devam eder)
+        if (input) { input.value = ''; }
     } else {
         sendChatMessage(currentName, text, null);
         if (input) input.value = '';
     }
 
     cancelReplyMessage();
+    // Butonları sıfırla: send gizle, mikrofon göster
+    const micBtn  = document.getElementById('chat-mic-btn');
+    const sendBtn = document.getElementById('chat-send-btn');
+    if (micBtn)  micBtn.classList.remove('hidden');
+    if (sendBtn) sendBtn.classList.add('hidden');
     if (input) handleChatInputTyping(input);
 }
 

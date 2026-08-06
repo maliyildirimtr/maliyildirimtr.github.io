@@ -347,6 +347,130 @@ function closeJitsiMeeting() {
     if (modal) modal.classList.add('hidden');
 }
 
+// ====================================================
+// SESLİ ARAMA — Jitsi Ses Odası (Kamera Kapalı)
+// ====================================================
+function startVoiceCall() {
+    // Mevcut sesli arama modal varsa kapat
+    const existing = document.getElementById('voice-call-overlay');
+    if (existing) { existing.remove(); return; }
+
+    const grp      = currentGroup || {};
+    const roomName = `maliacademy-audio-${groupId}`;
+    const jitsiUrl = `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&config.startWithVideoMuted=true&config.startAudioOnly=true&config.toolbarButtons=["microphone","hangup","chat"]`;
+
+    const user      = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+    const userName  = user ? (user.displayName || user.email) : 'Katılımcı';
+    const members   = grp.members || [];
+
+    const overlay = document.createElement('div');
+    overlay.id    = 'voice-call-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);';
+    overlay.innerHTML = `
+        <div style="width:min(360px,90vw);background:#111b21;border:1px solid rgba(255,255,255,0.1);border-radius:28px;padding:32px 28px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.6);position:relative;">
+
+            <!-- KAPATMA -->
+            <button onclick="endVoiceCall()" style="position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.07);border:none;cursor:pointer;color:#94a3b8;font-size:16px;display:flex;align-items:center;justify-content:center;"
+                onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">✕</button>
+
+            <!-- GRUP AVATARI -->
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6e0d25,#1e7fcb);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;box-shadow:0 0 0 6px rgba(30,127,203,0.15),0 0 0 12px rgba(30,127,203,0.06);">👥</div>
+
+            <!-- GRUP ADI -->
+            <div style="font-size:18px;font-weight:800;color:#e2e8f0;margin-bottom:4px;">${grp.name || 'Grup'}</div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:6px;">${members.length} üye · Sesli Arama Odası</div>
+
+            <!-- BAĞLANIYOR ANİMASYON -->
+            <div id="voice-call-status" style="font-size:12px;color:#10b981;font-weight:700;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 1.5s ease-in-out infinite;"></span>
+                Bağlanıyor...
+            </div>
+
+            <!-- KATILıMCı SAYACı -->
+            <div style="font-size:11px;color:#475569;margin-bottom:24px;">Sen dahil birden fazla kişi katılabilir</div>
+
+            <!-- KONTROL BUTONLARI -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:16px;">
+
+                <!-- SESSİZLEŞTİR -->
+                <button id="voice-mute-btn" onclick="toggleVoiceCallMute()" title="Mikrofonu kapat/aç"
+                    style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background=this.dataset.muted==='1'?'rgba(239,68,68,0.2)':'rgba(255,255,255,0.08)'">
+                    <svg style="width:22px;height:22px;color:#e2e8f0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
+                    </svg>
+                </button>
+
+                <!-- ARAMAY BİTİR (KIRMIZI) -->
+                <button onclick="endVoiceCall()" title="Aramayı Bitir"
+                    style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#dc2626,#ef4444);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(220,38,38,0.4);transition:transform 0.15s,box-shadow 0.15s;"
+                    onmouseover="this.style.transform='scale(1.07)';this.style.boxShadow='0 12px 32px rgba(220,38,38,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 8px 24px rgba(220,38,38,0.4)'">
+                    <svg style="width:26px;height:26px;color:#fff;transform:rotate(135deg);" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.338c0-.892.693-1.606 1.584-1.606h1.343c.74 0 1.383.504 1.554 1.224l.818 3.359a1.58 1.58 0 01-.44 1.566l-.98.897c-.054.05-.063.12-.027.178a11.994 11.994 0 005.137 5.138.143.143 0 00.177-.027l.898-.981a1.58 1.58 0 011.566-.439l3.359.818a1.584 1.584 0 011.224 1.554v1.343c0 .891-.714 1.584-1.606 1.584A16.753 16.753 0 012.25 6.338z"/>
+                    </svg>
+                </button>
+
+                <!-- GÖRÜNTÜLÜYE GEÇ -->
+                <button onclick="endVoiceCall();openJitsiMeeting();" title="Görüntülüye Geç"
+                    style="width:52px;height:52px;border-radius:50%;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(99,102,241,0.22)'" onmouseout="this.style.background='rgba(99,102,241,0.12)'">
+                    <svg style="width:22px;height:22px;color:#818cf8;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- BUTON ETİKETLERİ -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:10px;">
+                <span style="width:52px;font-size:10px;color:#64748b;text-align:center;">Sessiz</span>
+                <span style="width:64px;font-size:10px;color:#64748b;text-align:center;">Bitir</span>
+                <span style="width:52px;font-size:10px;color:#64748b;text-align:center;">Video</span>
+            </div>
+
+            <!-- GİZLİ IFRAME (ses için arka planda Jitsi bağlantısı) -->
+            <iframe id="voice-call-jitsi-iframe"
+                src="${jitsiUrl}"
+                allow="camera;microphone;display-capture;fullscreen"
+                style="position:absolute;width:1px;height:1px;top:-9999px;left:-9999px;border:none;opacity:0;"
+                onload="document.getElementById('voice-call-status').innerHTML='<span style=\\'width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 1.5s ease-in-out infinite;\\'></span> Bağlandı'"
+            ></iframe>
+
+            <!-- CSS ANİMASYON -->
+            <style>
+                @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.15)}}
+            </style>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Arkaplan tıklamada kapatma (sadece dış alana)
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) endVoiceCall();
+    });
+}
+
+function endVoiceCall() {
+    const overlay = document.getElementById('voice-call-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.25s';
+        setTimeout(() => overlay.remove(), 250);
+    }
+}
+
+function toggleVoiceCallMute() {
+    const btn = document.getElementById('voice-mute-btn');
+    if (!btn) return;
+    const isMuted = btn.dataset.muted === '1';
+    btn.dataset.muted = isMuted ? '0' : '1';
+    btn.style.background = isMuted ? 'rgba(255,255,255,0.08)' : 'rgba(239,68,68,0.2)';
+    btn.style.borderColor = isMuted ? 'rgba(255,255,255,0.12)' : 'rgba(239,68,68,0.4)';
+    btn.innerHTML = isMuted
+        ? `<svg style="width:22px;height:22px;color:#e2e8f0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/></svg>`
+        : `<svg style="width:22px;height:22px;color:#ef4444;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/><line x1="3" y1="3" x2="21" y2="21" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+
 // GRUBA ÜYE OLMA
 function joinCurrentGroup() {
     const user = getCurrentUser();
@@ -1793,9 +1917,36 @@ function renderChatTab(container) {
                         <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Takım Üyeleri (${currentGroup.members ? currentGroup.members.length : 1})</p>
                     </div>
                 </div>
-                <span class="text-[10px] text-emerald-500 dark:text-emerald-400 font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                    ● Canlı Sohbet
-                </span>
+
+                <!-- SAĞ: ARAMA BUTONLARI + CANLI ROZET -->
+                <div class="flex items-center gap-2">
+
+                    <!-- SESLİ ARAMA BUTONU -->
+                    <button onclick="startVoiceCall()" title="Sesli Arama Başlat"
+                        class="group relative w-9 h-9 rounded-full border border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-[#202c33] hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:border-emerald-500/40 transition-all duration-200 flex items-center justify-center shadow-sm">
+                        <svg class="w-4 h-4 text-slate-500 dark:text-slate-400 group-hover:text-emerald-500 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.338c0-.892.693-1.606 1.584-1.606h1.343c.74 0 1.383.504 1.554 1.224l.818 3.359a1.58 1.58 0 01-.44 1.566l-.98.897c-.054.05-.063.12-.027.178a11.994 11.994 0 005.137 5.138.143.143 0 00.177-.027l.898-.981a1.58 1.58 0 011.566-.439l3.359.818a1.584 1.584 0 011.224 1.554v1.343c0 .891-.714 1.584-1.606 1.584A16.753 16.753 0 012.25 6.338z"/>
+                        </svg>
+                        <!-- Tooltip -->
+                        <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white bg-slate-800 px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">Sesli Arama</span>
+                    </button>
+
+                    <!-- GÖRÜNTÜLÜ ARAMA BUTONU -->
+                    <button onclick="openJitsiMeeting()" title="Görüntülü Arama Başlat"
+                        class="group relative w-9 h-9 rounded-full border border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-[#202c33] hover:bg-indigo-500/10 dark:hover:bg-indigo-500/15 hover:border-indigo-500/40 transition-all duration-200 flex items-center justify-center shadow-sm">
+                        <svg class="w-4 h-4 text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/>
+                        </svg>
+                        <!-- Tooltip -->
+                        <span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white bg-slate-800 px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">Görüntülü Arama</span>
+                    </button>
+
+                    <!-- CANLI SOHBET ROZETİ -->
+                    <span class="text-[10px] text-emerald-500 dark:text-emerald-400 font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+                        Canlı Sohbet
+                    </span>
+                </div>
             </div>
 
             <!-- SOHBET AKIŞ ALANI (WHATSAPP DUVAR KAĞIDI HİSSİ) -->

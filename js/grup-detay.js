@@ -3635,17 +3635,17 @@ güvenlik protokolü gereği kalıcı olarak imha edilecektir.
             try {
                 emailjs.init(EMAILJS_PUBLIC_KEY);
                 await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-                    to_email   : userEmail,
-                    to_name    : userName,
-                    group_name : groupName,
-                    archive_link: shareableLink,
-                    expire_date: expireDateStr,
-                    zip_size   : zipSizeStr,
-                    delete_date: nowStr
+                    email        : userEmail,      // Template'deki {{email}} → To Email alanı
+                    to_name      : userName,        // Template'deki {{to_name}}
+                    group_name   : groupName,       // Template'deki {{group_name}}
+                    archive_link : shareableLink,   // Template'deki {{archive_link}}
+                    expire_date  : expireDateStr,   // Template'deki {{expire_date}}
+                    zip_size     : zipSizeStr,      // Template'deki {{zip_size}}
+                    delete_date  : nowStr           // Template'deki {{delete_date}}
                 });
                 console.log('✅ EmailJS bildirim maili gönderildi:', userEmail);
             } catch(mailErr) {
-                console.warn('EmailJS mail gönderilemedi (yapılandırma eksik olabilir):', mailErr);
+                console.warn('EmailJS mail gönderilemedi:', mailErr);
             }
         }
 

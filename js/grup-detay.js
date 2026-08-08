@@ -915,7 +915,7 @@ function renderArchiveTab(container) {
         </div>
     `;
 
-    populateMemberSelect('doc-uploader-select');
+    // Uploader artik gercek kullanici adindan alinacak (openAddDocModal icinde gosteriliyor)
     loadDocuments();
 }
 
@@ -1369,10 +1369,11 @@ function renderDocumentsTable(docs) {
             : 'bg-tsMavi/10 text-tsMavi border-tsMavi/20';
 
         const encUrl = encodeURIComponent(d.url || '');
-        const encTitle = (d.title || 'dokuman').replace(/'/g, "\\'");
+        const safeTitle = (d.title || 'Dokuman').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
         html += `
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                onclick="openDocPreviewModal('${encUrl}', decodeURIComponent('${encodeURIComponent(d.title || 'Dokuman')}'))">
                 <td class="p-3 font-semibold text-slate-900 dark:text-slate-100">
                     <div>${d.title}</div>
                     ${d.note ? `<div class="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-0.5">${d.note}</div>` : ''}
@@ -1384,14 +1385,16 @@ function renderDocumentsTable(docs) {
                 </td>
                 <td class="p-3 text-slate-700 dark:text-slate-300 font-medium">👤 ${d.uploader || 'Üye'}</td>
                 <td class="p-3 text-slate-500 dark:text-slate-400 font-mono text-[10px]">${d.date || 'Bugün'}</td>
-                <td class="p-3 text-right">
+                <td class="p-3 text-right" onclick="event.stopPropagation()">
                     <div class="flex items-center justify-end gap-2">
-                        <button type="button" onclick="downloadChatAttachment('${encUrl}', '${encTitle}')" class="px-3 py-1 rounded-xl bg-tsMavi/10 text-tsMavi text-[11px] font-bold hover:bg-tsMavi hover:text-white transition-all shadow-sm">
-                            🔗 Aç / İndir ↗
+                        <button type="button" 
+                            onclick="event.stopPropagation();openDocPreviewModal('${encUrl}', decodeURIComponent('${encodeURIComponent(d.title || 'Dokuman')}'))" 
+                            class="px-3 py-1 rounded-xl bg-indigo-500/10 text-indigo-400 text-[11px] font-bold hover:bg-indigo-500 hover:text-white transition-all shadow-sm">
+                            👁️ Önizle
                         </button>
                         ${isAuth ? `
-                            <button onclick="openEditDocModal('${d.id}', '${(d.title||'').replace(/'/g, "\\'")}', '${d.category||''}', '${(d.url||'').replace(/'/g, "\\'")}', '${(d.note||'').replace(/'/g, "\\'")}')" class="text-xs text-amber-500 hover:text-amber-600 px-1">✏️</button>
-                            <button onclick="deleteDocument('${d.id}')" class="text-xs text-rose-500 hover:text-rose-600 px-1">🗑️</button>
+                            <button onclick="event.stopPropagation();openEditDocModal('${d.id}', '${(d.title||'').replace(/'/g, '&apos;')}', '${d.category||''}', '${(d.url||'').replace(/'/g, '&apos;')}', '${(d.note||'').replace(/'/g, '&apos;')}')" class="text-xs text-amber-500 hover:text-amber-600 px-1" title="Düzenle">✏️</button>
+                            <button onclick="event.stopPropagation();deleteDocument('${d.id}')" class="text-xs text-rose-500 hover:text-rose-600 px-1" title="Sil">🗑️</button>
                         ` : ''}
                     </div>
                 </td>
@@ -1402,7 +1405,79 @@ function renderDocumentsTable(docs) {
     tbody.innerHTML = html;
 }
 
+// DOKUMAN ONIZLEME MODAL ROUTER — PDF, Gorsel veya Harici Link
+function openDocPreviewModal(encUrl, title) {
+    const url = decodeURIComponent(encUrl);
+    if (!url) { alert('Onizlenecek dosya bulunamadi!'); return; }
+
+    const imageExts = /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i;
+    const pdfExts   = /\.(pdf)$/i;
+
+    const isDataImage = url.startsWith('data:image/');
+    const isDataPdf   = url.startsWith('data:application/pdf') || url.startsWith('data:application/octet');
+    const cleanUrl    = url.split('?')[0];
+    const isExtImage  = imageExts.test(cleanUrl);
+    const isExtPdf    = pdfExts.test(cleanUrl);
+
+    if (isDataImage || isExtImage) {
+        openImagePreviewModal(url, title || 'Gorsel', null);
+    } else if (isDataPdf || isExtPdf) {
+        openPdfPreviewModal(url, title || 'Dokuman.pdf');
+    } else {
+        openExternalDocPreviewModal(url, title);
+    }
+}
+
+// DIS HARICI LINK — Iframe ile onizleme
+function openExternalDocPreviewModal(url, title) {
+    let existing = document.getElementById('ext-doc-preview-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'ext-doc-preview-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;flex-direction:column;align-items:center;padding:16px;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);animation:gsModalIn .25s cubic-bezier(.4,0,.2,1);';
+
+    const safeUrl   = url.replace(/"/g, '&quot;');
+    const safeTitle = (title || 'Dokuman').replace(/"/g, '&quot;');
+
+    modal.innerHTML = `
+        <div style="width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:18px;color:#fff;margin-bottom:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.3);color:#818cf8;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📎</div>
+                <div style="min-width:0;">
+                    <div style="font-size:13px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:600px;">${safeTitle}</div>
+                    <div style="font-size:10px;color:#94a3b8;margin-top:1px;">Dokuman Onizlemesi</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                <a href="${safeUrl}" target="_blank" rel="noopener"
+                    style="padding:8px 20px;border-radius:20px;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(99,102,241,0.4);text-decoration:none;border:none;display:inline-flex;align-items:center;gap:6px;">
+                    💾 İndir / Aç
+                </a>
+                <button onclick="document.getElementById('ext-doc-preview-modal').remove()"
+                    style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">✕</button>
+            </div>
+        </div>
+        <div style="flex:1;width:100%;max-width:1100px;background:#1e293b;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+            <iframe src="${safeUrl}" style="width:100%;height:100%;border:none;" title="${safeTitle}" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+        </div>
+        <div style="height:12px;"></div>
+    `;
+    document.body.appendChild(modal);
+
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            const m = document.getElementById('ext-doc-preview-modal');
+            if (m) m.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
 function openAddDocModal() {
+
     document.getElementById('edit-doc-id').value = '';
     document.getElementById('doc-title-input').value = '';
     document.getElementById('doc-url-input').value = '';
@@ -1410,6 +1485,13 @@ function openAddDocModal() {
     if (fileInp) fileInp.value = '';
     document.getElementById('doc-desc-input').value = '';
     document.getElementById('doc-modal-title').innerText = "📂 Doküman / Çizim Ekle";
+
+    // Gercek kullanici adini goster
+    const cu = getCurrentUser();
+    const cuName = cu ? (cu.displayName || cu.email.split('@')[0]) : 'Yönetici Admin';
+    const displayEl = document.getElementById('doc-uploader-display');
+    if (displayEl) displayEl.textContent = '\u{1F464} ' + cuName;
+
     document.getElementById('add-doc-modal').classList.remove('hidden');
 }
 
@@ -1463,7 +1545,9 @@ function handleSaveDocument(e) {
     const editId = document.getElementById('edit-doc-id').value;
     const title = document.getElementById('doc-title-input').value.trim();
     const category = document.getElementById('doc-category-select').value;
-    const uploader = document.getElementById('doc-uploader-select').value;
+    // Ekleme yapan: oturum acmis gercek kullanici adindan al
+    const currentUser = getCurrentUser();
+    const uploader = currentUser ? (currentUser.displayName || currentUser.email.split('@')[0]) : 'Yonetici Admin';
     let url = document.getElementById('doc-url-input').value.trim();
     const note = document.getElementById('doc-desc-input').value.trim();
     const fileInp = document.getElementById('doc-file-input');

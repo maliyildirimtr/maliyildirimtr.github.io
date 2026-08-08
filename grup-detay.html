@@ -224,10 +224,11 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">Ekleme Yapan Üye</label>
-                        <select id="doc-uploader-select" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-tsMavi">
-                            <!-- JS ile doldurulacak -->
-                        </select>
+                        <label class="block text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">Ekleme Yapan</label>
+                        <div id="doc-uploader-display" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold select-none">
+                            Yükleniyor...
+                        </div>
+                        <input type="hidden" id="doc-uploader-select">
                     </div>
                 </div>
 

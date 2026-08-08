@@ -351,6 +351,13 @@ function renderWorkspaceUI() {
 }
 
 // JITSI MEET VIRTUAL LAB TOPLANTI ODA KONTROLÜ
+// Global arama durumu takibi
+let _activeCallMsgId   = null;
+let _activeCallDocRef  = null;
+let _callStartTime     = null;
+let _callParticipants  = new Set();
+let _callType          = null;
+
 function openJitsiMeeting() {
     const roomName = `maliacademy-workspace-${groupId}`;
     const url = `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false`;
@@ -364,6 +371,11 @@ function openJitsiMeeting() {
     if (modal) modal.classList.remove('hidden');
 
     // Sohbete sistem mesajı gönder
+    _callType = 'video';
+    _callStartTime = Date.now();
+    _callParticipants = new Set();
+    const cu = getCurrentUser();
+    if (cu) _callParticipants.add(cu.uid || cu.email || cu.displayName);
     sendCallSystemMessage('video', url);
 }
 
@@ -372,6 +384,11 @@ function closeJitsiMeeting() {
     const modal = document.getElementById('jitsi-modal');
     if (iframe) iframe.src = 'about:blank';
     if (modal) modal.classList.add('hidden');
+
+    // Arama bitirildi — mesajı güncelle
+    if (_activeCallDocRef || _activeCallMsgId) {
+        endCallAndUpdateMessage('video');
+    }
 }
 
 // ====================================================
@@ -477,6 +494,11 @@ function startVoiceCall() {
     });
 
     // Sohbete sesli arama sistem mesajı gönder
+    _callType = 'voice';
+    _callStartTime = Date.now();
+    _callParticipants = new Set();
+    const cuForVoice = getCurrentUser();
+    if (cuForVoice) _callParticipants.add(cuForVoice.uid || cuForVoice.email || cuForVoice.displayName);
     const audioRoomUrl = `https://meet.jit.si/maliacademy-audio-${groupId}#config.prejoinPageEnabled=false&config.startWithVideoMuted=true&config.startAudioOnly=true`;
     sendCallSystemMessage('voice', audioRoomUrl);
 }
@@ -487,6 +509,10 @@ function endVoiceCall() {
         overlay.style.opacity = '0';
         overlay.style.transition = 'opacity 0.25s';
         setTimeout(() => overlay.remove(), 250);
+    }
+    // Arama bitirildi — mesajı güncelle
+    if (_activeCallDocRef || _activeCallMsgId) {
+        endCallAndUpdateMessage('voice');
     }
 }
 
@@ -3296,54 +3322,91 @@ function renderMessagesFeed(messages) {
         // ── ARAMA SİSTEM MESAJI (WhatsApp tarzı) ──
         if (m.callData && !isDeleted) {
             const cd = m.callData;
-            const isVideo = cd.type === 'video';
-            const icon   = isVideo ? '📹' : '📞';
-            const label  = isVideo ? 'Görüntülü Arama Başlatıldı' : 'Sesli Arama Başlatıldı';
-            const callColor = isVideo ? '#6366f1' : '#10b981';
-            const callBg   = isVideo ? 'rgba(99,102,241,0.12)' : 'rgba(16,185,129,0.12)';
-            const callBorder = isVideo ? 'rgba(99,102,241,0.3)' : 'rgba(16,185,129,0.3)';
+            const isVideo   = cd.type === 'video';
+            const isEnded   = !!cd.ended;
+            const icon      = isVideo ? '📹' : '📞';
+            const callColor  = isVideo ? '#6366f1' : '#10b981';
+            const callBg     = isEnded
+                ? 'rgba(100,116,139,0.10)'
+                : (isVideo ? 'rgba(99,102,241,0.12)' : 'rgba(16,185,129,0.12)');
+            const callBorder = isEnded
+                ? 'rgba(100,116,139,0.25)'
+                : (isVideo ? 'rgba(99,102,241,0.3)' : 'rgba(16,185,129,0.3)');
+
+            // Süre format
+            let durationStr = '';
+            if (isEnded && cd.durationSec != null) {
+                const mins = Math.floor(cd.durationSec / 60);
+                const secs = cd.durationSec % 60;
+                durationStr = mins > 0 ? `${mins} dk ${secs} sn` : `${secs} sn`;
+            }
+
+            const label = isEnded
+                ? (isVideo ? 'Görüntülü Arama Sonlandırıldı' : 'Sesli Arama Sonlandırıldı')
+                : (isVideo ? 'Görüntülü Arama Başlatıldı' : 'Sesli Arama Başlatıldı');
+
             const safeRoomUrl = (cd.roomUrl || '').replace(/"/g, '&quot;');
+
             html += `
                 <div class="flex justify-center w-full my-3">
                     <div style="
-                        display:inline-flex;flex-direction:column;align-items:center;gap:10px;
+                        display:inline-flex;flex-direction:column;align-items:center;gap:${isEnded ? '8' : '10'}px;
                         background:${callBg};
                         border:1px solid ${callBorder};
                         border-radius:22px;
-                        padding:14px 24px;
+                        padding:${isEnded ? '12px 22px' : '14px 24px'};
                         text-align:center;
-                        max-width:320px;
+                        max-width:${isEnded ? '290px' : '320px'};
                         backdrop-filter:blur(8px);
                         box-shadow:0 4px 24px rgba(0,0,0,0.18);
-                        animation:gsModalIn .3s cubic-bezier(.4,0,.2,1);
+                        ${isEnded ? '' : 'animation:gsModalIn .3s cubic-bezier(.4,0,.2,1);'}
                     ">
                         <div style="display:flex;align-items:center;gap:8px;">
-                            <span style="font-size:22px;line-height:1;">${icon}</span>
+                            <span style="font-size:${isEnded ? '18' : '22'}px;line-height:1;${isEnded ? 'opacity:0.6;' : ''}">${icon}</span>
                             <div style="text-align:left;">
-                                <div style="font-size:12px;font-weight:800;color:#e2e8f0;">${label}</div>
-                                <div style="font-size:10px;color:#64748b;margin-top:1px;">${m.sender || 'Bi\u0305ri'} • ${timeStr}</div>
+                                <div style="font-size:${isEnded ? '11' : '12'}px;font-weight:800;color:${isEnded ? '#94a3b8' : '#e2e8f0'};">${label}</div>
+                                <div style="font-size:10px;color:#475569;margin-top:1px;">${m.sender || 'Biri'} • ${timeStr}</div>
                             </div>
                         </div>
-                        <button
-                            onclick="joinCallFromMessage('${safeRoomUrl}', '${cd.type}')"
-                            style="
-                                padding:8px 28px;
-                                border-radius:20px;
-                                background:linear-gradient(135deg,${callColor},${isVideo ? '#818cf8' : '#34d399'});
-                                border:none;
-                                color:#fff;
-                                font-size:12px;
-                                font-weight:800;
-                                cursor:pointer;
-                                box-shadow:0 4px 16px rgba(0,0,0,0.25);
-                                transition:transform 0.15s,opacity 0.15s;
-                                letter-spacing:0.3px;
-                            "
-                            onmouseover="this.style.transform='scale(1.05)';this.style.opacity='0.92'"
-                            onmouseout="this.style.transform='scale(1)';this.style.opacity='1'"
-                        >
-                            ${isVideo ? '📹' : '📞'} Katıl
-                        </button>
+
+                        ${isEnded ? `
+                            <!-- ARAMA ÖZETI — SÜRE + KATILIMCI -->
+                            <div style="display:flex;align-items:center;gap:16px;background:rgba(0,0,0,0.15);border-radius:14px;padding:8px 16px;">
+                                ${durationStr ? `
+                                    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                                        <span style="font-size:9px;color:#64748b;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">SÜRE</span>
+                                        <span style="font-size:13px;font-weight:800;color:#cbd5e1;">&#x23F1; ${durationStr}</span>
+                                    </div>
+                                    <div style="width:1px;height:28px;background:rgba(255,255,255,0.1);"></div>
+                                ` : ''}
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                                    <span style="font-size:9px;color:#64748b;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">KATILIMCI</span>
+                                    <span style="font-size:13px;font-weight:800;color:#cbd5e1;">👥 ${cd.participants || 1} kişi</span>
+                                </div>
+                            </div>
+                        ` : `
+                            <!-- KATIL BUTONU — Arama devam ediyor -->
+                            <button
+                                onclick="joinCallFromMessage('${safeRoomUrl}', '${cd.type}')"
+                                style="
+                                    padding:8px 28px;
+                                    border-radius:20px;
+                                    background:linear-gradient(135deg,${callColor},${isVideo ? '#818cf8' : '#34d399'});
+                                    border:none;
+                                    color:#fff;
+                                    font-size:12px;
+                                    font-weight:800;
+                                    cursor:pointer;
+                                    box-shadow:0 4px 16px rgba(0,0,0,0.25);
+                                    transition:transform 0.15s,opacity 0.15s;
+                                    letter-spacing:0.3px;
+                                "
+                                onmouseover="this.style.transform='scale(1.05)';this.style.opacity='0.92'"
+                                onmouseout="this.style.transform='scale(1)';this.style.opacity='1'"
+                            >
+                                ${isVideo ? '📹' : '📞'} Katıl
+                            </button>
+                        `}
                     </div>
                 </div>
             `;
@@ -4595,7 +4658,7 @@ function sendCallSystemMessage(callType, roomUrl) {
     const newMsg = {
         sender:    sender,
         text:      '',
-        callData:  { type: callType, roomUrl: roomUrl },
+        callData:  { type: callType, roomUrl: roomUrl, ended: false },
         attachment: null,
         poll:       null,
         eventData:  null,
@@ -4605,19 +4668,82 @@ function sendCallSystemMessage(callType, roomUrl) {
     };
 
     if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection('groups').doc(groupId).collection('messages').add(newMsg).catch(() => {
-            DEMO_MESSAGES.push(newMsg);
-            renderMessagesFeed(DEMO_MESSAGES);
-        });
+        db.collection('groups').doc(groupId).collection('messages').add(newMsg)
+            .then(docRef => {
+                // Belge referansını sakla — arama bitince güncellemek için
+                _activeCallDocRef = docRef;
+                _activeCallMsgId  = docRef.id;
+            })
+            .catch(() => {
+                DEMO_MESSAGES.push(newMsg);
+                renderMessagesFeed(DEMO_MESSAGES);
+            });
     } else {
+        newMsg.id = 'demo_call_' + Date.now();
         DEMO_MESSAGES.push(newMsg);
+        _activeCallMsgId = newMsg.id;
         renderMessagesFeed(DEMO_MESSAGES);
+    }
+}
+
+// ARAMA BITİNCE MESAJI GÜNCELLE (süre + katılımcı sayısı + ended flag)
+function endCallAndUpdateMessage(callType) {
+    const durationSec = _callStartTime ? Math.round((Date.now() - _callStartTime) / 1000) : 0;
+    const participantCount = _callParticipants.size || 1;
+
+    const updateData = {
+        'callData.ended':       true,
+        'callData.durationSec': durationSec,
+        'callData.participants': participantCount
+    };
+
+    if (_activeCallDocRef) {
+        _activeCallDocRef.update(updateData).catch(err => {
+            console.warn('Arama mesajı güncelleme hatası:', err);
+            // Lokal güncelleme
+            _updateLocalCallMsg(_activeCallMsgId, durationSec, participantCount);
+        });
+    } else if (_activeCallMsgId) {
+        // Firestore ama docRef kayboldu — id üzerinden bul
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection('groups').doc(groupId).collection('messages').doc(_activeCallMsgId)
+                .update(updateData)
+                .catch(() => _updateLocalCallMsg(_activeCallMsgId, durationSec, participantCount));
+        } else {
+            _updateLocalCallMsg(_activeCallMsgId, durationSec, participantCount);
+        }
+    }
+
+    // Lokal state'i de güncelle (onSnapshot gelene kadar anında yansısın)
+    _updateLocalCallMsg(_activeCallMsgId, durationSec, participantCount);
+
+    // Reset
+    _activeCallDocRef  = null;
+    _activeCallMsgId   = null;
+    _callStartTime     = null;
+    _callParticipants  = new Set();
+    _callType          = null;
+}
+
+function _updateLocalCallMsg(msgId, durationSec, participants) {
+    const msgs = window.currentLoadedMessages || DEMO_MESSAGES;
+    const msg  = msgs.find((m, i) => m.id === msgId || ('demo_call_' + i) === msgId || (m.callData && !m.callData.ended));
+    if (msg && msg.callData) {
+        msg.callData.ended       = true;
+        msg.callData.durationSec = durationSec;
+        msg.callData.participants = participants;
+        renderMessagesFeed(msgs);
     }
 }
 
 // Sohbet'teki Katıl butonu tıklandığında arama/toplantıya bağlan
 function joinCallFromMessage(roomUrl, callType) {
     if (!roomUrl) return;
+
+    // Katılanı sayıya kat
+    const cu = getCurrentUser();
+    if (cu) _callParticipants.add(cu.uid || cu.email || cu.displayName);
+
     if (callType === 'video') {
         // Jitsi toplantı modalını aç ve o oda URL'sini kullan
         const iframe = document.getElementById('jitsi-iframe');

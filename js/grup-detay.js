@@ -362,6 +362,9 @@ function openJitsiMeeting() {
     if (iframe) iframe.src = url;
     if (externalLink) externalLink.href = url;
     if (modal) modal.classList.remove('hidden');
+
+    // Sohbete sistem mesajı gönder
+    sendCallSystemMessage('video', url);
 }
 
 function closeJitsiMeeting() {
@@ -472,6 +475,10 @@ function startVoiceCall() {
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) endVoiceCall();
     });
+
+    // Sohbete sesli arama sistem mesajı gönder
+    const audioRoomUrl = `https://meet.jit.si/maliacademy-audio-${groupId}#config.prejoinPageEnabled=false&config.startWithVideoMuted=true&config.startAudioOnly=true`;
+    sendCallSystemMessage('voice', audioRoomUrl);
 }
 
 function endVoiceCall() {
@@ -3202,6 +3209,63 @@ function renderMessagesFeed(messages) {
         const isDeleted = m.isDeleted || false;
         const attachmentJsonStr = encodeURIComponent(JSON.stringify(m.attachment || null));
 
+        // ── ARAMA SİSTEM MESAJI (WhatsApp tarzı) ──
+        if (m.callData && !isDeleted) {
+            const cd = m.callData;
+            const isVideo = cd.type === 'video';
+            const icon   = isVideo ? '📹' : '📞';
+            const label  = isVideo ? 'Görüntülü Arama Başlatıldı' : 'Sesli Arama Başlatıldı';
+            const callColor = isVideo ? '#6366f1' : '#10b981';
+            const callBg   = isVideo ? 'rgba(99,102,241,0.12)' : 'rgba(16,185,129,0.12)';
+            const callBorder = isVideo ? 'rgba(99,102,241,0.3)' : 'rgba(16,185,129,0.3)';
+            const safeRoomUrl = (cd.roomUrl || '').replace(/"/g, '&quot;');
+            html += `
+                <div class="flex justify-center w-full my-3">
+                    <div style="
+                        display:inline-flex;flex-direction:column;align-items:center;gap:10px;
+                        background:${callBg};
+                        border:1px solid ${callBorder};
+                        border-radius:22px;
+                        padding:14px 24px;
+                        text-align:center;
+                        max-width:320px;
+                        backdrop-filter:blur(8px);
+                        box-shadow:0 4px 24px rgba(0,0,0,0.18);
+                        animation:gsModalIn .3s cubic-bezier(.4,0,.2,1);
+                    ">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:22px;line-height:1;">${icon}</span>
+                            <div style="text-align:left;">
+                                <div style="font-size:12px;font-weight:800;color:#e2e8f0;">${label}</div>
+                                <div style="font-size:10px;color:#64748b;margin-top:1px;">${m.sender || 'Bi\u0305ri'} • ${timeStr}</div>
+                            </div>
+                        </div>
+                        <button
+                            onclick="joinCallFromMessage('${safeRoomUrl}', '${cd.type}')"
+                            style="
+                                padding:8px 28px;
+                                border-radius:20px;
+                                background:linear-gradient(135deg,${callColor},${isVideo ? '#818cf8' : '#34d399'});
+                                border:none;
+                                color:#fff;
+                                font-size:12px;
+                                font-weight:800;
+                                cursor:pointer;
+                                box-shadow:0 4px 16px rgba(0,0,0,0.25);
+                                transition:transform 0.15s,opacity 0.15s;
+                                letter-spacing:0.3px;
+                            "
+                            onmouseover="this.style.transform='scale(1.05)';this.style.opacity='0.92'"
+                            onmouseout="this.style.transform='scale(1)';this.style.opacity='1'"
+                        >
+                            ${isVideo ? '📹' : '📞'} Katıl
+                        </button>
+                    </div>
+                </div>
+            `;
+            return; // Normal balon render etme
+        }
+
         let attachmentHTML = "";
         if (m.attachment && !isDeleted) {
             if (m.attachment.type === 'image') {
@@ -4431,6 +4495,56 @@ function updateLocalMessageDeleted(msgId, type, userKey) {
             }
         }
         renderMessagesFeed(messages);
+    }
+}
+
+// ════════════════════════════════════════════════════════
+// ARAMA SİSTEM MESAJI GÖNDER (WhatsApp tarzı)
+// ════════════════════════════════════════════════════════
+function sendCallSystemMessage(callType, roomUrl) {
+    const user     = getCurrentUser();
+    const sender   = user ? (user.displayName || user.email.split('@')[0]) : 'Yönetici Admin';
+    const timestamp = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+        ? firebase.firestore.FieldValue.serverTimestamp()
+        : new Date().toISOString();
+
+    const newMsg = {
+        sender:    sender,
+        text:      '',
+        callData:  { type: callType, roomUrl: roomUrl },
+        attachment: null,
+        poll:       null,
+        eventData:  null,
+        reactions:  {},
+        time:       new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        createdAt:  timestamp
+    };
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection('groups').doc(groupId).collection('messages').add(newMsg).catch(() => {
+            DEMO_MESSAGES.push(newMsg);
+            renderMessagesFeed(DEMO_MESSAGES);
+        });
+    } else {
+        DEMO_MESSAGES.push(newMsg);
+        renderMessagesFeed(DEMO_MESSAGES);
+    }
+}
+
+// Sohbet'teki Katıl butonu tıklandığında arama/toplantıya bağlan
+function joinCallFromMessage(roomUrl, callType) {
+    if (!roomUrl) return;
+    if (callType === 'video') {
+        // Jitsi toplantı modalını aç ve o oda URL'sini kullan
+        const iframe = document.getElementById('jitsi-iframe');
+        const externalLink = document.getElementById('jitsi-external-link');
+        const modal = document.getElementById('jitsi-modal');
+        if (iframe) iframe.src = roomUrl;
+        if (externalLink) externalLink.href = roomUrl;
+        if (modal) modal.classList.remove('hidden');
+    } else {
+        // Sesli arama modalını aç
+        startVoiceCall();
     }
 }
 

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ders Detayı | Mehmet Ali Yıldırım</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/tailwind-config.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body data-page="ders-detay" class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <div id="navbar-container"></div>
+
+    <main class="max-w-6xl mx-auto px-4 py-12 flex-grow w-full space-y-8" id="course-detail-container">
+        <div class="py-20 text-center text-slate-500 text-sm">⏳ Yükleniyor...</div>
+    </main>
+
+    <!-- DÜZENLEME MODALI -->
+    <div id="topic-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold" id="modal-title">➕ Yeni Konu Ekle</h3>
+                <button onclick="closeTopicModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            
+            <form id="topic-form" class="space-y-4">
+                <input type="hidden" id="edit-topic-id">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">Konu Başlığı *</label>
+                    <input type="text" id="topic-title" required placeholder="Örn: Ders 12: Half Adder Tasarımı" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">YouTube Video Linki (İsteğe Bağlı)</label>
+                    <input type="url" id="topic-video" placeholder="Örn: https://www.youtube.com/watch?v=..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-tsMavi">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeTopicModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
+                    <button type="submit" id="save-topic-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="js/firebase.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/courses-seed.js"></script>
+    <script src="js/ders-detay.js"></script>
+</body>
+</html>

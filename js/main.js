@@ -472,18 +472,18 @@ function closeLoginModal() {
 }
 
 async function checkAdminPassword() {
-    const inputPass = document.getElementById('admin-password-input').value;
+    const inputPassEl = document.getElementById('admin-password-input');
     const errorMsg = document.getElementById('login-error-msg');
 
-    if (!inputPass) return;
+    if (!inputPassEl || !inputPassEl.value) return;
 
+    const inputPass = inputPassEl.value.trim();
     const hashedInput = await computeSHA256(inputPass);
 
-    if (hashedInput === SEC_HASH_PASS || inputPass === '258061') {
+    if (hashedInput === SEC_HASH_PASS) {
         sessionStorage.setItem('_mali_adm_token', SEC_HASH_PASS);
         localStorage.setItem('_mali_adm_token', SEC_HASH_PASS);
         localStorage.setItem('is_admin', 'true');
-        localStorage.setItem('mali_admin_session', 'active');
         closeLoginModal();
         location.reload();
     } else {

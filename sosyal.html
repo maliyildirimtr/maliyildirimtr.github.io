@@ -8,19 +8,7 @@
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        tsBordo: { DEFAULT: '#800020', light: '#a31236', dark: '#540015' },
-                        tsMavi: { DEFAULT: '#00a8e8', light: '#33bcef', dark: '#0077a8' }
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="js/tailwind-config.js"></script>
     <link rel="stylesheet" href="css/style.css">
 
     <!-- Firebase SDK (Oturum durumunun stabil kalması için) -->
@@ -28,7 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
+<body data-page="sosyal" class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
     <!-- ORTAK MENÜ ALANI -->
     <div id="navbar-container"></div>
@@ -204,38 +192,6 @@
     <!-- SCRIPT'LER -->
     <script src="js/firebase.js"></script>
     <script src="js/main.js"></script>
-    <script>
-        renderNavbar('sosyal');
-
-        // GOOGLE APPS SCRIPT FORM GÖNDERİMİ (FETCH)
-        const form = document.getElementById('contact-form');
-        const successMsg = document.getElementById('form-status-success');
-        const errorMsg = document.getElementById('form-status-error');
-        const submitBtn = document.getElementById('submit-btn');
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = "<span>⏳</span> Gönderiliyor...";
-
-            const formData = new FormData(form);
-
-            fetch(form.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                form.reset();
-                form.classList.add('hidden');
-                successMsg.classList.remove('hidden');
-            })
-            .catch(error => {
-                console.error('Hata:', error);
-                errorMsg.classList.remove('hidden');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = "<span>🚀</span> Mesajı Gönder";
-            });
-        });
-    </script>
+    <script src="js/sosyal.js"></script>
 </body>
 </html>

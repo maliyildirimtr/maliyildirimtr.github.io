@@ -8,22 +8,10 @@
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        tsBordo: { DEFAULT: '#800020', light: '#a31236', dark: '#540015' },
-                        tsMavi: { DEFAULT: '#00a8e8', light: '#33bcef', dark: '#0077a8' }
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="js/tailwind-config.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
+<body data-page="projeler" class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
     <!-- ORTAK MENÜ ALANI -->
     <div id="navbar-container"></div>
@@ -132,9 +120,5 @@
 
     <!-- SCRIPT'LER -->
     <script src="js/main.js"></script>
-    <script>
-        // Sayfa yüklenince menüde "Projeler" butonunu aktif hale getirir
-        renderNavbar('projeler');
-    </script>
 </body>
 </html>

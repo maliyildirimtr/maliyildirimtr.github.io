@@ -7,25 +7,12 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        tsBordo: { DEFAULT: '#800020', light: '#a31236', dark: '#540015' },
-                        tsMavi: { DEFAULT: '#00a8e8', light: '#33bcef', dark: '#0077a8' }
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="js/tailwind-config.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
+<body data-page="index" class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- NAV BAR -->
-    <!-- ORTAK MENÜ ALANI -->
+    <!-- ORTAK NAV BAR -->
     <div id="navbar-container"></div>
 
     <!-- HERO SECTION -->
@@ -59,7 +46,5 @@
     </footer>
 
     <script src="js/main.js"></script>
-    <script src="js/main.js"></script>
-    <script>renderNavbar('index');</script>
 </body>
 </html>

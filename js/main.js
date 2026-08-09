@@ -86,13 +86,9 @@ function toggleMobileMenu() {
 // 4. ORTAK NAVBAR COMPONENT & ARAYÜZ (DİNAMİK LOGO)
 // ==========================================
 function renderNavbar(activePage) {
-    const isAcademyPage = activePage === 'dersler' || activePage === 'ders-detay' || activePage === 'konu-detay';
+    const page = activePage || document.body.getAttribute('data-page') || 'index';
 
-    const logoHTML = isAcademyPage ? `
-        <a href="dersler.html" onclick="handleLogoClick(event)" class="text-xl font-extrabold tracking-wider uppercase select-none cursor-pointer flex items-center gap-1.5">
-            <span>🎓</span> MALİ <span class="ts-gradient-text">ACADEMY</span>
-        </a>
-    ` : `
+    const logoHTML = `
         <a href="index.html" onclick="handleLogoClick(event)" class="text-xl font-bold tracking-wider uppercase select-none cursor-pointer">
             M. Ali <span class="ts-gradient-text">Yıldırım</span>
         </a>
@@ -107,11 +103,12 @@ function renderNavbar(activePage) {
 
             <!-- MASAÜSTÜ MENÜ -->
             <div class="hidden md:flex items-center space-x-1 border border-slate-200 dark:border-slate-800 p-1 rounded-full bg-slate-100/50 dark:bg-slate-900/50">
-                <a href="index.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'index' || activePage === 'home' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Hakkımda</a>
-                <a href="projeler.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'projeler' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Projeler</a>
-                <a href="dersler.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'dersler' || activePage === 'ders-detay' || activePage === 'konu-detay' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Dersler & Notlar</a>
-                ${isAdmin() ? `<a href="gruplar.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'gruplar' || activePage === 'grup-detay' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-amber-500 font-semibold hover:text-amber-400'}">🔒 Proje Grupları</a>` : ''}
-                <a href="sosyal.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${activePage === 'sosyal' || activePage === 'iletişim' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">İletişim</a>
+                <a href="index.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'index' || page === 'home' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Hakkımda</a>
+                <a href="projeler.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'projeler' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Projeler</a>
+                <a href="sosyal.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'sosyal' || page === 'iletişim' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">İletişim</a>
+                <a href="https://github.com/maliyildirimtr/maliacademy" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm hover:opacity-90 transition-opacity flex items-center gap-1">
+                    <span>🎓</span> Mali Academy ↗
+                </a>
             </div>
 
             <!-- SAĞ BUTONLAR -->
@@ -133,9 +130,8 @@ function renderNavbar(activePage) {
         <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d0f12] px-4 py-4 space-y-2">
             <a href="index.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Hakkımda</a>
             <a href="projeler.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Projeler</a>
-            <a href="dersler.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Dersler & Notlar</a>
-            ${isAdmin() ? `<a href="gruplar.html" class="block px-4 py-2 rounded-xl text-sm font-semibold text-amber-500 hover:bg-amber-500/10 transition-colors">🔒 Proje Grupları</a>` : ''}
             <a href="sosyal.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">İletişim</a>
+            <a href="https://github.com/maliyildirimtr/maliacademy" target="_blank" rel="noopener noreferrer" class="block px-4 py-2 rounded-xl text-sm font-bold text-sky-400 hover:bg-sky-500/10 transition-colors">🎓 Mali Academy ↗</a>
         </div>
     </nav>
 
@@ -520,11 +516,8 @@ function openAddModal() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('openModal') === 'true') {
-        const modal = document.getElementById('add-course-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-        }
-    }
+    const page = document.body.getAttribute('data-page') || 
+                 window.location.pathname.split('/').pop().replace('.html', '') || 
+                 'index';
+    renderNavbar(page);
 });

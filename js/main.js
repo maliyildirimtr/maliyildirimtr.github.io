@@ -538,3 +538,16 @@ document.addEventListener('DOMContentLoaded', () => {
                  'index';
     renderNavbar(page);
 });
+
+// ==========================================
+// 9. SİSTEM ALTYAPISI & GÜVENLİK MODALI
+// ==========================================
+function openSecurityModal() {
+    const modal = document.getElementById('security-standards-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeSecurityModal() {
+    const modal = document.getElementById('security-standards-modal');
+    if (modal) modal.classList.add('hidden');
+}

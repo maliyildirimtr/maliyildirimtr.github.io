@@ -64,8 +64,84 @@
 
     </main>
 
+        <!-- MODAL: SİSTEM ALTYAPISI & GÜVENLİK BİLGİSİ -->
+    <div id="security-standards-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 max-w-2xl w-full space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            
+            <!-- MODAL HEADER -->
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-tsBordo/10 text-tsBordo font-bold flex items-center justify-center text-lg border border-tsBordo/20">
+                        🛡️
+                    </div>
+                    <div>
+                        <h3 class="text-base md:text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">Sistem Altyapısı & Güvenlik Bilgisi</h3>
+                        <p class="text-xs text-slate-500">M. Ali Yıldırım & Mali Academy Altyapı Standardı</p>
+                    </div>
+                </div>
+                <button onclick="closeSecurityModal()" class="text-slate-400 hover:text-white text-lg p-1 transition-colors">✕</button>
+            </div>
+
+            <!-- MODAL İÇERİK KARTLARI GRID -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- KART 1: Hosting & SSL -->
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-slate-100">
+                        <span class="text-base">⚡</span> Hosting & SSL Sertifikası
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Güvenli, kesintisiz ve küresel içerik dağıtım ağı (CDN) sağlayan <strong>GitHub Pages / Serverless</strong> altyapısı. Tüm bağlantılar <strong>256-bit SSL (HTTPS)</strong> ile uçtan uca şifrelenmektedir.
+                    </p>
+                </div>
+
+                <!-- KART 2: Veritabanı & Güvenlik -->
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-slate-100">
+                        <span class="text-base">🔒</span> Veritabanı & Kimlik Doğrulama
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Kullanıcı ve proje verileri <strong>Google Cloud & Firebase Auth / Cloud Firestore</strong> üzerinde saklanır. API istekleri HTTP Referrer kısıtlamaları ve Row-Level Security (RLS) ile koruma altındadır.
+                    </p>
+                </div>
+
+                <!-- KART 3: Teknolojiler -->
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-slate-100">
+                        <span class="text-base">🛠️</span> Modern Web Teknolojileri
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Modern <strong>Vanilla JavaScript (ES6+)</strong>, <strong>HTML5</strong>, <strong>CSS3</strong> & Tailwind mimarisi. Serverless API entegrasyonları (WebRTC / EmailJS) ve yüksek hızlı duyarlı tasarım.
+                    </p>
+                </div>
+
+                <!-- KART 4: Gizlilik & Şeffaflık -->
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-xs text-slate-900 dark:text-slate-100">
+                        <span class="text-base">⚖️</span> Gizlilik & Şeffaflık Standartları
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Kişisel verileriniz asla 3. taraf kurumlarla paylaşılmaz. Tüm yönetim eylemleri kriptografik SHA-256 doğrulama protokolleri arkasında güvenle tutulur.
+                    </p>
+                </div>
+            </div>
+
+            <!-- FOOTER KAPAT BUTONU -->
+            <div class="flex justify-end border-t border-slate-100 dark:border-slate-800 pt-4">
+                <button type="button" onclick="closeSecurityModal()" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
-        <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
+        <button onclick="openSecurityModal()" title="Sistem Altyapısı ve Güvenlik Standartlarını Görüntüle" class="inline-flex items-center gap-2 hover:text-tsMavi dark:hover:text-tsMavi transition-colors cursor-pointer group">
+            <span>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 group-hover:bg-tsMavi/10 text-slate-600 dark:text-slate-400 group-hover:text-tsMavi font-mono text-[10px] border border-slate-300 dark:border-slate-700 transition-colors flex items-center gap-1">
+                <span>🛡️</span> Sistem & Güvenlik Bilgisi
+            </span>
+        </button>
     </footer>
 
     <!-- SCRIPTS -->

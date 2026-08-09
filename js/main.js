@@ -614,19 +614,31 @@ function showToast(message, type = 'info') {
 window.showToast = showToast;
 window.dismissToast = dismissToast;
 
-document.addEventListener('DOMContentLoaded', () => {
+function initNavbar() {
     const page = document.body.getAttribute('data-page') || 
                  window.location.pathname.split('/').pop().replace('.html', '') || 
                  'index';
     renderNavbar(page);
     initDynamicNavbarFirstLink();
+}
 
-    if (window.location.hash === '#contact-section' || window.location.hash === '#iletisim') {
-        setTimeout(() => {
-            scrollToContactForm();
-        }, 300);
-    }
-});
+// ANINDA ÇALIŞTIRMA (Menünün kaybolmasını / gecikmesini engeller)
+initNavbar();
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initNavbar();
+        if (window.location.hash === '#contact-section' || window.location.hash === '#iletisim') {
+            setTimeout(() => {
+                scrollToContactForm();
+            }, 300);
+        }
+    });
+} else if (window.location.hash === '#contact-section' || window.location.hash === '#iletisim') {
+    setTimeout(() => {
+        scrollToContactForm();
+    }, 300);
+}
 
 if (typeof auth !== 'undefined' && auth) {
     auth.onAuthStateChanged(async (user) => {
@@ -638,8 +650,7 @@ if (typeof auth !== 'undefined' && auth) {
         } else {
             _cachedUserEmailHash = null;
         }
-        const page = document.body.getAttribute('data-page') || window.location.pathname.split('/').pop().replace('.html', '') || 'index';
-        renderNavbar(page);
+        initNavbar();
     });
 }
 

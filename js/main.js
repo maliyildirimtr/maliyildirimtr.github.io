@@ -551,3 +551,33 @@ function closeSecurityModal() {
     const modal = document.getElementById('security-standards-modal');
     if (modal) modal.classList.add('hidden');
 }
+
+// ==========================================
+// 10. İLETİŞİM FORMUNA YUMUŞAK KAYDIRMA & FOCUS VURGUSU
+// ==========================================
+function scrollToContactForm(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const contactSection = document.getElementById('contact-section') || document.getElementById('iletisim') || document.getElementById('contact-form');
+
+    if (contactSection) {
+        contactSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+            const nameInput = contactSection.querySelector('input[name="name"]') || contactSection.querySelector('input[type="text"]') || contactSection.querySelector('input');
+            if (nameInput) {
+                nameInput.focus();
+            }
+
+            const highlightTarget = document.getElementById('contact-card-highlight') || contactSection;
+            if (highlightTarget) {
+                highlightTarget.classList.add('ring-4', 'ring-tsMavi/50', 'border-tsMavi', 'transition-all', 'duration-300');
+                setTimeout(() => {
+                    highlightTarget.classList.remove('ring-4', 'ring-tsMavi/50', 'border-tsMavi');
+                }, 2000);
+            }
+        }, 500);
+    } else {
+        window.location.href = 'sosyal.html#contact-section';
+    }
+}

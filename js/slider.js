@@ -45,27 +45,30 @@ document.addEventListener('DOMContentLoaded', () => {
     initHeroSlider();
 });
 
-// SLIDER BAŞLATICI & FIRESTORE OTOMATİK SEED / OKUMA
+// SLIDER BAŞLATICI & FIRESTORE KART OKUMA / GERİ YÜKLEME
 function initHeroSlider() {
     setupDragAndDropEvents();
 
     if (typeof db !== 'undefined' && db && db.collection) {
+        // 3 Varsayılan kartın veritabanında var olduğunu garanti et
+        ensureDefaultCardsInFirestore();
+
         db.collection("announcements").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
-            if (snapshot.empty) {
-                // Veritabanı boşsa varsayılan 3 korumalı kartı Firestore'a otomatik ekle (Seed)
-                seedDefaultCardsToFirestore();
-                return;
+            let loadedSlides = [];
+            if (!snapshot.empty) {
+                snapshot.docs.forEach((doc, idx) => {
+                    const data = doc.data();
+                    loadedSlides.push({
+                        id: doc.id,
+                        ...data,
+                        isProtected: idx < 3 || data.isProtected === true || doc.id.startsWith('system-card-')
+                    });
+                });
             }
 
-            let loadedSlides = [];
-            snapshot.docs.forEach((doc, idx) => {
-                const data = doc.data();
-                loadedSlides.push({
-                    id: doc.id,
-                    ...data,
-                    isProtected: idx < 3 || data.isProtected === true
-                });
-            });
+            if (loadedSlides.length === 0) {
+                loadedSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c, isProtected: true }));
+            }
 
             allSlides = loadedSlides;
             renderSliderUI();
@@ -89,23 +92,57 @@ function initHeroSlider() {
     }
 }
 
-// ILK DEFA İÇİN VARSAYILAN 3 KORUMALI KARTI FIRESTORE'A SEED ETME
-function seedDefaultCardsToFirestore() {
+// 3 VARSAYILAN KARTIN FIRESTORE'DA OLDUĞUNU KONTROL ET VE OTOMATİK SEED ET
+function ensureDefaultCardsInFirestore() {
     if (typeof db === 'undefined' || !db || !db.collection) return;
-    const batch = db.batch();
-    DEFAULT_INITIAL_CARDS.forEach((card, index) => {
-        const ref = db.collection("announcements").doc();
-        batch.set(ref, {
-            ...card,
-            isProtected: true,
-            createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
-                ? firebase.firestore.FieldValue.serverTimestamp()
-                : new Date(Date.now() + index * 1000).toISOString()
+    
+    db.collection("announcements").doc("system-card-0").get().then((docSnap) => {
+        if (!docSnap.exists) {
+            const batch = db.batch();
+            DEFAULT_INITIAL_CARDS.forEach((card, index) => {
+                const ref = db.collection("announcements").doc(`system-card-${index}`);
+                batch.set(ref, {
+                    ...card,
+                    isProtected: true,
+                    createdAt: new Date(1700000000000 + index * 1000).toISOString()
+                }, { merge: true });
+            });
+            batch.commit().catch(err => console.error("Otomatik seed hatası:", err));
+        }
+    }).catch(err => console.warn("Sistem kartı kontrol hatası:", err));
+}
+
+// MANÜEL VARSAYILAN KARTLARI GERİ YÜKLEME
+function restoreDefaultCards() {
+    if (typeof isAdmin === 'function' && !isAdmin()) {
+        alert("Bu işlem yalnızca Yönetici (Admin) yetkisine açıktır.");
+        return;
+    }
+
+    if (!confirm("İlk 3 varsayılan kart (Ben Kimim, Dersler, Mali Academy) veritabanına yeniden yüklenecektir. Devam etmek istiyor musunuz?")) return;
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        const batch = db.batch();
+        DEFAULT_INITIAL_CARDS.forEach((card, index) => {
+            const ref = db.collection("announcements").doc(`system-card-${index}`);
+            batch.set(ref, {
+                ...card,
+                isProtected: true,
+                createdAt: new Date(1700000000000 + index * 1000).toISOString()
+            }, { merge: true });
         });
-    });
-    batch.commit().then(() => {
-        console.log("✅ Varsayılan 3 korumalı slider kartı Firestore'a seed edildi.");
-    }).catch(err => console.error("Seed hatası:", err));
+
+        batch.commit().then(() => {
+            alert("✅ İlk 3 varsayılan kart başarıyla geri yüklendi!");
+        }).catch(err => {
+            console.error("Geri yükleme hatası:", err);
+            alert("❌ Kartlar geri yüklenirken bir hata oluştu.");
+        });
+    } else {
+        allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c, isProtected: true }));
+        renderSliderUI();
+        alert("✅ İlk 3 varsayılan kart yerel akışa geri yüklendi!");
+    }
 }
 
 // SLIDER ARAYÜZÜNÜ VE TRANSITION SLIDE TRACK'İ ÇİZME
@@ -493,7 +530,7 @@ function deleteAnnouncement(id) {
     const targetIdx = allSlides.findIndex(item => item.id === id);
     const targetItem = allSlides[targetIdx];
 
-    if (targetIdx >= 0 && (targetIdx < 3 || targetItem?.isProtected)) {
+    if (targetIdx >= 0 && (targetIdx < 3 || targetItem?.isProtected || id.startsWith('system-card-'))) {
         alert("🔒 Bu kart sistemin temel kartıdır ve silinemez. Ancak içeriğini dilediğiniz gibi düzenleyebilirsiniz.");
         return;
     }
@@ -508,7 +545,6 @@ function deleteAnnouncement(id) {
             alert("❌ Duyuru silinirken bir hata oluştu.");
         });
     } else {
-        // Fallback for local slide deletion
         allSlides = allSlides.filter(s => s.id !== id);
         renderSliderUI();
         renderAdminAnnouncementsList(allSlides);
@@ -524,9 +560,17 @@ function renderAdminAnnouncementsList(slides) {
         return;
     }
 
-    let html = "";
+    let html = `
+        <div class="flex items-center justify-between pb-1">
+            <span class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Aktif Kartlar (${slides.length})</span>
+            <button type="button" onclick="restoreDefaultCards()" title="Varsayılan 3 kartı yeniden yükle" class="px-2.5 py-1 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[11px] font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors flex items-center gap-1">
+                🔄 3 Kartı Geri Yükle
+            </button>
+        </div>
+    `;
+
     slides.forEach((item, index) => {
-        const isProtected = index < 3 || item.isProtected === true;
+        const isProtected = index < 3 || item.isProtected === true || item.id.startsWith('system-card-');
 
         let deleteBtnHTML = "";
         if (isProtected) {

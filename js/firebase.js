@@ -2,6 +2,16 @@
 // FIREBASE GÜVENLİ YAPILANDIRMA VE BAŞLATMA MODÜLÜ
 // ==========================================
 
+/**
+ * 📌 FIREBASE AUTHORIZED DOMAINS (YETKİLİ ALAN ADLARI) HATIRLATMASI:
+ * Google ile Giriş (Google Auth) ve Firebase servislerinin canlı ortamda çalışabilmesi için
+ * Firebase Console > Authentication > Settings > Authorized Domains sekmesinde aşağıdaki adreslerin tanımlı olması gerekmektedir:
+ * 1. localhost (Geliştirme ortamı)
+ * 2. 127.0.0.1 (Yerel canlı sunucu)
+ * 3. academy.maliyildirimtr.com (Mali Academy Portalı)
+ * 4. maliyildirimtr.github.io (Kişisel Portfolio Portalı)
+ */
+
 // Dinamik ortam değişkeni çözücü (window.env, process.env veya güvenli kod çözücü)
 const resolveEnvVar = (envKey, fallbackBase64) => {
     if (typeof window !== 'undefined' && window.env && window.env[envKey]) {
@@ -23,10 +33,10 @@ const firebaseConfig = {
 };
 
 // Firebase & Firestore & Auth Başlatma
-if (!firebase.apps.length) {
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-const db = firebase.firestore();
-const auth = firebase.auth();
-const googleProvider = new firebase.auth.GoogleAuthProvider();
+const db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
+const auth = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth() : null;
+const googleProvider = (typeof firebase !== 'undefined' && firebase.auth) ? new firebase.auth.GoogleAuthProvider() : null;

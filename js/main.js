@@ -537,6 +537,12 @@ document.addEventListener('DOMContentLoaded', () => {
                  window.location.pathname.split('/').pop().replace('.html', '') || 
                  'index';
     renderNavbar(page);
+
+    if (window.location.hash === '#contact-section' || window.location.hash === '#iletisim') {
+        setTimeout(() => {
+            scrollToContactForm();
+        }, 300);
+    }
 });
 
 // ==========================================

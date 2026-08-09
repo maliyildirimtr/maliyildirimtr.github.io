@@ -9,7 +9,8 @@ const DEFAULT_INITIAL_CARDS = [
         title: "Ben Kimim?",
         description: "Gazi Üniversitesi Elektrik-Elektronik Mühendisliği öğrencisi. FPGA mimarileri, SystemVerilog, STM32 & FreeRTOS gömülü sistemler ve yapay zeka projeleri. Detaylı teknik öz geçmişimi inceleyin.",
         buttonText: "Detayları İncele ↓",
-        targetUrl: "#about-details"
+        targetUrl: "#about-details",
+        isProtected: true
     },
     {
         icon: "📚",
@@ -17,7 +18,8 @@ const DEFAULT_INITIAL_CARDS = [
         title: "Dersler & Akademik Notlar",
         description: "Mantık Devreleri Tasarımı, Microprocessors, İşaretler ve Sistemler ders notları, sınav hazırlık belgeleri ve açık kaynak anlatımlar.",
         buttonText: "Derslere Git →",
-        targetUrl: "dersler.html"
+        targetUrl: "dersler.html",
+        isProtected: true
     },
     {
         icon: "🚀",
@@ -25,7 +27,8 @@ const DEFAULT_INITIAL_CARDS = [
         title: "Mali Academy İş Birliği Platformu",
         description: "Mühendislik takımları için geliştirilmiş ortak çalışma alanı: Kanban panosu, bütçe takibi ve görüntülü Virtual Lab odaları.",
         buttonText: "Platforma Git ↗",
-        targetUrl: "https://academy.maliyildirimtr.com"
+        targetUrl: "https://academy.maliyildirimtr.com",
+        isProtected: true
     }
 ];
 
@@ -49,14 +52,19 @@ function initHeroSlider() {
     if (typeof db !== 'undefined' && db && db.collection) {
         db.collection("announcements").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
             if (snapshot.empty) {
-                // Veritabanı boşsa varsayılan 3 kartı Firestore'a otomatik ekle (Seed)
+                // Veritabanı boşsa varsayılan 3 korumalı kartı Firestore'a otomatik ekle (Seed)
                 seedDefaultCardsToFirestore();
                 return;
             }
 
             let loadedSlides = [];
-            snapshot.docs.forEach((doc) => {
-                loadedSlides.push({ id: doc.id, ...doc.data() });
+            snapshot.docs.forEach((doc, idx) => {
+                const data = doc.data();
+                loadedSlides.push({
+                    id: doc.id,
+                    ...data,
+                    isProtected: idx < 3 || data.isProtected === true
+                });
             });
 
             allSlides = loadedSlides;
@@ -66,14 +74,14 @@ function initHeroSlider() {
             }
         }, (err) => {
             console.warn("Firestore okuma hatası, yerel varsayılan kartlar gösteriliyor:", err);
-            allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c }));
+            allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c, isProtected: true }));
             renderSliderUI();
             if (typeof isAdmin === 'function' && isAdmin()) {
                 renderAdminAnnouncementsList(allSlides);
             }
         });
     } else {
-        allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c }));
+        allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c, isProtected: true }));
         renderSliderUI();
         if (typeof isAdmin === 'function' && isAdmin()) {
             renderAdminAnnouncementsList(allSlides);
@@ -81,7 +89,7 @@ function initHeroSlider() {
     }
 }
 
-// ILK DEFA İÇİN VARSAYILAN KARTLARI FIRESTORE'A SEED ETME
+// ILK DEFA İÇİN VARSAYILAN 3 KORUMALI KARTI FIRESTORE'A SEED ETME
 function seedDefaultCardsToFirestore() {
     if (typeof db === 'undefined' || !db || !db.collection) return;
     const batch = db.batch();
@@ -89,13 +97,14 @@ function seedDefaultCardsToFirestore() {
         const ref = db.collection("announcements").doc();
         batch.set(ref, {
             ...card,
+            isProtected: true,
             createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
                 ? firebase.firestore.FieldValue.serverTimestamp()
                 : new Date(Date.now() + index * 1000).toISOString()
         });
     });
     batch.commit().then(() => {
-        console.log("✅ Varsayılan slider kartları Firestore'a seed edildi.");
+        console.log("✅ Varsayılan 3 korumalı slider kartı Firestore'a seed edildi.");
     }).catch(err => console.error("Seed hatası:", err));
 }
 
@@ -190,10 +199,7 @@ function renderSliderUI() {
     });
 
     updateTrackPosition();
-
-    // Nokta İndikatörleri
     renderDotsUI();
-
     startAutoSlide();
 }
 
@@ -349,7 +355,7 @@ function scrollToAboutDetails(e) {
 }
 
 // ==========================================
-// ADMİN DUYURU / SLIDER YÖNETİMİ (FULL CRUD)
+// ADMİN DUYURU / SLIDER YÖNETİMİ (KORUMALI SİSTEM KARTLARI + FULL CRUD)
 // ==========================================
 function openAnnouncementModal() {
     if (typeof isAdmin === 'function' && !isAdmin()) {
@@ -431,9 +437,10 @@ function handleCreateOrUpdateAnnouncement(e) {
             announcementData.createdAt = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
                 ? firebase.firestore.FieldValue.serverTimestamp()
                 : new Date().toISOString();
+            announcementData.isProtected = false;
 
             db.collection("announcements").add(announcementData).then(() => {
-                alert("✅ Slider kartı başarıyla eklendi!");
+                alert("✅ Yeni slider duyuru kartı başarıyla eklendi!");
                 closeAnnouncementModal();
             }).catch(err => {
                 console.error("Duyuru ekleme hatası:", err);
@@ -482,6 +489,15 @@ function editAnnouncement(id) {
 
 function deleteAnnouncement(id) {
     if (typeof isAdmin === 'function' && !isAdmin()) return;
+
+    const targetIdx = allSlides.findIndex(item => item.id === id);
+    const targetItem = allSlides[targetIdx];
+
+    if (targetIdx >= 0 && (targetIdx < 3 || targetItem?.isProtected)) {
+        alert("🔒 Bu kart sistemin temel kartıdır ve silinemez. Ancak içeriğini dilediğiniz gibi düzenleyebilirsiniz.");
+        return;
+    }
+
     if (!confirm("Bu duyuru slider kartını silmek istediğinize emin misiniz?")) return;
 
     if (typeof db !== 'undefined' && db && db.collection && !id.startsWith('local-')) {
@@ -509,12 +525,30 @@ function renderAdminAnnouncementsList(slides) {
     }
 
     let html = "";
-    slides.forEach(item => {
+    slides.forEach((item, index) => {
+        const isProtected = index < 3 || item.isProtected === true;
+
+        let deleteBtnHTML = "";
+        if (isProtected) {
+            deleteBtnHTML = `
+                <span title="Temel Sistem Kartı - Silinemez" class="px-2 py-1 rounded-xl bg-slate-200/80 dark:bg-slate-800 text-slate-500 font-semibold text-[10px] border border-slate-300/80 dark:border-slate-700 flex items-center gap-1 select-none cursor-not-allowed">
+                    🔒 Korumalı
+                </span>
+            `;
+        } else {
+            deleteBtnHTML = `
+                <button onclick="deleteAnnouncement('${item.id}')" title="Duyuruyu Sil" class="px-2.5 py-1 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20 font-bold transition-all text-[11px]">
+                    🗑️ Sil
+                </button>
+            `;
+        }
+
         html += `
             <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 text-xs">
                 <div class="space-y-0.5 min-w-0 pr-2">
                     <div class="flex items-center gap-1.5">
                         <span class="font-bold text-tsMavi">${item.icon || '📢'} ${item.badge || 'Duyuru'}</span>
+                        ${isProtected ? '<span class="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded font-semibold">Temel Kart</span>' : ''}
                     </div>
                     <h4 class="font-bold text-slate-900 dark:text-slate-100 truncate">${item.title}</h4>
                     <p class="text-[11px] text-slate-500 line-clamp-1">${item.description}</p>
@@ -523,9 +557,7 @@ function renderAdminAnnouncementsList(slides) {
                     <button onclick="editAnnouncement('${item.id}')" title="Duyuruyu Düzenle" class="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white border border-amber-500/20 font-bold transition-all text-[11px]">
                         ✏️ Düzenle
                     </button>
-                    <button onclick="deleteAnnouncement('${item.id}')" title="Duyuruyu Sil" class="px-2.5 py-1 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20 font-bold transition-all text-[11px]">
-                        🗑️ Sil
-                    </button>
+                    ${deleteBtnHTML}
                 </div>
             </div>
         `;

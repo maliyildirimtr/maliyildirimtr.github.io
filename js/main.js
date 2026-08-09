@@ -416,12 +416,14 @@ function checkGoogleRedirectResult() {
         _redirectResultChecked = true;
         auth.getRedirectResult().then((result) => {
             if (result && result.user) {
-                console.log("Google Redirect ile giriş başarılı:", result.user);
+                console.log("Redirect ile başarıyla giriş yapıldı:", result.user);
                 if (typeof showToast === 'function') showToast("✅ Google hesabı ile başarıyla giriş yapıldı!", "success");
-                if (typeof closeAuthModal === 'function') closeAuthModal();
+                if (typeof SSO !== 'undefined') SSO.onLogin(result.user);
+                closeAuthModal();
+                initNavbar();
             }
         }).catch((err) => {
-            console.error("Firebase Google Redirect Hatası:", err);
+            console.error("Redirect alma hatası:", err);
             if (err.code !== 'auth/popup-closed-by-user') {
                 if (typeof showToast === 'function') showToast("Giriş işlemi gerçekleştirilemedi. Lütfen Firebase Console üzerinden Google giriş sağlayıcısının ve domain izinlerinin (Authorized Domains) aktif olduğunu kontrol edin.", "error");
             }
@@ -713,11 +715,14 @@ if (typeof auth !== 'undefined' && auth) {
     auth.onAuthStateChanged(async (user) => {
         try {
             if (user) {
+                console.log("Aktif Kullanıcı:", user.displayName || user.email);
                 if (user.email) {
                     _cachedUserEmailHash = await computeSHA256(user.email.toLowerCase().trim());
                 }
                 if (typeof SSO !== 'undefined') SSO.onLogin(user);
+                closeAuthModal();
             } else {
+                console.log("Kullanıcı oturumu kapalı.");
                 _cachedUserEmailHash = null;
             }
         } catch (e) {}

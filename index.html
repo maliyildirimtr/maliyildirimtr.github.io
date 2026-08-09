@@ -6,9 +6,9 @@
     <title>Mehmet Ali Yıldırım | Kişisel Web Sitesi & Akademik Portfolyo</title>
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Mehmet Ali Yıldırım'ın kişisel web sitesi ve akademik portalı. Elektrik-Elektronik Mühendisliği, FPGA, Gömülü Sistemler, Yapay Zeka, akademik ders notları ve projeler.">
+    <meta name="description" content="Mehmet Ali Yıldırım - Gazi Üniversitesi Elektrik-Elektronik Mühendisliği Öğrencisi, Donanım & Yazılım Geliştirici. FPGA, SystemVerilog, Gömülü Sistemler ve Mali Academy akademik içerik üreticisi.">
     <meta name="author" content="Mehmet Ali Yıldırım">
-    <meta name="keywords" content="Mehmet Ali Yıldırım, maliyildirimtr, FPGA, Gömülü Sistemler, SystemVerilog, Yapay Zeka, Elektrik Elektronik Mühendisliği, Mali Academy, Akademik Ders Notları">
+    <meta name="keywords" content="Mehmet Ali Yıldırım, maliyildirimtr, FPGA, SystemVerilog, Gömülü Sistemler, STM32, FreeRTOS, Yapay Zeka, Elektrik Elektronik Mühendisliği, Mali Academy, Akademik Ders Notları">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://maliyildirimtr.com/">
 
@@ -16,7 +16,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://maliyildirimtr.com/">
     <meta property="og:title" content="Mehmet Ali Yıldırım | Kişisel Web Sitesi & Akademik Portfolyo">
-    <meta property="og:description" content="Mehmet Ali Yıldırım'ın kişisel web sitesi ve akademik portalı. Elektrik-Elektronik Mühendisliği, FPGA, Gömülü Sistemler, Yapay Zeka ve ders notları.">
+    <meta property="og:description" content="Gazi Üniversitesi Elektrik-Elektronik Mühendisliği Öğrencisi & Donanım/Yazılım Geliştirici. FPGA, SystemVerilog, Gömülü Sistemler ve Mali Academy portfolyosu.">
     <meta property="og:site_name" content="Mehmet Ali Yıldırım">
     <meta property="og:locale" content="tr_TR">
 
@@ -24,7 +24,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://maliyildirimtr.com/">
     <meta name="twitter:title" content="Mehmet Ali Yıldırım | Kişisel Web Sitesi & Akademik Portfolyo">
-    <meta name="twitter:description" content="Mehmet Ali Yıldırım'ın kişisel web sitesi. Elektrik-Elektronik Mühendisliği, FPGA, Gömülü Sistemler ve Yapay Zeka projeleri.">
+    <meta name="twitter:description" content="Mehmet Ali Yıldırım - Elektrik-Elektronik Mühendisliği, FPGA, Gömülü Sistemler ve Yapay Zeka projeleri.">
     <meta name="twitter:site" content="@maliyildirimtr">
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
@@ -37,7 +37,8 @@
       "name": "Mehmet Ali Yıldırım",
       "alternateName": ["maliyildirimtr", "Mali Yıldırım"],
       "url": "https://maliyildirimtr.com/",
-      "jobTitle": "Elektrik-Elektronik Mühendisi & Araştırmacı",
+      "jobTitle": "Elektrik-Elektronik Mühendisliği Öğrencisi & Donanım/Yazılım Geliştirici",
+      "alumniOf": "Gazi Üniversitesi",
       "knowsAbout": [
         "FPGA",
         "SystemVerilog",
@@ -57,7 +58,7 @@
       ]
     }
     </script>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/tailwind-config.js"></script>
@@ -68,98 +69,296 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
-<body data-page="dersler" class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans">
+<body data-page="index" class="bg-slate-50 text-slate-900 dark:bg-[#0d0f12] dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-tsMavi/30 selection:text-tsMavi">
 
     <!-- ORTAK NAVBAR CONTAINER -->
     <div id="navbar-container"></div>
 
-    <!-- MAIN CONTENT -->
-    <main class="max-w-6xl mx-auto px-4 py-12 flex-grow w-full space-y-8">
-        
-        <!-- ÜST BAŞLIK VE GİRİŞ PANELİ -->
-        <div class="border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-3xl font-extrabold tracking-tight">Akademik Dersler & Eğitim Setleri</h1>
-                <p class="text-slate-500 text-xs mt-1">İçeriğine gitmek istediğiniz ders penceresine tıklayın.</p>
-            </div>
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-6xl mx-auto px-4 py-10 flex-grow w-full space-y-16">
 
-            <!-- KULLANICI / ADMİN KART VE GİRİŞ PANELİ (SAĞ TARAF) -->
-            <div id="academy-user-panel" class="flex items-center gap-2">
-                <div class="h-9 w-32 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl"></div>
-            </div>
-        </div>
-
-        <!-- DERS KARTLARI GRID -->
-        <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="col-span-full py-20 text-center text-slate-500 text-sm">⏳ Yükleniyor...</div>
-        </div>
-    </main>
-
-    <!-- DERS EKLE / DÜZENLE MODAL (ADMIN) -->
-    <div id="add-course-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="text-base font-bold" id="course-modal-title">➕ Yeni Ders Ekle</h3>
-                <button onclick="closeCourseModal()" class="text-slate-400 hover:text-white">✕</button>
-            </div>
+        <!-- 1. HERO ALANI (HERO SECTION) -->
+        <section class="relative rounded-3xl p-8 md:p-12 overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xl backdrop-blur-md">
+            <div class="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-tsBordo via-tsMavi to-tsBordo"></div>
             
-            <form id="add-course-form" class="space-y-4">
-                <input type="hidden" id="edit-course-id">
-                
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">Ders Başlığı *</label>
-                    <input type="text" id="course-title" required placeholder="Örn: Mantık Devreleri Tasarımı" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+                <!-- Sol Metin Alanı -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-tsBordo/10 text-tsBordo dark:text-rose-400 border border-tsBordo/20 text-xs font-bold shadow-sm">
+                        <span>⚡</span> Elektrik-Elektronik Mühendisliği & Donanım/Yazılım Geliştirici
+                    </div>
+                    
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-slate-900 dark:text-slate-100">
+                        Merhaba, Ben <span class="bg-gradient-to-r from-tsBordo via-rose-500 to-tsMavi bg-clip-text text-transparent">Mehmet Ali Yıldırım</span> 👋
+                    </h1>
+
+                    <p class="text-sm md:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                        Gazi Üniversitesi Elektrik-Elektronik Mühendisliği öğrencisiyim. Dijital donanım mimarileri (FPGA/SystemVerilog), gömülü sistemler (STM32 & FreeRTOS) ve yapay zeka hızlandırıcıları üzerine çalışıyor; aynı zamanda mühendislik adayları için <strong>Mali Academy</strong> üzerinden açık kaynak akademik içerikler üretiyorum.
+                    </p>
+
+                    <div class="flex flex-wrap items-center gap-3 pt-2">
+                        <a href="projeler.html" class="px-6 py-3 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white font-bold text-xs shadow-lg shadow-tsBordo/20 hover:opacity-90 transition-all flex items-center gap-2">
+                            <span>🛠️</span> Projelerimi İncele
+                        </a>
+                        <a href="https://academy.maliyildirimtr.com" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors border border-slate-700 flex items-center gap-2 shadow-sm">
+                            <span>🎓</span> Mali Academy ↗
+                        </a>
+                        <a href="sosyal.html" class="px-5 py-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                            <span>📩</span> İletişim
+                        </a>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">Ders Kodu / Kategori</label>
-                    <input type="text" id="course-code" placeholder="Örn: EEE-201 veya Genel Notlar" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
-                </div>
+                <!-- Sağ Profil / İstatistik Kartı -->
+                <div class="lg:col-span-5 flex justify-center">
+                    <div class="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-6 space-y-5 shadow-inner">
+                        <div class="flex items-center gap-4 border-b border-slate-200 dark:border-slate-700/60 pb-4">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-tsBordo to-tsMavi text-white font-extrabold text-2xl flex items-center justify-center shadow-md">
+                                MY
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">Mehmet Ali Yıldırım</h3>
+                                <p class="text-xs text-tsMavi font-semibold">Ankara, Türkiye 📍</p>
+                                <span class="inline-block mt-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold border border-emerald-500/20">
+                                    ● Projelere Açık
+                                </span>
+                            </div>
+                        </div>
 
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">İkon / Görsel (Emoji veya Görsel Linki)</label>
-                    <input type="text" id="course-icon" placeholder="Örn: ⚡ veya images/ders.png" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                        <div class="space-y-3 text-xs">
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                                <span class="text-slate-500 font-medium">🎓 Uzmanlık:</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200">FPGA & Gömülü Sistemler</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                                <span class="text-slate-500 font-medium">🏛️ Kurum:</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200">Gazi Üniversitesi</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
+                                <span class="text-slate-500 font-medium">🚀 Topluluk:</span>
+                                <span class="font-bold text-tsMavi">Mali Academy Platformu</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </section>
 
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">Kısa Açıklama</label>
-                    <textarea id="course-description" rows="3" placeholder="Ders içeriği hakkında kısa bilgi..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi resize-none"></textarea>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" onclick="closeCourseModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Kaydet</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- HESAP / PROFİL DÜZENLEME MODALI -->
-    <div id="user-profile-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="text-base font-bold">👤 Profil & Hesap Ayarları</h3>
-                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white">✕</button>
+        <!-- 2. YETENEKLER & TEKNİK UZMANLIK (SKILLS SECTION) -->
+        <section class="space-y-6">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
+                <h2 class="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+                    <span>⚡</span> Teknik Yetenekler & Uzmanlık Alanları
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">Donanım tasarımı, gömülü sistem yazılımları ve geliştirme araçları.</p>
             </div>
 
-            <form id="profile-edit-form" onsubmit="updateUserProfile(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">E-Posta Adresiniz</label>
-                    <input type="email" id="profile-email-disabled" disabled class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-500 text-xs cursor-not-allowed">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Kart 1: Donanım & Dijital Tasarım -->
+                <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 space-y-4 hover:border-tsBordo transition-all shadow-sm">
+                    <div class="w-10 h-10 rounded-2xl bg-tsBordo/10 text-tsBordo font-bold flex items-center justify-center text-lg border border-tsBordo/20">
+                        💾
+                    </div>
+                    <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">Donanım & Dijital Tasarım</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">SystemVerilog ve FPGA mimarileri üzerinde sayısal devre ve hızlandırıcı tasarımı.</p>
+
+                    <div class="flex flex-wrap gap-1.5 pt-2">
+                        <span class="px-2.5 py-1 rounded-lg bg-tsBordo/10 text-tsBordo dark:text-rose-400 font-semibold text-xs border border-tsBordo/20">SystemVerilog</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">Verilog HDL</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">FPGA Mimarisi</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">Intel Quartus Prime</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">Pipelined Design</span>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-400">Kullanıcı Adınız</label>
-                    <input type="text" id="profile-display-name" required placeholder="Kullanıcı Adınız..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                <!-- Kart 2: Gömülü Sistemler & Yazılım -->
+                <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 space-y-4 hover:border-tsMavi transition-all shadow-sm">
+                    <div class="w-10 h-10 rounded-2xl bg-tsMavi/10 text-tsMavi font-bold flex items-center justify-center text-lg border border-tsMavi/20">
+                        💻
+                    </div>
+                    <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">Gömülü Sistemler & Yazılım</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Mikrodenetleyiciler, gerçek zamanlı işletim sistemleri ve modern web mantığı.</p>
+
+                    <div class="flex flex-wrap gap-1.5 pt-2">
+                        <span class="px-2.5 py-1 rounded-lg bg-tsMavi/10 text-tsMavi font-semibold text-xs border border-tsMavi/20">C / C++</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">STM32 (ARM Cortex)</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">FreeRTOS</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">JavaScript (ES6+)</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">HTML5 / Tailwind</span>
+                    </div>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" onclick="closeProfileModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
-                    <button type="submit" id="profile-save-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md hover:opacity-90 transition-opacity">Değişiklikleri Kaydet</button>
+                <!-- Kart 3: Araçlar & Protokoller -->
+                <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 space-y-4 hover:border-amber-500 transition-all shadow-sm">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 font-bold flex items-center justify-center text-lg border border-amber-500/20">
+                        🛠️
+                    </div>
+                    <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">Araçlar & Protokoller</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">Haberleşme protokolleri, simülasyon ortamları ve versiyon kontrolü.</p>
+
+                    <div class="flex flex-wrap gap-1.5 pt-2">
+                        <span class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold text-xs border border-amber-500/20">UART / SPI / I2C</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">ModelSim / Questa</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">Git & GitHub</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">Firebase Backend</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700">Python Data & Script</span>
+                    </div>
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
+        </section>
+
+        <!-- 3. MALİ ACADEMY & VİZYON (HIGHLIGHT CARD) -->
+        <section class="relative rounded-3xl p-8 border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-900 via-[#121824] to-slate-900 text-white shadow-xl overflow-hidden">
+            <div class="absolute -right-12 -bottom-12 w-64 h-64 bg-tsMavi/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-12 -top-12 w-64 h-64 bg-tsBordo/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 space-y-6">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-tsBordo to-tsMavi text-white font-bold text-xs shadow-md">
+                    <span>🎓</span> Açık Kaynak Akademik Vizyon
+                </div>
+
+                <div class="max-w-3xl space-y-3">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight leading-snug">
+                        Mali Academy: Mühendislik Eğitimi & İş Birliği Platformu
+                    </h3>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                        Mali Academy; Elektrik-Elektronik Mühendisliği müfredatındaki karmaşık ders konularını (FPGA, Dijital Tasarım, Gömülü Sistemler, Sinyal İşleme) anlaşılır akademik notlar, video eğitimler ve proje çalışma takımları ile bir araya getiren bağımsız platformdur. Tüm içerikler öğrenciler için 100% ücretsiz ve açık kaynaktır.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                    <div class="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm space-y-1">
+                        <div class="text-xl">📚</div>
+                        <h4 class="font-bold text-xs">Akademik Ders Notları</h4>
+                        <p class="text-[11px] text-slate-400">Mantık Devreleri, Gömülü Sistemler ve Sinyaller.</p>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm space-y-1">
+                        <div class="text-xl">👥</div>
+                        <h4 class="font-bold text-xs">Proje Çalışma Grupları</h4>
+                        <p class="text-[11px] text-slate-400">Kanban panosu, bütçe takibi ve takım sohbeti.</p>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm space-y-1">
+                        <div class="text-xl">📹</div>
+                        <h4 class="font-bold text-xs">Virtual Lab & Toplantı</h4>
+                        <p class="text-[11px] text-slate-400">Gerçek zamanlı görüntülü lab toplantı odası.</p>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <a href="https://academy.maliyildirimtr.com" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white text-xs font-bold shadow-lg hover:opacity-90 transition-all">
+                        <span>🎓</span> Mali Academy Platformuna Git ↗
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. ZAMAN ÇİZELGESİ (TIMELINE / KRONOLOJİ) -->
+        <section class="space-y-6">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
+                <h2 class="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+                    <span>⏳</span> Gelişim Yolculuğu & Zaman Çizelgesi
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">Akademik eğitim, proje kilometre taşları ve topluluk çalışmaları.</p>
+            </div>
+
+            <div class="relative border-l-2 border-slate-200 dark:border-slate-800 ml-4 space-y-8 py-2">
+                <!-- Nokta 1 -->
+                <div class="relative pl-6 space-y-1">
+                    <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-tsBordo border-4 border-white dark:border-[#0d0f12]"></div>
+                    <span class="text-[10px] font-mono font-bold text-tsBordo dark:text-rose-400 px-2 py-0.5 rounded bg-tsBordo/10 border border-tsBordo/20">2023 - GÜNÜMÜZ</span>
+                    <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">Gazi Üniversitesi - Elektrik-Elektronik Mühendisliği</h3>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Lisans eğitimi kapsamında Sayısal Mantık Tasarımı, Microprocessors, İşaretler ve Sistemler ve Gömülü Sistem Mimarileri üzerine odaklanma.
+                    </p>
+                </div>
+
+                <!-- Nokta 2 -->
+                <div class="relative pl-6 space-y-1">
+                    <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-tsMavi border-4 border-white dark:border-[#0d0f12]"></div>
+                    <span class="text-[10px] font-mono font-bold text-tsMavi px-2 py-0.5 rounded bg-tsMavi/10 border border-tsMavi/20">2024 - GÜNÜMÜZ</span>
+                    <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">FPGA & SystemVerilog YZ Hızlandırıcı Geliştirme</h3>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Intel Quartus Prime ve SystemVerilog kullanarak CNN matris çarpımlarını boru hattı (pipelined) mimarisiyle FPGA üzerinde gerçekleştiren donanım blokları tasarımı.
+                    </p>
+                </div>
+
+                <!-- Nokta 3 -->
+                <div class="relative pl-6 space-y-1">
+                    <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-indigo-500 border-4 border-white dark:border-[#0d0f12]"></div>
+                    <span class="text-[10px] font-mono font-bold text-indigo-400 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">2025</span>
+                    <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">Mali Academy Akademik Platformunun Kuruluşu</h3>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Mühendislik öğrencilerine özel açık kaynak ders modülleri, proje takımları ve gerçek zamanlı iş birliği platformunun kodlanması ve yayınlanması.
+                    </p>
+                </div>
+
+                <!-- Nokta 4 -->
+                <div class="relative pl-6 space-y-1">
+                    <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-emerald-500 border-4 border-white dark:border-[#0d0f12]"></div>
+                    <span class="text-[10px] font-mono font-bold text-emerald-500 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">2025 - GÜNÜMÜZ</span>
+                    <h3 class="font-bold text-base text-slate-900 dark:text-slate-100">STM32 & FreeRTOS Otonom İHA Kontrol Kartı</h3>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        FreeRTOS gerçek zamanlı işletim sistemi ve Kalman filtresi destekli otonom uçuş kontrol kartı donanım ve yazılımı geliştirmesi.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. HIZLI BAĞLANTILAR & SOSYAL MEDYA (SOCIAL PROFILES) -->
+        <section class="space-y-6">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
+                <h2 class="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+                    <span>🌐</span> İletişim & Sosyal Medya Profilleri
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">Geliştirdiğim repoları, eğitim videolarını ve sosyal medya paylaşımlarımı takip edin.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- GitHub -->
+                <a href="https://github.com/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-tsMavi transition-all shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl">🐱</span>
+                        <span class="text-xs font-semibold text-slate-400 group-hover:text-tsMavi transition-colors">Takip Et ↗</span>
+                    </div>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">GitHub</h3>
+                    <p class="text-[11px] text-slate-500 font-mono">@maliyildirimtr</p>
+                </a>
+
+                <!-- YouTube -->
+                <a href="https://youtube.com/@maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-rose-500 transition-all shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl">📺</span>
+                        <span class="text-xs font-semibold text-slate-400 group-hover:text-rose-500 transition-colors">Abone Ol ↗</span>
+                    </div>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">YouTube</h3>
+                    <p class="text-[11px] text-slate-500 font-mono">@maliyildirimtr</p>
+                </a>
+
+                <!-- LinkedIn -->
+                <a href="https://www.linkedin.com/in/maliyildirimtr" target="_blank" rel="noopener noreferrer" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-sky-500 transition-all shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl">💼</span>
+                        <span class="text-xs font-semibold text-slate-400 group-hover:text-sky-500 transition-colors">Bağlantı Kur ↗</span>
+                    </div>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">LinkedIn</h3>
+                    <p class="text-[11px] text-slate-500 font-mono">in/maliyildirimtr</p>
+                </a>
+
+                <!-- E-Posta -->
+                <a href="mailto:maliyildirimtr@gmail.com" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-amber-500 transition-all shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl">✉️</span>
+                        <span class="text-xs font-semibold text-slate-400 group-hover:text-amber-500 transition-colors">E-Posta Gönder ↗</span>
+                    </div>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">E-Posta</h3>
+                    <p class="text-[11px] text-slate-500 font-mono">maliyildirimtr@gmail.com</p>
+                </a>
+            </div>
+        </section>
+
+    </main>
 
     <!-- FOOTER -->
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
@@ -169,7 +368,5 @@
     <!-- SCRIPT'LER -->
     <script src="js/firebase.js"></script>
     <script src="js/main.js?v=20260809v3"></script>
-    <script src="js/courses-seed.js"></script>
-    <script src="js/dersler.js"></script>
 </body>
 </html>

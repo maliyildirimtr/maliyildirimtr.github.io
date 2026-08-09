@@ -106,7 +106,7 @@ function renderNavbar(activePage) {
                 <a href="index.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'index' || page === 'home' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Hakkımda</a>
                 <a href="projeler.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'projeler' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Projeler</a>
                 <a href="sosyal.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'sosyal' || page === 'iletişim' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">İletişim</a>
-                <a href="https://github.com/maliyildirimtr/maliacademy" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm hover:opacity-90 transition-opacity flex items-center gap-1">
+                <a href="https://academy.maliyildirimtr.com" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 text-xs font-bold rounded-full bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-sm hover:opacity-90 transition-opacity flex items-center gap-1">
                     <span>🎓</span> Mali Academy ↗
                 </a>
             </div>
@@ -131,7 +131,7 @@ function renderNavbar(activePage) {
             <a href="index.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Hakkımda</a>
             <a href="projeler.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Projeler</a>
             <a href="sosyal.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">İletişim</a>
-            <a href="https://github.com/maliyildirimtr/maliacademy" target="_blank" rel="noopener noreferrer" class="block px-4 py-2 rounded-xl text-sm font-bold text-sky-400 hover:bg-sky-500/10 transition-colors">🎓 Mali Academy ↗</a>
+            <a href="https://academy.maliyildirimtr.com" target="_blank" rel="noopener noreferrer" class="block px-4 py-2 rounded-xl text-sm font-bold text-sky-400 hover:bg-sky-500/10 transition-colors">🎓 Mali Academy ↗</a>
         </div>
     </nav>
 

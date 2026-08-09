@@ -104,7 +104,7 @@ function renderNavbar(activePage) {
 
             <!-- MASAÜSTÜ MENÜ -->
             <div class="hidden md:flex items-center space-x-1 border border-slate-200 dark:border-slate-800 p-1 rounded-full bg-slate-100/50 dark:bg-slate-900/50">
-                <a href="index.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'index' || page === 'home' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Hakkımda</a>
+                <a id="nav-first-link" href="index.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-300 ${page === 'index' || page === 'home' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Ana Sayfa</a>
                 <a href="dersler.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'dersler' || page === 'ders-detay' || page === 'konu-detay' || page === 'ders-ekle' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Dersler & Notlar</a>
                 <a href="projeler.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'projeler' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">Projeler</a>
                 <a href="sosyal.html" class="px-5 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${page === 'sosyal' || page === 'iletişim' ? 'bg-white dark:bg-slate-800 text-tsBordo dark:text-tsMavi shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}">İletişim</a>
@@ -136,7 +136,7 @@ function renderNavbar(activePage) {
 
         <!-- MOBİL MENÜ -->
         <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d0f12] px-4 py-4 space-y-2">
-            <a href="index.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Hakkımda</a>
+            <a id="mobile-nav-first-link" href="index.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Ana Sayfa</a>
             <a href="dersler.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Dersler & Notlar</a>
             <a href="projeler.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">Projeler</a>
             <a href="sosyal.html" class="block px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">İletişim</a>
@@ -537,6 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  window.location.pathname.split('/').pop().replace('.html', '') || 
                  'index';
     renderNavbar(page);
+    initDynamicNavbarFirstLink();
 
     if (window.location.hash === '#contact-section' || window.location.hash === '#iletisim') {
         setTimeout(() => {
@@ -586,4 +587,59 @@ function scrollToContactForm(e) {
     } else {
         window.location.href = 'sosyal.html#contact-section';
     }
+}
+
+// ==========================================
+// 11. DİNAMİK NAVBAR İLK SEKME METNİ ("Ana Sayfa" <-> "Hakkımda")
+// ==========================================
+function initDynamicNavbarFirstLink() {
+    const desktopLink = document.getElementById('nav-first-link');
+    const mobileLink = document.getElementById('mobile-nav-first-link');
+
+    if (!desktopLink && !mobileLink) return;
+
+    const page = document.body.getAttribute('data-page') || 
+                 window.location.pathname.split('/').pop().replace('.html', '') || 
+                 'index';
+
+    // Sadece index / ana sayfada dinamik scroll takibi yap
+    if (page !== 'index' && page !== '' && page !== 'home') {
+        if (desktopLink) desktopLink.innerText = "Hakkımda";
+        if (mobileLink) mobileLink.innerText = "Hakkımda";
+        return;
+    }
+
+    let isScrolledPast = false;
+
+    function handleNavbarScroll() {
+        const aboutSection = document.getElementById('about-details');
+        const scrollThreshold = aboutSection ? (aboutSection.offsetTop - 180) : 300;
+        const currentScrollY = window.scrollY || window.pageYOffset;
+
+        if (currentScrollY >= scrollThreshold) {
+            if (!isScrolledPast) {
+                isScrolledPast = true;
+                updateLinkText("Hakkımda");
+            }
+        } else {
+            if (isScrolledPast) {
+                isScrolledPast = false;
+                updateLinkText("Ana Sayfa");
+            }
+        }
+    }
+
+    function updateLinkText(newText) {
+        [desktopLink, mobileLink].forEach(link => {
+            if (!link) return;
+            link.style.opacity = '0';
+            setTimeout(() => {
+                link.innerText = newText;
+                link.style.opacity = '1';
+            }, 150);
+        });
+    }
+
+    window.addEventListener('scroll', handleNavbarScroll, { passive: true });
+    handleNavbarScroll();
 }

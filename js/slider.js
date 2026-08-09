@@ -40,6 +40,7 @@ const DEFAULT_SLIDES = [
 ];
 
 let allSlides = [...DEFAULT_SLIDES];
+let rawDynamicSlides = [];
 let currentSlideIndex = 0;
 let slideInterval = null;
 
@@ -57,6 +58,7 @@ function initHeroSlider() {
                     dynamicSlides.push({ id: doc.id, ...doc.data() });
                 });
             }
+            rawDynamicSlides = dynamicSlides;
             allSlides = [...DEFAULT_SLIDES, ...dynamicSlides];
             renderSliderUI();
             if (typeof isAdmin === 'function' && isAdmin()) {
@@ -206,7 +208,7 @@ function scrollToAboutDetails(e) {
 }
 
 // ==========================================
-// ADMİN DUYURU / SLIDER YÖNETİMİ
+// ADMİN DUYURU / SLIDER YÖNETİMİ (CRUD: CREATE, READ, UPDATE, DELETE)
 // ==========================================
 function openAnnouncementModal() {
     if (typeof isAdmin === 'function' && !isAdmin()) {
@@ -220,11 +222,27 @@ function openAnnouncementModal() {
 function closeAnnouncementModal() {
     const modal = document.getElementById('announcement-admin-modal');
     if (modal) modal.classList.add('hidden');
-    const form = document.getElementById('announcement-form');
-    if (form) form.reset();
+    resetAnnouncementForm();
 }
 
-function handleCreateAnnouncement(e) {
+function resetAnnouncementForm() {
+    const form = document.getElementById('announcement-form');
+    const editIdInput = document.getElementById('announcement-edit-id');
+    const submitBtn = document.getElementById('announcement-submit-btn');
+    const formTitle = document.getElementById('announcement-form-title');
+    const cancelBtn = document.getElementById('announcement-cancel-edit-btn');
+
+    if (form) form.reset();
+    if (editIdInput) editIdInput.value = "";
+    if (submitBtn) {
+        submitBtn.innerHTML = "<span>＋</span> Slider'a Ekle";
+        submitBtn.className = "px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md";
+    }
+    if (formTitle) formTitle.innerText = "Yeni Slider Kartı Ekle";
+    if (cancelBtn) cancelBtn.classList.add('hidden');
+}
+
+function handleCreateOrUpdateAnnouncement(e) {
     if (e && e.preventDefault) e.preventDefault();
 
     if (typeof isAdmin === 'function' && !isAdmin()) {
@@ -232,6 +250,7 @@ function handleCreateAnnouncement(e) {
         return;
     }
 
+    const editId = document.getElementById('announcement-edit-id')?.value;
     const title = document.getElementById('announcement-title')?.value.trim();
     const desc = document.getElementById('announcement-desc')?.value.trim();
     const badge = document.getElementById('announcement-badge')?.value.trim() || "Duyuru";
@@ -244,29 +263,80 @@ function handleCreateAnnouncement(e) {
         return;
     }
 
-    const newAnnouncement = {
+    const announcementData = {
         title: title,
         description: desc,
         badge: badge,
         icon: icon,
         buttonText: buttonText,
         targetUrl: targetUrl,
-        createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+        updatedAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
             ? firebase.firestore.FieldValue.serverTimestamp()
             : new Date().toISOString()
     };
 
     if (typeof db !== 'undefined' && db && db.collection) {
-        db.collection("announcements").add(newAnnouncement).then(() => {
-            alert("✅ Duyuru slider kartı başarıyla eklendi!");
-            closeAnnouncementModal();
-        }).catch(err => {
-            console.error("Duyuru ekleme hatası:", err);
-            alert("❌ Duyuru eklenirken bir hata oluştu.");
-        });
+        if (editId) {
+            // UPDATE EXISTING ANNOUNCEMENT
+            db.collection("announcements").doc(editId).update(announcementData).then(() => {
+                alert("✨ Duyuru slider kartı başarıyla güncellendi!");
+                closeAnnouncementModal();
+            }).catch(err => {
+                console.error("Duyuru güncelleme hatası:", err);
+                alert("❌ Duyuru güncellenirken bir hata oluştu.");
+            });
+        } else {
+            // CREATE NEW ANNOUNCEMENT
+            announcementData.createdAt = (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue)
+                ? firebase.firestore.FieldValue.serverTimestamp()
+                : new Date().toISOString();
+
+            db.collection("announcements").add(announcementData).then(() => {
+                alert("✅ Yeni duyuru slider kartı başarıyla eklendi!");
+                closeAnnouncementModal();
+            }).catch(err => {
+                console.error("Duyuru ekleme hatası:", err);
+                alert("❌ Duyuru eklenirken bir hata oluştu.");
+            });
+        }
     } else {
         alert("❌ Veritabanı bağlantısı kurulamadı.");
     }
+}
+
+function editAnnouncement(id) {
+    if (typeof isAdmin === 'function' && !isAdmin()) return;
+    const target = rawDynamicSlides.find(item => item.id === id);
+    if (!target) return;
+
+    const editIdInput = document.getElementById('announcement-edit-id');
+    const titleInput = document.getElementById('announcement-title');
+    const descInput = document.getElementById('announcement-desc');
+    const badgeInput = document.getElementById('announcement-badge');
+    const iconInput = document.getElementById('announcement-icon');
+    const buttonTextInput = document.getElementById('announcement-button-text');
+    const targetUrlInput = document.getElementById('announcement-target-url');
+    const submitBtn = document.getElementById('announcement-submit-btn');
+    const formTitle = document.getElementById('announcement-form-title');
+    const cancelBtn = document.getElementById('announcement-cancel-edit-btn');
+
+    if (editIdInput) editIdInput.value = target.id;
+    if (titleInput) titleInput.value = target.title || "";
+    if (descInput) descInput.value = target.description || "";
+    if (badgeInput) badgeInput.value = target.badge || "";
+    if (iconInput) iconInput.value = target.icon || "";
+    if (buttonTextInput) buttonTextInput.value = target.buttonText || "";
+    if (targetUrlInput) targetUrlInput.value = target.targetUrl || "";
+
+    if (submitBtn) {
+        submitBtn.innerHTML = "<span>✨</span> Değişiklikleri Güncelle";
+        submitBtn.className = "px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-white shadow-md hover:bg-amber-600 transition-colors";
+    }
+    if (formTitle) formTitle.innerText = "✏️ Duyuru Kartını Düzenle";
+    if (cancelBtn) cancelBtn.classList.remove('hidden');
+
+    const modal = document.getElementById('announcement-admin-modal');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function deleteAnnouncement(id) {
@@ -294,6 +364,7 @@ function renderAdminAnnouncementsList(dynamicSlides) {
 
     let html = "";
     dynamicSlides.forEach(item => {
+        const safeTitle = (item.title || '').replace(/'/g, "\\'");
         html += `
             <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 text-xs">
                 <div class="space-y-0.5 min-w-0 pr-2">
@@ -303,9 +374,14 @@ function renderAdminAnnouncementsList(dynamicSlides) {
                     <h4 class="font-bold text-slate-900 dark:text-slate-100 truncate">${item.title}</h4>
                     <p class="text-[11px] text-slate-500 line-clamp-1">${item.description}</p>
                 </div>
-                <button onclick="deleteAnnouncement('${item.id}')" title="Duyuruyu Sil" class="px-2.5 py-1 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20 font-bold transition-all text-[11px] shrink-0">
-                    🗑️ Sil
-                </button>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button onclick="editAnnouncement('${item.id}')" title="Duyuruyu Düzenle" class="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white border border-amber-500/20 font-bold transition-all text-[11px]">
+                        ✏️ Düzenle
+                    </button>
+                    <button onclick="deleteAnnouncement('${item.id}')" title="Duyuruyu Sil" class="px-2.5 py-1 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20 font-bold transition-all text-[11px]">
+                        🗑️ Sil
+                    </button>
+                </div>
             </div>
         `;
     });

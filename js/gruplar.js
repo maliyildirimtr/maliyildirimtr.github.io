@@ -139,12 +139,73 @@ function renderGroupsUI(groups) {
     const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
     const isPlatformAdmin = (typeof isAdmin === 'function' && isAdmin());
 
+// KULLANICI GRUP ÜYELİĞİ / LİDERLİĞİ KONTROLÜ
+function isUserGroupMember(group) {
+    if (!group) return false;
+    const isPlatformAdmin = (typeof isAdmin === 'function' && isAdmin());
+    if (isPlatformAdmin) return true; // Platform Yöneticisi doğrudan erişebilir
+
+    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
+    if (!user) return false;
+
+    // Grup kurucusu / lideri mi?
+    if (group.leaderUid === user.uid || (group.leader && user.displayName && group.leader === user.displayName)) {
+        return true;
+    }
+
+    // Grubun üyeler dizisinde var mı?
+    if (group.members && Array.isArray(group.members)) {
+        return group.members.some(m => m.uid === user.uid || (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()));
+    }
+
+    return false;
+}
+
+function handleGroupCardClick(event, groupId) {
+    if (event) event.stopPropagation();
+
+    const group = allGroups.find(g => g.id === groupId);
+    if (!group) return;
+
+    if (isUserGroupMember(group)) {
+        window.location.href = `grup-detay.html?id=${groupId}`;
+    } else {
+        openJoinModalForGroup(group);
+    }
+}
+
+// Grupları Ekrana Çizme
+function renderGroupsUI(groups) {
+    const grid = document.getElementById('groups-grid');
+    if (!grid) return;
+
+    let filtered = groups;
+    if (currentCategoryFilter !== 'all') {
+        filtered = groups.filter(g => g.category === currentCategoryFilter);
+    }
+
+    const searchInput = document.getElementById('search-groups-input');
+    const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    if (q) {
+        filtered = filtered.filter(g => (g.name || '').toLowerCase().includes(q) || (g.description || '').toLowerCase().includes(q));
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-500 text-xs border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">Aradığınız kriterde proje grubu bulunamadı.</div>`;
+        return;
+    }
+
+    let html = "";
+    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
+    const isPlatformAdmin = (typeof isAdmin === 'function' && isAdmin());
+
     filtered.forEach(g => {
         const progress = g.tasksTotal > 0 ? Math.round((g.tasksDone / g.tasksTotal) * 100) : 0;
         const budgetPercent = g.targetBudget > 0 ? Math.min(100, Math.round((g.spentBudget / g.targetBudget) * 100)) : 0;
         
         const isCreator = user && (g.leaderUid === user.uid || (g.leader && user.displayName && g.leader === user.displayName));
         const canDelete = isPlatformAdmin || isCreator;
+        const isMember = isUserGroupMember(g);
 
         const lookingRolesHTML = g.lookingRoles ? `
             <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60 space-y-1.5">
@@ -161,7 +222,7 @@ function renderGroupsUI(groups) {
         ` : '';
 
         html += `
-            <div onclick="window.location.href='grup-detay.html?id=${g.id}'" class="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer overflow-hidden backdrop-blur-md">
+            <div onclick="handleGroupCardClick(event, '${g.id}')" class="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 hover:border-tsMavi transition-all shadow-sm flex flex-col justify-between cursor-pointer overflow-hidden backdrop-blur-md">
                 
                 <div class="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-tsBordo to-tsMavi opacity-80 group-hover:opacity-100 transition-opacity"></div>
 
@@ -171,9 +232,15 @@ function renderGroupsUI(groups) {
                             ${g.category || 'Genel'}
                         </span>
                         <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                                🔑 ${g.inviteCode || 'MP-0000'}
-                            </span>
+                            ${isMember ? `
+                                <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold">
+                                    ✓ Üyesiniz
+                                </span>
+                            ` : `
+                                <span class="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold">
+                                    🔒 Davet Kodu Gerekli
+                                </span>
+                            `}
                             ${canDelete ? `
                                 <button onclick="event.stopPropagation(); deleteGroup('${g.id}', '${(g.name||'').replace(/'/g, "\\'")}')" title="Grubu Sil" class="px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-[10px] font-bold transition-all">
                                     🗑️ Sil
@@ -221,7 +288,7 @@ function renderGroupsUI(groups) {
 
                     <div class="pt-2 flex items-center justify-between">
                         <span class="text-xs text-tsMavi font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                            Çalışma Alanına Git →
+                            ${isMember ? 'Çalışma Alanına Git →' : '🔑 Davet Kodu Gir & Katıl →'}
                         </span>
                     </div>
                 </div>
@@ -314,14 +381,111 @@ function closeCreateGroupModal() {
 }
 
 function openJoinModal() {
+    openJoinModalForGroup(null);
+}
+
+function openJoinModalForGroup(group) {
     if (!checkAuthOrPrompt()) return;
+
     const modal = document.getElementById('join-group-modal');
+    const targetInput = document.getElementById('join-group-target-id');
+    const nameDisplay = document.getElementById('join-group-name-display');
+    const inputCode = document.getElementById('invite-code-input');
+    const errorMsg = document.getElementById('join-invite-error');
+
+    if (targetInput) targetInput.value = group ? group.id : '';
+    if (nameDisplay) {
+        nameDisplay.innerText = group 
+            ? `📌 "${group.name}" çalışma alanına erişmek için grup liderinden aldığınız davet kodunu giriniz.`
+            : "Bu grubun çalışma alanına erişmek için grup liderinden aldığınız davet kodunu giriniz.";
+    }
+    if (inputCode) {
+        inputCode.value = '';
+        setTimeout(() => inputCode.focus(), 100);
+    }
+    if (errorMsg) errorMsg.classList.add('hidden');
+
     if (modal) modal.classList.remove('hidden');
 }
+
 function closeJoinModal() {
     const modal = document.getElementById('join-group-modal');
+    const errorMsg = document.getElementById('join-invite-error');
     if (modal) modal.classList.add('hidden');
+    if (errorMsg) errorMsg.classList.add('hidden');
     if (document.getElementById('join-group-form')) document.getElementById('join-group-form').reset();
+}
+
+function handleJoinGroup(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
+    if (!user) {
+        if (typeof openAuthModal === 'function') openAuthModal();
+        return;
+    }
+
+    const targetIdInput = document.getElementById('join-group-target-id');
+    const inputCodeEl = document.getElementById('invite-code-input');
+    const errorMsg = document.getElementById('join-invite-error');
+
+    const enteredCode = inputCodeEl ? inputCodeEl.value.trim().toUpperCase() : '';
+    const targetId = targetIdInput ? targetIdInput.value : '';
+
+    if (!enteredCode) return;
+
+    let targetGroup = null;
+
+    if (targetId) {
+        targetGroup = allGroups.find(g => g.id === targetId);
+    } else {
+        targetGroup = allGroups.find(g => (g.inviteCode || '').trim().toUpperCase() === enteredCode);
+    }
+
+    if (!targetGroup) {
+        if (errorMsg) {
+            errorMsg.innerText = "❌ Girdiğiniz davet koduna ait bir proje grubu bulunamadı.";
+            errorMsg.classList.remove('hidden');
+        }
+        return;
+    }
+
+    const expectedCode = (targetGroup.inviteCode || '').trim().toUpperCase();
+
+    if (enteredCode === expectedCode) {
+        const creatorName = user.displayName || user.email.split('@')[0];
+        const newMember = {
+            uid: user.uid,
+            name: creatorName,
+            email: user.email,
+            role: "Üye",
+            joinedAt: new Date().toISOString()
+        };
+
+        if (typeof db !== 'undefined' && db && db.collection && targetGroup.id) {
+            db.collection("groups").doc(targetGroup.id).update({
+                members: firebase.firestore.FieldValue.arrayUnion(newMember),
+                membersCount: firebase.firestore.FieldValue.increment(1)
+            }).then(() => {
+                closeJoinModal();
+                alert(`🎉 Tebrikler! "${targetGroup.name}" projesine üye olarak katıldınız.`);
+                window.location.href = `grup-detay.html?id=${targetGroup.id}`;
+            }).catch(err => {
+                console.warn("Firestore üye güncelleme hatası:", err);
+                closeJoinModal();
+                window.location.href = `grup-detay.html?id=${targetGroup.id}`;
+            });
+        } else {
+            closeJoinModal();
+            alert(`🎉 Tebrikler! "${targetGroup.name}" projesine üye olarak katıldınız.`);
+            window.location.href = `grup-detay.html?id=${targetGroup.id}`;
+        }
+    } else {
+        if (errorMsg) {
+            errorMsg.innerText = "❌ Girdiğiniz davet kodu hatalı. Lütfen kontrol edip tekrar deneyiniz.";
+            errorMsg.classList.remove('hidden');
+        }
+    }
 }
 
 // YENİ GRUP OLUŞTURMA SÜRECİ

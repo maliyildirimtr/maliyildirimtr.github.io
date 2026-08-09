@@ -50,24 +50,33 @@ function initHeroSlider() {
     setupDragAndDropEvents();
 
     if (typeof db !== 'undefined' && db && db.collection) {
-        // 3 Varsayılan kartın veritabanında var olduğunu garanti et
+        // 3 Varsayılan kartın veritabanında var olduğunu garanti et ve test verilerini temizle
         ensureDefaultCardsInFirestore();
 
         db.collection("announcements").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
             let loadedSlides = [];
             if (!snapshot.empty) {
-                snapshot.docs.forEach((doc, idx) => {
+                snapshot.docs.forEach((doc) => {
                     const data = doc.data();
+                    const title = (data.title || '').trim().toLowerCase();
+                    const desc = (data.description || '').trim().toLowerCase();
+
+                    // "aaaa" vb. test kartlarını Firestore'dan sil ve akışa alma
+                    if (title === 'aaaa' || desc === 'aaaa' || title === 'aaa' || title === 'aa') {
+                        db.collection("announcements").doc(doc.id).delete().catch(e => {});
+                        return;
+                    }
+
                     loadedSlides.push({
                         id: doc.id,
                         ...data,
-                        isProtected: idx < 3 || data.isProtected === true || doc.id.startsWith('system-card-')
+                        isProtected: doc.id.startsWith('system-card-') || data.isProtected === true
                     });
                 });
             }
 
             if (loadedSlides.length === 0) {
-                loadedSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c, isProtected: true }));
+                loadedSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `system-card-${i}`, ...c, isProtected: true }));
             }
 
             allSlides = loadedSlides;
@@ -77,14 +86,14 @@ function initHeroSlider() {
             }
         }, (err) => {
             console.warn("Firestore okuma hatası, yerel varsayılan kartlar gösteriliyor:", err);
-            allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c, isProtected: true }));
+            allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `system-card-${i}`, ...c, isProtected: true }));
             renderSliderUI();
             if (typeof isAdmin === 'function' && isAdmin()) {
                 renderAdminAnnouncementsList(allSlides);
             }
         });
     } else {
-        allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c, isProtected: true }));
+        allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `system-card-${i}`, ...c, isProtected: true }));
         renderSliderUI();
         if (typeof isAdmin === 'function' && isAdmin()) {
             renderAdminAnnouncementsList(allSlides);
@@ -92,24 +101,20 @@ function initHeroSlider() {
     }
 }
 
-// 3 VARSAYILAN KARTIN FIRESTORE'DA OLDUĞUNU KONTROL ET VE OTOMATİK SEED ET
+// 3 VARSAYILAN KARTIN FIRESTORE'DA OLDUĞUNU KONTROL ET VE OTOMATİK DÜZELT
 function ensureDefaultCardsInFirestore() {
     if (typeof db === 'undefined' || !db || !db.collection) return;
     
-    db.collection("announcements").doc("system-card-0").get().then((docSnap) => {
-        if (!docSnap.exists) {
-            const batch = db.batch();
-            DEFAULT_INITIAL_CARDS.forEach((card, index) => {
-                const ref = db.collection("announcements").doc(`system-card-${index}`);
-                batch.set(ref, {
-                    ...card,
-                    isProtected: true,
-                    createdAt: new Date(1700000000000 + index * 1000).toISOString()
-                }, { merge: true });
-            });
-            batch.commit().catch(err => console.error("Otomatik seed hatası:", err));
-        }
-    }).catch(err => console.warn("Sistem kartı kontrol hatası:", err));
+    const batch = db.batch();
+    DEFAULT_INITIAL_CARDS.forEach((card, index) => {
+        const ref = db.collection("announcements").doc(`system-card-${index}`);
+        batch.set(ref, {
+            ...card,
+            isProtected: true,
+            createdAt: new Date(1700000000000 + index * 1000).toISOString()
+        }, { merge: true });
+    });
+    batch.commit().catch(err => console.error("Otomatik seed hatası:", err));
 }
 
 // MANÜEL VARSAYILAN KARTLARI GERİ YÜKLEME
@@ -139,7 +144,7 @@ function restoreDefaultCards() {
             alert("❌ Kartlar geri yüklenirken bir hata oluştu.");
         });
     } else {
-        allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `local-${i}`, ...c, isProtected: true }));
+        allSlides = DEFAULT_INITIAL_CARDS.map((c, i) => ({ id: `system-card-${i}`, ...c, isProtected: true }));
         renderSliderUI();
         alert("✅ İlk 3 varsayılan kart yerel akışa geri yüklendi!");
     }

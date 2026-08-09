@@ -10,11 +10,11 @@
     <meta name="author" content="Mehmet Ali Yıldırım">
     <meta name="keywords" content="Mehmet Ali Yıldırım, maliyildirimtr, FPGA, SystemVerilog, Gömülü Sistemler, STM32, FreeRTOS, Yapay Zeka, Elektrik Elektronik Mühendisliği, Mali Academy, Akademik Ders Notları">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://maliyildirimtr.com/">
+    <link rel="canonical" href="https://maliyildirimtr.github.io/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://maliyildirimtr.com/">
+    <meta property="og:url" content="https://maliyildirimtr.github.io/">
     <meta property="og:title" content="Mehmet Ali Yıldırım | Kişisel Web Sitesi & Akademik Portfolyo">
     <meta property="og:description" content="Gazi Üniversitesi Elektrik-Elektronik Mühendisliği Öğrencisi & Donanım/Yazılım Geliştirici. FPGA, SystemVerilog, Gömülü Sistemler ve Mali Academy portfolyosu.">
     <meta property="og:site_name" content="Mehmet Ali Yıldırım">
@@ -22,7 +22,7 @@
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://maliyildirimtr.com/">
+    <meta name="twitter:url" content="https://maliyildirimtr.github.io/">
     <meta name="twitter:title" content="Mehmet Ali Yıldırım | Kişisel Web Sitesi & Akademik Portfolyo">
     <meta name="twitter:description" content="Mehmet Ali Yıldırım - Elektrik-Elektronik Mühendisliği, FPGA, Gömülü Sistemler ve Yapay Zeka projeleri.">
     <meta name="twitter:site" content="@maliyildirimtr">
@@ -36,7 +36,7 @@
       "@type": "Person",
       "name": "Mehmet Ali Yıldırım",
       "alternateName": ["maliyildirimtr", "Mali Yıldırım"],
-      "url": "https://maliyildirimtr.com/",
+      "url": "https://maliyildirimtr.github.io/",
       "jobTitle": "Elektrik-Elektronik Mühendisliği Öğrencisi & Donanım/Yazılım Geliştirici",
       "alumniOf": "Gazi Üniversitesi",
       "knowsAbout": [
@@ -75,10 +75,47 @@
     <div id="navbar-container"></div>
 
     <!-- MAIN CONTENT CONTAINER -->
-    <main class="max-w-6xl mx-auto px-4 py-10 flex-grow w-full space-y-16">
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full space-y-12">
 
-        <!-- 1. HERO ALANI (HERO SECTION) -->
-        <section class="relative rounded-3xl p-8 md:p-12 overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xl backdrop-blur-md">
+        <!-- 0. HERO HAKKIMDA KAYAN PANEL (SLIDER / CAROUSEL) -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-full bg-tsBordo/10 text-tsBordo dark:text-rose-400 font-bold text-xs border border-tsBordo/20 flex items-center gap-1 shadow-sm">
+                        <span>⚡</span> Öne Çıkanlar & Duyurular
+                    </span>
+                    <span id="slider-count-badge" class="text-xs font-mono font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">1 / 3</span>
+                </div>
+
+                <!-- SLIDER KONTROL BUTONLARI & ADMİN DUYURU EKLEME -->
+                <div class="flex items-center gap-2">
+                    <!-- ADMİN YÖNETİMİ BUTONU (Yalnızca Admin Giriş Yaptığında Görünür) -->
+                    <button id="admin-announcement-btn" onclick="openAnnouncementModal()" class="hidden px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-tsBordo to-tsMavi text-white font-bold text-xs shadow-md hover:opacity-90 transition-all items-center gap-1">
+                        <span>＋</span> Duyuru / Slider Ekle
+                    </button>
+
+                    <button onclick="prevSlide()" title="Önceki Slayt" class="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button onclick="nextSlide()" title="Sonraki Slayt" class="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SLIDER KART TRACK -->
+            <div id="slider-container" onmouseenter="stopAutoSlide()" onmouseleave="startAutoSlide()" class="relative overflow-hidden">
+                <div id="slider-track" class="w-full">
+                    <!-- Slaytlar js/slider.js tarafından dinamik çizilir -->
+                </div>
+            </div>
+
+            <!-- NOKTA İNDİKATÖRLERİ -->
+            <div id="slider-dots" class="flex justify-center items-center gap-1.5 pt-1"></div>
+        </section>
+
+        <!-- 1. HERO ALANI (DETAYLI BİYOGRAFİ & PORTFOLYO) -->
+        <section id="about-details" class="relative rounded-3xl p-8 md:p-12 overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xl backdrop-blur-md">
             <div class="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-tsBordo via-tsMavi to-tsBordo"></div>
             
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
@@ -360,6 +397,67 @@
 
     </main>
 
+    <!-- ADMİN: SLIDER / DUYURU YÖNETİM MODALI -->
+    <div id="announcement-admin-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <span>📢</span> Kayan Panel & Duyuru Yönetimi
+                </h3>
+                <button onclick="closeAnnouncementModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <!-- YENİ DUYURU FORMU -->
+            <form id="announcement-form" onsubmit="handleCreateAnnouncement(event)" class="space-y-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <h4 class="text-xs font-bold text-tsMavi uppercase tracking-wider">Yeni Slider Kartı Ekle</h4>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-slate-400">Başlık *</label>
+                        <input type="text" id="announcement-title" required placeholder="Örn: Yeni FPGA Videosu Yayında!" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-slate-400">Rozet / Etiket</label>
+                        <input type="text" id="announcement-badge" placeholder="Örn: Yeni Video veya Duyuru" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-400">Kısa Açıklama *</label>
+                    <textarea id="announcement-desc" rows="2" required placeholder="Duyurunun kısa içeriği..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi resize-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-slate-400">İkon (Emoji)</label>
+                        <input type="text" id="announcement-icon" placeholder="Örn: 🎬 veya 📢" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-slate-400">Buton Metni</label>
+                        <input type="text" id="announcement-button-text" placeholder="Örn: İzle ↗" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1 text-slate-400">Hedef Link (URL)</label>
+                        <input type="text" id="announcement-target-url" placeholder="Örn: https://youtube.com/..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none focus:border-tsMavi">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="closeAnnouncementModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">İptal</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-tsBordo to-tsMavi text-white shadow-md">Slider'a Ekle</button>
+                </div>
+            </form>
+
+            <!-- MEVCUT DUYURULAR LİSTESİ -->
+            <div class="space-y-3">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Aktif Özel Duyuru Kartları</h4>
+                <div id="admin-announcements-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <p class="text-xs text-slate-500 text-center py-4">Yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
         <p>© 2026 Mehmet Ali Yıldırım. Tüm hakları saklıdır.</p>
@@ -368,5 +466,6 @@
     <!-- SCRIPT'LER -->
     <script src="js/firebase.js"></script>
     <script src="js/main.js?v=20260809v3"></script>
+    <script src="js/slider.js"></script>
 </body>
 </html>

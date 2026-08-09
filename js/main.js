@@ -18,7 +18,13 @@ async function computeSHA256(text) {
 }
 
 function isAdmin() {
-    return true; // Giriş / şifre kontrolü kaldırıldı, tüm ziyaretçilere açık.
+    const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+    const sessionToken = sessionStorage.getItem('_mali_adm_token') || localStorage.getItem('_mali_adm_token');
+    
+    const isEmailAdmin = !!(user && user.email && (_cachedUserEmailHash === SEC_HASH_EMAIL || user.email.toLowerCase().trim() === 'maliyildirimtr@gmail.com'));
+    const isTokenValid = (sessionToken === SEC_HASH_PASS) || localStorage.getItem('is_admin') === 'true' || localStorage.getItem('mali_admin_session') === 'active';
+
+    return isEmailAdmin || isTokenValid;
 }
 
 // ==========================================
@@ -81,9 +87,10 @@ function toggleMobileMenu() {
 // ==========================================
 function renderNavbar(activePage) {
     const page = activePage || document.body.getAttribute('data-page') || 'index';
+    const adminActive = isAdmin();
 
     const logoHTML = `
-        <a href="index.html" class="text-xl font-bold tracking-wider uppercase select-none cursor-pointer">
+        <a href="index.html" onclick="handleLogoClick(event)" class="text-xl font-bold tracking-wider uppercase select-none cursor-pointer">
             M. Ali <span class="ts-gradient-text">Yıldırım</span>
         </a>
     `;
@@ -108,6 +115,12 @@ function renderNavbar(activePage) {
 
             <!-- SAĞ BUTONLAR -->
             <div class="flex items-center gap-2">
+                ${adminActive ? `
+                    <button onclick="logoutAdmin()" class="px-3 py-1.5 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-1">
+                        <span>👑</span> Yönetici (Çıkış)
+                    </button>
+                ` : ''}
+
                 <!-- Tema Değiştirici -->
                 <button id="theme-toggle" onclick="toggleTheme()" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center w-10 h-10">
                     <svg id="theme-toggle-dark-icon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
@@ -414,15 +427,49 @@ function logoutUser() {
 }
 
 // ==========================================
-// 6. YÖNETİCİ & İZİN MANTIGI (Giriş Şifre Kontrolü Kaldırıldı)
+// 6. YÖNETİCİ GİRİŞİ LOGIC (Cmd+Shift+A & Logo 3-Tık)
 // ==========================================
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        openLoginModal();
+    }
+    
+    const modal = document.getElementById('admin-login-modal');
+    if (modal && !modal.classList.contains('hidden') && e.key === 'Enter') {
+        checkAdminPassword();
+    }
+});
+
+let logoClickCount = 0;
+let logoClickTimer = null;
+
 function handleLogoClick(e) {
-    // Kısayol / şifre doğrulama kaldırıldı, kısıtlamasız erişim
+    logoClickCount++;
+    clearTimeout(logoClickTimer);
+    
+    if (logoClickCount === 3) {
+        if (e) e.preventDefault();
+        openLoginModal();
+        logoClickCount = 0;
+    } else {
+        logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 1000);
+    }
 }
 
-function openLoginModal() {}
-function closeLoginModal() {}
-function checkAdminPassword() {}
+function openLoginModal() {
+    const modal = document.getElementById('admin-login-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeLoginModal() {
+    const modal = document.getElementById('admin-login-modal');
+    const errorMsg = document.getElementById('login-error-msg');
+    const inputPass = document.getElementById('admin-password-input');
+    if (modal) modal.classList.add('hidden');
+    if (errorMsg) errorMsg.classList.add('hidden');
+    if (inputPass) inputPass.value = '';
+}
 
 async function checkAdminPassword() {
     const inputPass = document.getElementById('admin-password-input').value;
@@ -442,6 +489,14 @@ async function checkAdminPassword() {
     } else {
         if (errorMsg) errorMsg.classList.remove('hidden');
     }
+}
+
+function logoutAdmin() {
+    localStorage.removeItem('_mali_adm_token');
+    sessionStorage.removeItem('_mali_adm_token');
+    localStorage.removeItem('is_admin');
+    localStorage.removeItem('mali_admin_session');
+    location.reload();
 }
 
 // ==========================================

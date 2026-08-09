@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mali Network SSO Bridge</title>
+</head>
+<body>
+    <script>
+        const STORAGE_KEY = '_mali_sso_user';
+        window.addEventListener('message', function(event) {
+            if (!event.data || !event.data.type) return;
+
+            if (event.data.type === 'SYNC_SSO' && event.data.data) {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(event.data.data)); } catch(e) {}
+            } else if (event.data.type === 'CLEAR_SSO') {
+                try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+            } else if (event.data.type === 'GET_SSO') {
+                try {
+                    const data = localStorage.getItem(STORAGE_KEY);
+                    event.source.postMessage({
+                        type: 'SSO_BRIDGE_RESPONSE',
+                        data: data ? JSON.parse(data) : null
+                    }, event.origin);
+                } catch(e) {}
+            }
+        });
+        
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data && window.parent) {
+                window.parent.postMessage({
+                    type: 'SSO_BRIDGE_RESPONSE',
+                    data: JSON.parse(data)
+                }, '*');
+            }
+        } catch(e) {}
+    </script>
+</body>
+</html>

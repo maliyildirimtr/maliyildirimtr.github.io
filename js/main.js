@@ -546,6 +546,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+if (typeof auth !== 'undefined' && auth) {
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            if (user.email) {
+                _cachedUserEmailHash = await computeSHA256(user.email.toLowerCase().trim());
+            }
+            if (typeof SSO !== 'undefined') SSO.onLogin(user);
+        } else {
+            _cachedUserEmailHash = null;
+        }
+        const page = document.body.getAttribute('data-page') || window.location.pathname.split('/').pop().replace('.html', '') || 'index';
+        renderNavbar(page);
+    });
+}
+
 // ==========================================
 // 9. SİSTEM ALTYAPISI & GÜVENLİK MODALI
 // ==========================================

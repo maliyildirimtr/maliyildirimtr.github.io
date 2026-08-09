@@ -25,11 +25,11 @@ const resolveEnvVar = (envKey, fallbackBase64) => {
 
 const firebaseConfig = {
     apiKey: resolveEnvVar("FIREBASE_API_KEY", "QUl6YVN5QUdoNXJ1dEllOXJZaEI3WkpJdUt6d1p4UFdMeHRjNm00"),
-    authDomain: resolveEnvVar("FIREBASE_AUTH_DOMAIN", "") || "maliyildirimtr-db.firebaseapp.com",
-    projectId: resolveEnvVar("FIREBASE_PROJECT_ID", "") || "maliyildirimtr-db",
-    storageBucket: resolveEnvVar("FIREBASE_STORAGE_BUCKET", "") || "maliyildirimtr-db.firebasestorage.app",
-    messagingSenderId: resolveEnvVar("FIREBASE_MESSAGING_SENDER_ID", "") || "1079425314668",
-    appId: resolveEnvVar("FIREBASE_APP_ID", "") || "1:1079425314668:web:726b216d3cdeedb678cd49"
+    authDomain: "maliyildirimtr-db.firebaseapp.com",
+    projectId: resolveEnvVar("FIREBASE_PROJECT_ID", "maliyildirimtr-db"),
+    storageBucket: resolveEnvVar("FIREBASE_STORAGE_BUCKET", "maliyildirimtr-db.firebasestorage.app"),
+    messagingSenderId: resolveEnvVar("FIREBASE_MESSAGING_SENDER_ID", "1079425314668"),
+    appId: resolveEnvVar("FIREBASE_APP_ID", "1:1079425314668:web:726b216d3cdeedb678cd49")
 };
 
 // Firebase & Firestore & Auth Başlatma

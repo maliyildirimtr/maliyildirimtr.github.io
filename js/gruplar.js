@@ -114,31 +114,6 @@ function updateStatsBar(groups) {
     if (memberCountEl) memberCountEl.innerText = totalMembers;
 }
 
-// Grupları Ekrana Çizme
-function renderGroupsUI(groups) {
-    const grid = document.getElementById('groups-grid');
-    if (!grid) return;
-
-    let filtered = groups;
-    if (currentCategoryFilter !== 'all') {
-        filtered = groups.filter(g => g.category === currentCategoryFilter);
-    }
-
-    const searchInput = document.getElementById('search-groups-input');
-    const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
-    if (q) {
-        filtered = filtered.filter(g => (g.name || '').toLowerCase().includes(q) || (g.description || '').toLowerCase().includes(q));
-    }
-
-    if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-500 text-xs border border-dashed border-slate-300 dark:border-slate-800 rounded-3xl">Aradığınız kriterde proje grubu bulunamadı.</div>`;
-        return;
-    }
-
-    let html = "";
-    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
-    const isPlatformAdmin = (typeof isAdmin === 'function' && isAdmin());
-
 // KULLANICI GRUP ÜYELİĞİ / LİDERLİĞİ KONTROLÜ
 function isUserGroupMember(group) {
     if (!group) return false;
@@ -385,8 +360,6 @@ function openJoinModal() {
 }
 
 function openJoinModalForGroup(group) {
-    if (!checkAuthOrPrompt()) return;
-
     const modal = document.getElementById('join-group-modal');
     const targetInput = document.getElementById('join-group-target-id');
     const nameDisplay = document.getElementById('join-group-name-display');
@@ -419,12 +392,6 @@ function closeJoinModal() {
 function handleJoinGroup(e) {
     if (e && e.preventDefault) e.preventDefault();
 
-    const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
-    if (!user) {
-        if (typeof openAuthModal === 'function') openAuthModal();
-        return;
-    }
-
     const targetIdInput = document.getElementById('join-group-target-id');
     const inputCodeEl = document.getElementById('invite-code-input');
     const errorMsg = document.getElementById('join-invite-error');
@@ -453,6 +420,14 @@ function handleJoinGroup(e) {
     const expectedCode = (targetGroup.inviteCode || '').trim().toUpperCase();
 
     if (enteredCode === expectedCode) {
+        const user = (typeof window.auth !== 'undefined' && window.auth) ? window.auth.currentUser : null;
+        if (!user) {
+            closeJoinModal();
+            if (typeof openAuthModal === 'function') openAuthModal();
+            alert("🔑 Davet kodu doğrulandı! Grubun çalışma alanına üye olarak katılmak için lütfen giriş yapın veya kayıt olun.");
+            return;
+        }
+
         const creatorName = user.displayName || user.email.split('@')[0];
         const newMember = {
             uid: user.uid,

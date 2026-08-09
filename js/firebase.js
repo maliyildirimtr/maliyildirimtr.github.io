@@ -12,31 +12,37 @@
  * 4. maliyildirimtr.github.io (Kişisel Portfolio Portalı)
  */
 
-// Dinamik ortam değişkeni çözücü (window.env, process.env veya güvenli kod çözücü)
-const resolveEnvVar = (envKey, fallbackBase64) => {
-    if (typeof window !== 'undefined' && window.env && window.env[envKey]) {
-        return window.env[envKey];
-    }
-    if (typeof process !== 'undefined' && process.env && process.env[envKey]) {
-        return process.env[envKey];
-    }
-    return (typeof atob === 'function' && fallbackBase64) ? atob(fallbackBase64) : "";
-};
+var auth = null;
+var db = null;
+var googleProvider = null;
 
-const firebaseConfig = {
-    apiKey: resolveEnvVar("FIREBASE_API_KEY", "QUl6YVN5QUdoNXJ1dEllOXJZaEI3WkpJdUt6d1p4UFdMeHRjNm00"),
-    authDomain: "maliyildirimtr-db.firebaseapp.com",
-    projectId: resolveEnvVar("FIREBASE_PROJECT_ID", "maliyildirimtr-db"),
-    storageBucket: resolveEnvVar("FIREBASE_STORAGE_BUCKET", "maliyildirimtr-db.firebasestorage.app"),
-    messagingSenderId: resolveEnvVar("FIREBASE_MESSAGING_SENDER_ID", "1079425314668"),
-    appId: resolveEnvVar("FIREBASE_APP_ID", "1:1079425314668:web:726b216d3cdeedb678cd49")
-};
+try {
+    const firebaseConfig = {
+        apiKey: "AIzaSyAGh5rutIe9rYhB7ZJIuKzwZxPWLxtc6m4",
+        authDomain: "maliyildirimtr-db.firebaseapp.com",
+        projectId: "maliyildirimtr-db",
+        storageBucket: "maliyildirimtr-db.firebasestorage.app",
+        messagingSenderId: "1079425314668",
+        appId: "1:1079425314668:web:726b216d3cdeedb678cd49"
+    };
 
-// Firebase & Firestore & Auth Başlatma
-if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+    if (typeof firebase !== 'undefined' && firebase.apps && !firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+    if (typeof firebase !== 'undefined') {
+        if (firebase.firestore) {
+            db = firebase.firestore();
+        }
+        if (firebase.auth) {
+            auth = firebase.auth();
+            googleProvider = new firebase.auth.GoogleAuthProvider();
+        }
+    }
+} catch (err) {
+    console.warn("Firebase başlatma uyarısı:", err);
 }
 
-const db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
-const auth = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth() : null;
-const googleProvider = (typeof firebase !== 'undefined' && firebase.auth) ? new firebase.auth.GoogleAuthProvider() : null;
+window.auth = auth;
+window.db = db;
+window.googleProvider = googleProvider;

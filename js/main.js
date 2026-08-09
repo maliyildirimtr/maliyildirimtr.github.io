@@ -18,7 +18,7 @@ async function computeSHA256(text) {
 }
 
 function isAdmin() {
-    const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+    const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
     const sessionToken = sessionStorage.getItem('_mali_adm_token') || localStorage.getItem('_mali_adm_token');
     
     const isEmailAdmin = !!(user && user.email && (_cachedUserEmailHash === SEC_HASH_EMAIL || user.email.toLowerCase().trim() === 'maliyildirimtr@gmail.com'));

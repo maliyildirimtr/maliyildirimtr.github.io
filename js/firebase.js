@@ -37,6 +37,14 @@ try {
         if (firebase.auth) {
             auth = firebase.auth();
             googleProvider = new firebase.auth.GoogleAuthProvider();
+            googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+            // 1. Oturum Kalıcılığı (Persistence: LOCAL) Zorunlu Kılma
+            if (firebase.auth.Auth && firebase.auth.Auth.Persistence && firebase.auth.Auth.Persistence.LOCAL) {
+                auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => {
+                    console.warn("Firebase Auth setPersistence uyarısı:", err);
+                });
+            }
         }
     }
 } catch (err) {

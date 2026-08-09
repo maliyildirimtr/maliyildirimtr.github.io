@@ -720,7 +720,14 @@ if (typeof auth !== 'undefined' && auth) {
                     _cachedUserEmailHash = await computeSHA256(user.email.toLowerCase().trim());
                 }
                 if (typeof SSO !== 'undefined') SSO.onLogin(user);
-                closeAuthModal();
+                
+                // 3. Modalları Otomatik Kapat
+                document.querySelectorAll('.login-modal, #auth-modal').forEach(m => m.classList.add('hidden'));
+                
+                const userBtn = document.getElementById('user-profile-btn');
+                if (userBtn && user.displayName) {
+                    userBtn.innerHTML = user.displayName;
+                }
             } else {
                 console.log("Kullanıcı oturumu kapalı.");
                 _cachedUserEmailHash = null;

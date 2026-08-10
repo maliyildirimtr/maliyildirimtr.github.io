@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "maliyildirimtr-db"
+  },
+  "targets": {
+    "maliyildirimtr-db": {
+      "hosting": {
+        "maliyildirimtr": [
+          "maliyildirimtr"
+        ]
+      }
+    }
+  }
+}

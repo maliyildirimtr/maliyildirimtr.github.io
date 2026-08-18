@@ -6,6 +6,8 @@
 .env.production.local
 config.json
 secrets.json
+serviceAccountKey.json
+firebase-debug.log
 
 # Operating System files
 .DS_Store
